@@ -413,3 +413,19 @@ Interface uniquement : aucune migration, `register_photo` et règles d'accès in
 | `npm run test` depuis la racine | **PASS 349**, 35 ignorés (opt-in), 0 échec |
 | `npm run test:real` | **PASS 30/30** + 54 contrôles HTTP |
 | **Safari iPhone et Chrome Android réels** : ouverture du sélecteur par un appui sur la carte, annulation, HEIC natif | **NON_TESTÉ** (seuls des émulateurs WebKit/Chromium ont tourné ; la conformité au geste utilisateur est vérifiée par `navigator.userActivation`, pas par un appareil) |
+
+## Modération des images : audit du filtre et décision (11 octobre 2026)
+
+Détail et tableaux dans `DETECTEUR_NSFW.md`. Résumé : filtre NSFWJS 4.4.0 / MobileNetV2 dans le navigateur ; un objet (sextoy) est classé `Neutral` car aucune catégorie ne le décrit ; verdict transmis à `register_photo`, qui décide côté serveur. **Aucun détecteur complémentaire n'a été ajouté** : aucune image de positif n'étant disponible, la détection de sextoys n'a pu être mesurée pour aucun modèle ; CLIP zéro-shot (≈ 89 Mo) a produit 1 faux positif sur 16 photos ordinaires. Aucun code de production modifié par cette partie (scripts d'évaluation et documentation seulement).
+
+| Contrôle | Résultat |
+|---|---|
+| `scripts/evaluate-detector.mjs` sur 16 négatifs (13 photos ordinaires, 3 synthétiques piégeuses) : MobileNetV2 (actuel) / MobileNetV2Mid / InceptionV3 | **0/16 faux positif** pour les trois (Porn+Hentai max 0,087 / 0,046 / 0,067 ; Sexy max 0,713 / 0,004 / 0,062) ; poids 2,6 / 4,3 / 22,4 Mo |
+| CLIP ViT-B/32 zéro-shot (`scripts/evaluate-clip-zeroshot.mjs`, expérience hors site) | 1/16 photo ordinaire classée « adult toy » (0,41) ; 3 images abstraites entre 0,10 et 0,17 ; ≈ 89 Mo : **non retenu** |
+| Détection de sextoys / contenus explicites par n'importe quel modèle | **NON_TESTÉ** : aucun positif disponible (image du problème non fournie) ; aucune garantie de détection |
+| Photo normale publiée seule quand la validation est désactivée ; en attente quand elle est activée (verdict `clean` forcé côté client) | PASS : `tests/messages.spec.js`, `tests/moderation.spec.js`, `tests/real-admin.spec.js` (pile réelle : 3 envois « clean » restent `pending_review`, invisibles, non signables) |
+| Photo suspecte ⇒ en attente quel que soit le réglage ; modèle indisponible ⇒ en attente avec message adapté ; message invité de la validation | PASS (`flows.spec.js` verdicts suspect/sexy/indisponible, `messages.spec.js`) |
+| Photos en attente : absence d'accès public (galerie, table, Storage, URL signées, URL directes) ; admin : valider, refuser, supprimer | PASS (`scripts/real-http-test.mjs` 54 contrôles, `real-admin.spec.js`, `moderation.spec.js`) ; une vérification dédiée de 55 contrôles (verdicts falsifiés, écritures directes, fonctions admin, course à l'activation, liens signés) a été faite à part sur la pile locale |
+| Fuite des photos privées | PASS (`real-http-test.mjs`, `real-admin.spec.js`, `share-flow.spec.js` : chemins `maries/…`, absentes de la galerie) |
+| Non-régression générale après la correction du partage | `npm run test` depuis la racine : **349 réussis**, 35 ignorés (opt-in), 0 échec ; `npm run test:real` : **30/30** + 54 contrôles HTTP |
+| Mobiles réels, projet Supabase hébergé | NON_TESTÉ |
