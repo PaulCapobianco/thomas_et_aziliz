@@ -22,13 +22,13 @@ test("real send from the unmodified site to the hosted project", async ({ page }
   await (await chooser).setFiles([{ name: "e2e.jpg", mimeType: "image/jpeg", buffer: bytes }]);
   await expect(page.locator("#upload-status")).toContainText("1 photo(s) prête(s)");
   await page.locator("#send").click();
-  await expect(page.locator("#upload-status")).toContainText("Terminé ✓", { timeout: 90000 });
+  await expect(page.locator("#upload-message")).toHaveAttribute("data-kind", /success|pending|error/, { timeout: 90000 });
   const status = await page.locator("#upload-status").textContent();
   console.log(`[${info.project.name}] ${status}`);
-  expect(status).toMatch(/1 ajoutée\(s\) à la galerie|1 en attente/);
+  expect(status).toMatch(/1 photo ajoutée à la galerie|1 photo reçue/);
   const after = [...(await ids())].filter((id) => !before.has(id));
   console.log(`[${info.project.name}] nouvelle(s) photo(s) publique(s): ${after.join(", ") || "(aucune: en attente)"}; erreurs réseau: ${errors.join(" | ") || "aucune"}`);
-  if (/1 ajoutée/.test(status)) {
+  if (/1 photo ajoutée/.test(status)) {
     expect(after.length).toBe(1);
     await page.getByRole("link", { name: "Accueil", exact: true }).click();
     await page.locator("#refresh").click();

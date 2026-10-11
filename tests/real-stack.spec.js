@@ -44,11 +44,12 @@ test("real upload: public photos appear, exact copy ignored, private stays out, 
     ]);
   await expect(a.locator("#send")).toBeEnabled();
   await a.locator("#send").click();
-  await expect(a.locator("#upload-status")).toContainText("en échec", { timeout: 90000 });
+  await expect(a.locator("#upload-message")).toHaveAttribute("data-kind", /success|pending|error/, { timeout: 90000 });
   const status = await a.locator("#upload-status").textContent();
   console.log("real upload summary:", status);
-  expect(status).toContain("0 en échec");
-  expect(status).toMatch(/doublon\(s\) ignoré\(s\)/);
+  expect(status).not.toContain("n’a pas pu");
+  expect(status).toContain("2 photos ajoutées à la galerie");
+  expect(status).toMatch(/1 doublon ignoré/);
 
   // Private upload must never reach the public gallery.
   await a.locator("[name=audience][value=maries]").check();
@@ -56,7 +57,7 @@ test("real upload: public photos appear, exact copy ignored, private stays out, 
     .locator("#files")
     .setInputFiles([await file("prive.jpg", "photo_03.jpg", Buffer.from("priv" + Date.now()))]);
   await a.locator("#send").click();
-  await expect(a.locator("#upload-status")).toContainText("envoyée(s) aux mariés", { timeout: 60000 });
+  await expect(a.locator("#upload-status")).toContainText("envoyée aux mariés", { timeout: 60000 });
 
   // Another browser (other localStorage identity) sees the public photos only, with real signed URLs.
   const ctxB = await browser.newContext({ bypassCSP: true });
@@ -114,7 +115,7 @@ test("regression: after publishing a 3rd photo in the same page nothing disappea
   const sendNow = async (files) => {
     await page.locator("#files").setInputFiles(files);
     await page.locator("#send").click();
-    await expect(page.locator("#upload-status")).toContainText("Terminé", { timeout: 90000 });
+    await expect(page.locator("#upload-message")).toHaveAttribute("data-kind", /success|pending/, { timeout: 90000 });
   };
   await sendNow([await unique("x1.jpg", "photo_01.jpg"), await unique("x2.jpg", "photo_02.jpg")]);
   await page.getByRole("link", { name: "Accueil", exact: true }).click();

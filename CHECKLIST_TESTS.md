@@ -248,3 +248,29 @@ Conclusion : sans le repli de qualité, une photo très bruitée dépasserait la
 
 Note : deux passages intermédiaires ont montré des échecs ponctuels (4 tests de `design.spec.js` pendant qu'un autre processus modifiait la maquette du site ; 4 tests de la pile réelle lancés pendant une autre exécution) ; relancés seuls, tout passe.
 **À faire : `npm run build` puis `npm run deploy` pour mettre ces réglages en ligne.** Les photos déjà envoyées gardent leur résolution d'origine.
+
+## Messages d'envoi et lightbox (11 octobre 2026)
+
+**Messages d'envoi** (`uploads.js`, bloc `#upload-message` ; `#upload-status` reste la zone `role="status" aria-live="polite"`) : un seul message à la fois.
+Succès complet « N photos ajoutées à la galerie » : disparaît seul après 5 s (fondu 0,4 s, aucune transition avec `prefers-reduced-motion`). Photos en attente : une phrase d'explication, bouton « OK », disparaît seul après 10 s.
+Doublons : cités dans le message (« N doublons ignorés (déjà envoyé) »), jamais comme erreur. Échec même partiel ou anomalie (fichier illisible, format refusé, connexion interrompue, trop de photos envoyées) : ne disparaît jamais seul, raison en français, nombre de photos,
+« Réessayer les échecs » et « Fermer », les réussites comptées à part (« Bien reçues : … »). Le bloc de progression disparaît quand le message final apparaît ; un nouvel envoi remplace le message ; l'état des photos étant agrégé, une erreur non résolue
+réapparaît dans le message final d'un envoi suivant (un succès ne l'efface pas) ; une simple information ne remplace jamais une erreur. Bogue trouvé par les tests et corrigé : après « Fermer », le bouton « Réessayer » de la barre d'outils restait caché.
+**Lightbox** : barre d'actions en bas de l'écran (fond sombre à 86 % d'opacité, marge de sécurité iPhone `env(safe-area-inset-bottom)`), « ↓ Télécharger » à gauche (bouton plein), « Signaler cette photo » à droite (discret) ; « Fermer × » en haut à droite (48 px), « 3 / 48 » en haut à gauche ; flèches sur les côtés ; rien ne recouvre le centre de la photo ; swipe, Échap, flèches inchangés. L'aperçu de l'administration garde sa mise en page.
+
+| Contrôle (Chromium 1440 px, Pixel 7 360 px, iPhone 13 WebKit) | Résultat |
+|---|---|
+| Succès : texte exact, `aria-live=polite`, présent à 3 s, disparu peu après 5 s ; transition > 0 ms, 0 ms en mouvement réduit | PASS ×3 |
+| En attente : phrase de raison, « OK » ferme ; sans clic, encore là à 6,5 s, disparu avant ~12 s | PASS ×3 |
+| Échec : message toujours présent après 12 s, raison + nombre + « Réessayer les échecs » + « Fermer », un seul bouton de nouvelle tentative visible ; « Fermer » puis réessai depuis la barre d'outils | PASS ×3 |
+| Envoi mixte (réussite + échec réseau + doublon + fichier illisible) : un seul message cohérent (« 2 photos n'ont pas pu être envoyées … 1 photo ajoutée … 1 doublon ignoré »), progression masquée | PASS ×3 |
+| Nouvel envoi remplace le message ; une erreur survit à un autre envoi ; limite d'envois expliquée et durable ; jamais progression et message final ensemble | PASS ×3 |
+| Lightbox : Télécharger et Signaler visibles sans défiler, dans la barre du bas (bas de l'écran), hors de la photo (le centre de la photo est la photo), ≥ 44 px, Fermer en haut à droite, position « 1 / 48 » en haut | PASS ×3 |
+| Flèches ≥ 44 px, ne recouvrent ni la barre ni la photo | PASS ×3 |
+| Contraste ≥ 4,5:1 (texte « Signaler » sur la barre composée sur blanc et sur noir ; texte « Télécharger » sur son fond ; « Fermer ») avec photo claire et photo sombre ; captures `test-results/lightbox-{bright,dark}-*.png` | PASS ×3 |
+| Focus visible (contour ≥ 2 px) sur Télécharger et Signaler, flèches, Échap ; signalement : motifs et annulation ; téléchargement forcé `photo-mariage.jpg` | PASS (clavier : ordinateur et WebKit) |
+| Non-régression : `npm test` complet (envoi, pagination, signalement, téléchargement, administration, galerie, design) | **PASS 160**, 26 ignorés (opt-in) |
+| `npm run test:real` (Storage, PostgREST, GoTrue réels) avec les nouveaux messages | PASS 21/21 + 54 contrôles HTTP |
+| Lecteur d'écran réel (VoiceOver/TalkBack), photo réelle très claire ou très sombre sur téléphone, safe-area d'un vrai iPhone | NON_TESTÉ |
+
+**À faire : `npm run build` puis `npm run deploy` pour publier.**

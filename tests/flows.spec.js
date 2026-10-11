@@ -9,13 +9,18 @@ const emptyConfig = (page) =>
     }),
   );
 const fixture = (name) => `fixtures/${name}`;
+// The final message (success, pending or error) replaces the progress block.
+const settled = (page, timeout = 30000) =>
+  expect(page.locator("#upload-message")).toHaveAttribute(
+    "data-kind",
+    /success|pending|error/,
+    { timeout },
+  );
 async function upload(page, names) {
   await page.locator("#files").setInputFiles(names.map(fixture));
   await expect(page.locator("#send")).toBeEnabled();
   await page.locator("#send").click();
-  await expect(page.locator("#upload-status")).toContainText("en échec", {
-    timeout: 30000,
-  });
+  await settled(page, 30000);
 }
 test("fallback, 360/tablet/desktop, semantics and no indexation", async ({
   page,
@@ -89,8 +94,8 @@ test("public JPEG PNG uploads, exact duplicate, similar photos and compressed di
     "rafale_a.jpg",
     "rafale_b.jpg",
   ]);
-  await expect(page.locator("#upload-status")).toContainText("6 ajoutée(s)");
-  await expect(page.locator("#upload-status")).toContainText("1 doublon(s)");
+  await expect(page.locator("#upload-status")).toContainText("6 photos ajoutées à la galerie");
+  await expect(page.locator("#upload-status")).toContainText("1 doublon ignoré");
   const data = await page.evaluate(() => ({
     records: mock.records.length,
     objects: [...mock.objects],
@@ -119,7 +124,7 @@ test("private upload skips NSFW and is absent from guest gallery", async ({
   await page.locator("[value=maries]").check();
   await upload(page, ["portrait_exif6.jpg"]);
   await expect(page.locator("#upload-status")).toContainText(
-    "1 envoyée(s) aux mariés",
+    "1 photo envoyée aux mariés",
   );
   const info = await page.evaluate(() => ({
     models: mock.calls.filter((c) => c[0] === "model-load").length,
@@ -163,10 +168,10 @@ test("failure after 3 attempts is retryable, cancellation stops after current ph
   await installMock(page, { failures: 3, uploadDelay: 150 });
   await page.goto("/#partager");
   await upload(page, ["photo_01.jpg"]);
-  await expect(page.locator("#upload-status")).toContainText("1 en échec");
+  await expect(page.locator("#upload-status")).toContainText("1 photo n’a pas pu être envoyée");
   expect(await page.evaluate(() => mock.records.length)).toBe(0);
-  await page.locator("#retry").click();
-  await expect(page.locator("#upload-status")).toContainText("1 ajoutée(s)");
+  await page.locator("#message-retry").click();
+  await expect(page.locator("#upload-status")).toContainText("1 photo ajoutée à la galerie");
   await page
     .locator("#files")
     .setInputFiles([fixture("photo_02.jpg"), fixture("photo_03.jpg")]);
@@ -182,8 +187,8 @@ test("invalid file does not interrupt following valid image", async ({
   await installMock(page);
   await page.goto("/#partager");
   await upload(page, ["pas_une_image.jpg", "minuscule_1x1.png"]);
-  await expect(page.locator("#upload-status")).toContainText("1 ajoutée(s)");
-  await expect(page.locator("#upload-status")).toContainText("1 en échec");
+  await expect(page.locator("#upload-status")).toContainText("1 photo ajoutée à la galerie");
+  await expect(page.locator("#upload-status")).toContainText("1 photo n’a pas pu être envoyée");
 });
 test("200 photos: pagination, refresh removal and new insertion, lightbox focus and signed download", async ({
   page,
@@ -444,11 +449,11 @@ test("retry respects a changed private destination after a public upload failure
   await installMock(page, { failures: 3 });
   await page.goto("/#partager");
   await upload(page, ["minuscule_1x1.png"]);
-  await expect(page.locator("#upload-status")).toContainText("1 en échec");
+  await expect(page.locator("#upload-status")).toContainText("1 photo n’a pas pu être envoyée");
   await page.locator("[value=maries]").check();
-  await page.locator("#retry").click();
+  await page.locator("#message-retry").click();
   await expect(page.locator("#upload-status")).toContainText(
-    "1 envoyée(s) aux mariés",
+    "1 photo envoyée aux mariés",
   );
   expect(
     await page.evaluate(() => mock.records.map((row) => row.audience)),
@@ -527,13 +532,18 @@ test.describe("add-photos action", () => {
     await page.locator("[name=audience][value=maries]").check();
     await expect(page.locator("#send-destination")).toContainText("mariés");
     await page.locator("[name=audience][value=public]").check();
-    await page.locator("#send").click();
-    await expect(page.locator("#progress-panel")).toBeVisible();
-    await expect(page.locator("#upload-status")).toContainText("Terminé ✓", {
-      timeout: 30000,
+    await page.evaluate(() => {
+      window.__progressSeen = false;
+      new MutationObserver(() => {
+        if (!document.getElementById("progress-panel").hidden) window.__progressSeen = true;
+      }).observe(document.getElementById("progress-panel"), { attributes: true });
     });
+    await page.locator("#send").click();
+    await settled(page);
+    expect(await page.evaluate(() => window.__progressSeen)).toBeTruthy();
+    await expect(page.locator("#progress-panel")).toBeHidden();
     await expect(page.locator("#upload-status")).toContainText(
-      "2 ajoutée(s) à la galerie",
+      "2 photos ajoutées à la galerie",
     );
     await expect(page.locator("#selection")).toContainText("Ajoutée à la galerie");
   });
@@ -544,11 +554,11 @@ test.describe("add-photos action", () => {
     await page.locator("#files").setInputFiles([fixture("photo_01.jpg")]);
     await expect(page.locator("#send")).toBeEnabled();
     await page.locator("#send").click();
+    await settled(page);
     await expect(page.locator("#upload-status")).toContainText(
-      "appuyez sur « Réessayer les échecs »",
-      { timeout: 30000 },
+      "1 photo n’a pas pu être envoyée",
     );
-    await expect(page.locator("#retry")).toBeVisible();
+    await expect(page.locator("#message-retry")).toBeVisible();
     await expect(page.locator("#selection")).toContainText("Échec");
   });
 
@@ -602,9 +612,7 @@ test.describe("gallery never loses photos around a publication", () => {
     await page.locator(`[name=audience][value=${audience}]`).check();
     await page.locator("#files").setInputFiles(files.map(fixture));
     await page.locator("#send").click();
-    await expect(page.locator("#upload-status")).toContainText("en échec", {
-      timeout: 40000,
-    });
+    await settled(page, 40000);
   };
   const cards = (page) => page.locator("#gallery .photo-card");
   const allImagesLoaded = (page) =>
@@ -619,7 +627,7 @@ test.describe("gallery never loses photos around a publication", () => {
     await page.goto("/");
     await expect(cards(page)).toHaveCount(2);
     await sendFiles(page, ["photo_03.jpg"]);
-    await expect(page.locator("#upload-status")).toContainText("Terminé ✓");
+    await expect(page.locator("#upload-status")).toContainText("1 photo ajoutée à la galerie");
     await page.getByRole("link", { name: "Accueil", exact: true }).click();
     await expect(cards(page)).toHaveCount(3);
     await expect.poll(() => allImagesLoaded(page)).toBeTruthy();
@@ -639,7 +647,7 @@ test.describe("gallery never loses photos around a publication", () => {
     await expect(cards(page)).toHaveCount(3);
     // Same file again: ignored. Private send: not in the shared gallery.
     await sendFiles(page, ["photo_03.jpg"]);
-    await expect(page.locator("#upload-status")).toContainText("1 doublon(s)");
+    await expect(page.locator("#upload-status")).toContainText("1 doublon ignoré");
     await sendFiles(page, ["photo_02.jpg"], "maries");
     await expect(page.locator("#upload-status")).toContainText("aux mariés");
     await page.getByRole("link", { name: "Accueil", exact: true }).click();
@@ -667,7 +675,7 @@ test.describe("gallery never loses photos around a publication", () => {
     await page.goto("/");
     await expect(cards(page)).toHaveCount(2);
     await sendFiles(page, ["photo_01.jpg"]);
-    await expect(page.locator("#upload-status")).toContainText("Réessayer");
+    await expect(page.locator("#message-retry")).toBeVisible();
     await page.getByRole("link", { name: "Accueil", exact: true }).click();
     await expect(cards(page)).toHaveCount(2);
     await expect.poll(() => allImagesLoaded(page)).toBeTruthy();
@@ -708,9 +716,7 @@ test("gallery with a freshly published photo renders correctly at 390 and 1440 p
   await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
   await page.locator("#files").setInputFiles([fixture("photo_03.jpg")]);
   await page.locator("#send").click();
-  await expect(page.locator("#upload-status")).toContainText("Terminé ✓", {
-    timeout: 40000,
-  });
+  await settled(page, 40000);
   await page.getByRole("link", { name: "Accueil", exact: true }).click();
   await expect(page.locator("#gallery .photo-card")).toHaveCount(3);
   for (const width of [390, 1440]) {

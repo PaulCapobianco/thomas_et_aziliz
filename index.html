@@ -203,7 +203,15 @@
             </div>
             <button id="cancel-upload" type="button">Annuler</button>
           </div>
-          <p id="upload-status" role="status" aria-live="polite"></p>
+          <div id="upload-message" class="upload-message">
+            <p id="upload-status" role="status" aria-live="polite"></p>
+            <div class="message-actions">
+              <button id="message-retry" type="button" hidden>
+                Réessayer les échecs
+              </button>
+              <button id="message-close" type="button" hidden>Fermer</button>
+            </div>
+          </div>
         </form>
       </section>
     </main>
@@ -220,7 +228,9 @@
     <dialog id="lightbox" class="lightbox" aria-label="Photo du mariage">
       <div class="lightbox-toolbar">
         <p id="photo-position"></p>
-        <button id="close-lightbox" autofocus>Fermer ×</button>
+        <button id="close-lightbox" class="lightbox-close" autofocus>
+          Fermer <span aria-hidden="true">×</span>
+        </button>
       </div>
       <p id="lightbox-status" role="status"></p>
       <div class="lightbox-stage">
@@ -233,8 +243,12 @@
         </button>
       </div>
       <div class="lightbox-actions">
-        <button id="download">Télécharger ↓</button
-        ><button id="report-open" class="quiet">Signaler cette photo</button>
+        <button id="download" class="lightbox-download">
+          <span aria-hidden="true">↓</span> Télécharger
+        </button>
+        <button id="report-open" class="lightbox-report">
+          Signaler cette photo
+        </button>
       </div>
     </dialog>
     <dialog id="report-dialog" aria-labelledby="report-title">

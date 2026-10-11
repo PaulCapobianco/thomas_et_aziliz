@@ -117,6 +117,8 @@ export async function installMock(page, options = {}) {
                   )
                   .map((r) => r.hash),
               );
+            if (name === "register_photo" && options.rateLimited)
+              return ok({ result: "rate_limited" });
             if (name === "register_photo") {
               if (
                 !objects.has(`${p.p_audience}/thumbs/${p.p_id}.jpg`) ||

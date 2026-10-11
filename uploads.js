@@ -276,7 +276,107 @@ export async function uploadPhoto(sb, file, audience, seen, update = () => {}) {
       if (canvas) canvas.width = canvas.height = 0;
   }
 }
+// ---- Status message: one block, one message at a time -------------------------------------------------
+// success: disappears after 5 s; pending (kept for review): "OK" button, disappears after 10 s;
+// error: never disappears by itself (reason, count, "Réessayer les échecs", "Fermer"); info: replaced freely.
+const SUCCESS_MS = 5000,
+  PENDING_MS = 10000,
+  FADE_MS = 400;
+const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+function createMessage(onChange = () => {}) {
+  let timer = 0,
+    kind = "";
+  const box = () => $("upload-message");
+  const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const clearNow = () => {
+    clearTimeout(timer);
+    kind = "";
+    box().classList.remove("is-open", "is-leaving");
+    delete box().dataset.kind;
+    $("upload-status").textContent = "";
+    $("upload-status").classList.remove("error");
+    $("message-retry").hidden = $("message-close").hidden = true;
+    onChange();
+  };
+  const dismiss = () => {
+    clearTimeout(timer);
+    if (reduced()) return clearNow();
+    box().classList.add("is-leaving");
+    timer = setTimeout(clearNow, FADE_MS);
+  };
+  return {
+    get kind() {
+      return kind;
+    },
+    clear: clearNow,
+    dismiss,
+    show(next, text, { retry = false, close = "", autoHide = 0 } = {}) {
+      // A running error is only replaced by another error or an explicit action, never by information.
+      if (kind === "error" && next === "info") return;
+      clearTimeout(timer);
+      kind = next;
+      box().classList.remove("is-leaving");
+      box().classList.add("is-open");
+      box().dataset.kind = next;
+      $("upload-status").classList.toggle("error", next === "error");
+      $("upload-status").textContent = text;
+      $("message-retry").hidden = !retry;
+      $("message-close").hidden = !close;
+      $("message-close").textContent = close;
+      if (autoHide) timer = setTimeout(dismiss, autoHide);
+      onChange();
+    },
+  };
+}
+function finalMessage(items, cancelled) {
+  const count = (result) => items.filter((item) => item.result === result).length;
+  const sent = (item) => ["published", "registered"].includes(item.result);
+  const priv = items.filter((item) => item.audience === "maries" && sent(item)).length;
+  const shared = items.filter((item) => item.audience !== "maries" && sent(item)).length;
+  const dup = count("duplicate"),
+    pend = count("pending_review"),
+    failed = items.filter((item) => item.result === "error");
+  const done = [];
+  if (shared)
+    done.push(`${plural(shared, "photo ajoutée", "photos ajoutées")} à la galerie`);
+  if (priv)
+    done.push(`${plural(priv, "photo envoyée", "photos envoyées")} aux mariés`);
+  if (dup)
+    done.push(`${plural(dup, "doublon ignoré", "doublons ignorés")} (déjà envoyé)`);
+  const pending = pend
+    ? `${plural(pend, "photo reçue", "photos reçues")} : ${pend > 1 ? "elles apparaîtront" : "elle apparaîtra"} dans la galerie après vérification par les organisateurs.`
+    : "";
+  if (failed.length) {
+    const reasons = [...new Set(failed.map((item) => item.reason).filter(Boolean))];
+    const why = reasons.length
+      ? ` Raison : ${reasons.slice(0, 2).join(" ; ")}${reasons.length > 2 ? " ; …" : ""}.`
+      : "";
+    return {
+      kind: "error",
+      options: { retry: true, close: "Fermer" },
+      text:
+        `${plural(failed.length, "photo n’a pas pu être envoyée", "photos n’ont pas pu être envoyées")}.${why}` +
+        (done.length ? ` Bien reçues : ${done.join(" · ")}.` : "") +
+        (pending ? ` ${pending}` : ""),
+    };
+  }
+  const head = cancelled ? "Envoi arrêté ; les photos restantes peuvent être envoyées. " : "";
+  if (pend)
+    return {
+      kind: "pending",
+      options: { close: "OK", autoHide: PENDING_MS },
+      text: head + (done.length ? `${done.join(" · ")}. ` : "") + pending,
+    };
+  if (cancelled)
+    return { kind: "info", options: { close: "OK" }, text: head + (done.length ? `${done.join(" · ")}.` : "") };
+  return {
+    kind: "success",
+    options: { autoHide: SUCCESS_MS },
+    text: done.length ? `${done.join(" · ")}.` : "Terminé.",
+  };
+}
 export function setupUploads(sb, onComplete) {
+  const message = createMessage(() => render());
   let items = [],
     busy = false,
     cancelled = false;
@@ -328,7 +428,9 @@ export function setupUploads(sb, onComplete) {
     $("send").disabled = busy || !sb || !waiting;
     $("send").textContent =
       `Envoyer ${items.filter((item) => !item.result).length} photo(s)`;
-    $("retry").hidden = !items.some((item) => item.result === "error");
+    $("retry").hidden =
+      !items.some((item) => item.result === "error") ||
+      !$("message-retry").hidden;
     $("retry").disabled = busy;
     $("upload-controls").disabled = busy;
   }
@@ -340,7 +442,7 @@ export function setupUploads(sb, onComplete) {
     event.target.value = "";
     busy = true;
     render();
-    $("upload-status").textContent = "Préparation des aperçus…";
+    message.show("info", "Préparation des aperçus…");
     for (const file of files) {
       const item = { file };
       let source, canvas;
@@ -350,7 +452,8 @@ export function setupUploads(sb, onComplete) {
         item.url = URL.createObjectURL(await jpeg(canvas, 0.6));
       } catch (error) {
         item.result = "error";
-        item.message = `Échec : ${errorText(error)}`;
+        item.reason = errorText(error);
+        item.message = `Échec : ${item.reason}`;
       } finally {
         source?.close?.();
         if (canvas) canvas.width = canvas.height = 0;
@@ -358,11 +461,18 @@ export function setupUploads(sb, onComplete) {
       items.push(item);
     }
     busy = false;
-    $("upload-status").classList.remove("error");
     const ready = items.filter((item) => !item.result).length;
-    $("upload-status").textContent = ready
-      ? `${ready} photo(s) prête(s). Vérifiez la destination, puis appuyez sur « Envoyer ».`
-      : "Aucune photo utilisable dans cette sélection.";
+    const unreadable = items.filter((item) => item.result === "error");
+    if (unreadable.length) {
+      const reasons = [...new Set(unreadable.map((item) => item.reason))];
+      message.show(
+        "error",
+        `${plural(unreadable.length, "fichier n’a pas pu être utilisé", "fichiers n’ont pas pu être utilisés")}. Raison : ${reasons.slice(0, 2).join(" ; ")}.${ready ? ` ${plural(ready, "photo est prête", "photos sont prêtes")} à être envoyée${ready > 1 ? "s" : ""}.` : ""}`,
+        { retry: true, close: "Fermer" },
+      );
+    } else if (ready)
+      message.show("info", `${ready} photo(s) prête(s). Vérifiez la destination, puis appuyez sur « Envoyer ».`);
+    else message.show("info", "Aucune photo utilisable dans cette sélection.");
     render();
   };
   async function run(retry = false) {
@@ -374,6 +484,7 @@ export function setupUploads(sb, onComplete) {
     if (!batch.length) return;
     busy = true;
     cancelled = false;
+    message.clear();
     render();
     $("progress-panel").hidden = false;
     $("cancel-upload").disabled = false;
@@ -395,6 +506,7 @@ export function setupUploads(sb, onComplete) {
               `${processed} sur ${batch.length} photos traitées · ${message}`;
           },
         );
+        item.reason = "";
         item.message =
           item.result === "duplicate"
             ? "Déjà envoyée, ignorée"
@@ -408,7 +520,8 @@ export function setupUploads(sb, onComplete) {
         revoke(item);
       } catch (error) {
         item.result = "error";
-        item.message = `Échec : ${errorText(error)}`;
+        item.reason = errorText(error);
+        item.message = `Échec : ${item.reason}`;
       }
       processed++;
       $("progress").value = Math.round((processed / batch.length) * 100);
@@ -419,17 +532,12 @@ export function setupUploads(sb, onComplete) {
     busy = false;
     $("cancel-upload").disabled = true;
     render();
-    const count = (result) =>
-      items.filter((item) => item.result === result).length;
-    const privateCount = items.filter(
-      (item) =>
-        item.audience === "maries" &&
-        ["published", "registered"].includes(item.result),
-    ).length;
-    const failed = count("error");
-    $("upload-status").classList.toggle("error", failed > 0);
-    $("upload-status").textContent =
-      `${cancelled ? "Envoi arrêté ; les photos restantes peuvent être envoyées. " : failed ? "Envoi terminé avec des échecs : appuyez sur « Réessayer les échecs ». " : "Terminé ✓ "}${count("published") + count("registered") - privateCount} ajoutée(s) à la galerie · ${privateCount} envoyée(s) aux mariés · ${count("duplicate")} doublon(s) ignoré(s) · ${count("pending_review")} en attente · ${count("error")} en échec.`;
+    // The progress block gives way to the final message: never both on screen.
+    $("progress-panel").hidden = true;
+    const final = finalMessage(items, cancelled);
+    message.show(final.kind, final.text, final.options);
+    render();
+    $("upload-message").scrollIntoView({ block: "nearest" });
     onComplete();
   }
   $("upload-form").onsubmit = (event) => {
@@ -437,10 +545,12 @@ export function setupUploads(sb, onComplete) {
     run();
   };
   $("retry").onclick = () => run(true);
+  $("message-retry").onclick = () => run(true);
+  $("message-close").onclick = () => message.dismiss();
   $("cancel-upload").onclick = () => {
     cancelled = true;
     $("cancel-upload").disabled = true;
-    $("upload-status").textContent = "Arrêt demandé après la photo en cours.";
+    $("progress-label").textContent = "Arrêt demandé : la photo en cours se termine…";
   };
   window.addEventListener("beforeunload", (event) => {
     if (busy) {
@@ -450,9 +560,10 @@ export function setupUploads(sb, onComplete) {
   });
   window.addEventListener("pagehide", () => items.forEach(revoke));
   if (!sb) {
-    $("upload-status").classList.add("error");
-    $("upload-status").textContent =
-      "Les envois ne sont pas encore ouverts : le service photo n'est pas configuré sur ce site. Prévenez les organisateurs.";
+    message.show(
+      "error",
+      "Les envois ne sont pas encore ouverts : le service photo n'est pas configuré sur ce site. Prévenez les organisateurs.",
+    );
     $("files").disabled = true;
   }
   render();
