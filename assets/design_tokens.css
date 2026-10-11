@@ -1,0 +1,30 @@
+/* Tokens de design mesurés sur les 3 maquettes (pixels échantillonnés), à copier dans :root.
+   Direction : éditorial / hôtel de luxe, fond anthracite, ivoire chaud, accent terre cuite mat.
+   Les noms respectent le cahier V2 §15 (pas de dizaines de variables quasi identiques). */
+:root {
+  --bg:            #0f0e0c;                 /* fond principal (maquettes : #101010 à #0c0c0c) */
+  --surface:       #161412;                 /* cartes, bandeaux (maquettes : #141010 à #181814) */
+  --text:          #f4ebe0;                 /* ivoire chaud (titres, texte principal) */
+  --muted:         #bdafa7;                 /* texte secondaire (maquettes : #bdafa7 à #dbceba) */
+  --accent:        #b06448;                 /* terre cuite mat : boutons, onglet actif (mesuré : #b06448) */
+  --accent-hover:  #c1735a;                 /* survol / appui, ~ +8 % de clarté */
+  --accent-soft:   rgba(176, 100, 72, .55); /* carte de choix sélectionnée (mesuré : #905038 sur fond sombre) */
+  --border:        rgba(244, 235, 224, .14);/* filets fins */
+  --ok:            #5fa36a;                 /* point vert « galerie en ligne » */
+  --danger:        #c9573f;                 /* suppression, erreurs */
+
+  --font-display: "Cormorant Garamond", "Fraunces", Georgia, serif;   /* prénoms, titres : grands, contraste fort */
+  --font-ui:      "Jost", "Inter", system-ui, sans-serif;             /* navigation, boutons, petites capitales espacées */
+
+  --tap: 44px;                /* zone tactile minimale */
+  --radius: 4px;              /* angles quasi droits : le style est net, pas « bulle » */
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+/* Petites capitales espacées (surtitres : « LE MARIAGE DE », « NOS SOUVENIRS ») */
+.eyebrow { font: 500 .72rem/1 var(--font-ui); letter-spacing: .32em; text-transform: uppercase; color: var(--muted); }
+
+/* Respect de prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

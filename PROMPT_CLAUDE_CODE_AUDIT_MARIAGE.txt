@@ -1,0 +1,19 @@
+MISSION CLAUDE CODE — AUDIT CIBLÉ APRÈS CODEX
+
+Contexte : site de partage des photos du mariage du 31 octobre 2026 (environ 130 invités). Codex a développé le MVP décrit dans CAHIER_DES_CHARGES_CODEX_MARIAGE_31_OCTOBRE_2026_V2.md. Lis HANDOFF_CLAUDE.md, le cahier des charges V2, l'état Git et les diffs. Ne repars pas de zéro.
+
+Ton rôle : auditer, tester et corriger UNIQUEMENT les risques réels ; préserver le design premium, les trois écrans et le fonctionnement déjà validé. N'ajoute aucune nouvelle fonctionnalité ni aucun framework.
+
+Priorités strictes :
+1. Aucune fuite de photos privées ou suspectes (Supabase RLS/Storage/URLs).
+2. Aucune perte de photos en cas de panne ou d'upload partiel ; conformité aux deux variantes JPEG.
+3. Deux signalements réellement distincts et traités atomiquement ; 1 seul vote sans retrait ; masquage/restauration admin.
+4. NSFWJS : pas d'acceptation silencieuse si modèle indisponible ; pas d'échec de traitement empêchant l'album privé.
+5. Fonctionnement Safari iOS, Chrome Android, lightbox, accessibilité, chargement progressif, performance.
+6. Absence de secrets dans le client et protections admin réellement côté serveur/DB.
+
+Travaille de façon autonome : inspecte, exécute les tests existants, ajoute les tests de sécurité manquants, corrige les bugs confirmés et committe proprement tes modifications. Quand Supabase distant n'est pas disponible, teste localement autant que possible, sans prétendre avoir testé le déploiement réel.
+
+Interdictions : migrations destructives ou déploiements distants sans autorisation ; refonte de la direction artistique ; remplacement complet de la stack ; fonctionnalités hors MVP.
+
+Livrable final : (1) vulnérabilités/bugs corrigés, (2) preuves des tests exécutés, (3) points NON_TESTÉ/à faire manuellement, (4) fichiers et commits, (5) liste de 5 à 10 actions humaines maximum avant le 25 octobre, par ordre de priorité.

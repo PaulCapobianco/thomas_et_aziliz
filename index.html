@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nos photos du mariage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Great+Vibes&family=Montserrat:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===== COULEURS : à adapter à celles du mariage ===== */
+  :root {
+    --bg: #fbf8f3;          /* fond */
+    --ink: #3a322c;         /* texte */
+    --soft: #7b6f65;        /* texte secondaire */
+    --accent: #b9906f;      /* couleur principale (boutons, ornements) */
+    --accent-dark: #96704f; /* couleur au toucher */
+    --line: #e6dccf;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; font-family:"Montserrat", system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+
+  /* ===== En-tête ===== */
+  .hero { text-align:center; padding:56px 20px 28px;
+          background: radial-gradient(ellipse at top, #f3e9dc 0%, var(--bg) 70%); }
+  .photo { width:200px; height:260px; margin:0 auto 24px; border-radius:100px 100px 12px 12px; overflow:hidden;
+           border:4px solid #fff; box-shadow:0 10px 30px rgba(90,60,40,.18); background:var(--line); }
+  .photo img { width:100%; height:100%; object-fit:cover; object-position:center 30%; display:block; }
+  .hero .kicker { font-size:.72rem; letter-spacing:.35em; text-transform:uppercase; color:var(--soft); margin:0 0 14px; }
+  .hero h1 { font-family:"Great Vibes", cursive; font-weight:400; font-size:3.4rem; line-height:1.05; margin:0; color:var(--accent-dark); }
+  .hero .date { font-family:"Cormorant Garamond", serif; font-style:italic; font-size:1.3rem; margin:12px 0 0; color:var(--ink); }
+  .orn { display:flex; align-items:center; justify-content:center; gap:12px; margin:22px auto 0; max-width:240px; color:var(--accent); }
+  .orn::before, .orn::after { content:""; flex:1; height:1px; background:var(--line); }
+  .orn span { font-size:1rem; }
+  .intro { font-family:"Cormorant Garamond", serif; font-size:1.2rem; line-height:1.45; color:var(--soft); max-width:420px; margin:18px auto 0; }
+
+  main { max-width:900px; margin:0 auto; padding:8px 16px 40px; }
+
+  /* ===== Boutons ===== */
+  .btn { display:block; width:100%; background:var(--accent); color:#fff; border:0; border-radius:999px;
+         padding:18px; font-size:.95rem; letter-spacing:.08em; text-transform:uppercase; font-family:inherit; font-weight:500;
+         cursor:pointer; text-align:center; box-shadow:0 6px 18px rgba(150,112,79,.28); transition:transform .1s, background .2s; }
+  .btn:active { background:var(--accent-dark); transform:scale(.99); }
+  .btn.secondary { background:transparent; color:var(--accent-dark); border:1.5px solid var(--accent); box-shadow:none;
+                   margin-top:12px; padding:13px; font-size:.8rem; }
+  input[type=file] { display:none; }
+
+  #status { margin:16px 0 4px; font-size:.9rem; min-height:1.4em; text-align:center; }
+  .bar { height:6px; background:var(--line); border-radius:3px; overflow:hidden; margin-top:8px; display:none; }
+  .bar > div { height:100%; width:0; background:var(--accent); transition:width .2s; }
+  .error { color:#a33; }
+  .ok { color:#2f6b3a; }
+
+  /* ===== Galerie ===== */
+  h2 { font-family:"Cormorant Garamond", serif; font-weight:500; font-size:1.7rem; text-align:center; margin:36px 0 16px; }
+  #gallery { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; }
+  @media (min-width:640px){ #gallery { grid-template-columns:repeat(4,1fr); gap:8px; } }
+  #gallery a { display:block; aspect-ratio:1; background:var(--line); border-radius:8px; overflow:hidden; }
+  #gallery img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s; }
+  #gallery a:hover img { transform:scale(1.04); }
+  .empty { grid-column:1/-1; text-align:center; color:var(--soft); font-family:"Cormorant Garamond", serif; font-size:1.2rem; padding:24px 0; }
+
+  footer { text-align:center; color:var(--soft); font-size:.75rem; padding:0 16px 32px; letter-spacing:.05em; }
+  #locked { display:none; text-align:center; padding:60px 20px; color:var(--soft); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="photo" id="photo"><img src="couple.jpg" alt="Les mariés" onerror="document.getElementById('photo').style.display='none'"></div>
+  <p class="kicker">Notre mariage</p>
+  <h1 id="names">Prénom &amp; Prénom</h1>
+  <p class="date" id="date">31 octobre 2026</p>
+  <div class="orn"><span>♡</span></div>
+  <p class="intro">Merci d'être là. Partagez vos plus beaux souvenirs de la soirée, nous avons hâte de les découvrir.</p>
+</header>
+
+<div id="locked">Lien incomplet. Merci de scanner à nouveau le QR code.</div>
+
+<main id="app">
+  <label class="btn" for="files">Ajouter mes photos</label>
+  <input id="files" type="file" accept="image/*" multiple>
+  <div id="status"></div>
+  <div class="bar" id="bar"><div id="barfill"></div></div>
+
+  <h2>Les photos de la soirée</h2>
+  <div id="gallery"></div>
+  <button class="btn secondary" id="more" style="display:none">Voir plus de photos</button>
+  <button class="btn secondary" id="refresh">Actualiser</button>
+</main>
+
+<footer>Avec tout notre amour ♡</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ====== À MODIFIER ======
+const NAMES = "Prénom & Prénom";   // ex. "Marie & Paul"
+const DATE_TXT = "31 octobre 2026";
+const SUPABASE_URL = "https://VOTRE-PROJET.supabase.co";
+const SUPABASE_KEY = "VOTRE_CLE_PUBLIQUE_ANON";
+const BUCKET = "photos";
+const SECRET = "";   // optionnel : ex "marie-et-paul-2026" ; le QR code pointera vers https://votre-site/?k=marie-et-paul-2026
+// ========================
+
+document.getElementById("names").textContent = NAMES;
+document.getElementById("date").textContent = DATE_TXT;
+document.title = "Photos du mariage de " + NAMES;
+
+const PAGE = 48;
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = (id) => document.getElementById(id);
+
+// --- Lien secret (dissuasif, pas une vraie sécurité)
+(function gate() {
+  if (!SECRET) return;
+  const k = new URLSearchParams(location.search).get("k");
+  try { if (k) localStorage.setItem("wk", k); } catch (e) {}
+  let saved = k;
+  try { saved = k || localStorage.getItem("wk"); } catch (e) {}
+  if (saved !== SECRET) { $("app").style.display = "none"; $("locked").style.display = "block"; }
+})();
+
+// --- Compression côté navigateur
+function resize(file, maxSide, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const w = Math.round(img.width * ratio), h = Math.round(img.height * ratio);
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      c.toBlob((b) => b ? resolve(b) : reject(new Error("compression")), "image/jpeg", quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("lecture")); };
+    img.src = url;
+  });
+}
+
+const rand = () => Math.random().toString(36).slice(2, 8);
+
+async function uploadOne(file) {
+  const name = `${Date.now()}-${rand()}.jpg`;
+  const [full, thumb] = await Promise.all([resize(file, 1600, 0.8), resize(file, 400, 0.7)]);
+  const opts = { contentType: "image/jpeg", upsert: false };
+  const r1 = await sb.storage.from(BUCKET).upload(`full/${name}`, full, opts);
+  if (r1.error) throw r1.error;
+  const r2 = await sb.storage.from(BUCKET).upload(`thumbs/${name}`, thumb, opts);
+  if (r2.error) throw r2.error;
+}
+
+$("files").addEventListener("change", async (e) => {
+  const files = [...e.target.files];
+  if (!files.length) return;
+  const st = $("status"), bar = $("bar"), fill = $("barfill");
+  bar.style.display = "block"; fill.style.width = "0";
+  let done = 0, failed = 0;
+  for (const f of files) {
+    st.className = ""; st.textContent = `Envoi en cours… ${done + failed + 1}/${files.length}`;
+    try { await uploadOne(f); done++; } catch (err) { console.error(err); failed++; }
+    fill.style.width = `${((done + failed) / files.length) * 100}%`;
+  }
+  e.target.value = "";
+  if (failed === 0) { st.className = "ok"; st.textContent = `Merci ! ${done} photo${done > 1 ? "s" : ""} ajoutée${done > 1 ? "s" : ""} ♡`; }
+  else { st.className = "error"; st.textContent = `${done} envoyée(s), ${failed} en échec. Réessayez pour les photos manquantes.`; }
+  setTimeout(() => { bar.style.display = "none"; }, 1500);
+  reload();
+});
+
+// --- Galerie
+let offset = 0;
+async function loadMore(reset) {
+  if (reset) { offset = 0; $("gallery").innerHTML = ""; }
+  const { data, error } = await sb.storage.from(BUCKET).list("thumbs", {
+    limit: PAGE, offset, sortBy: { column: "name", order: "desc" }
+  });
+  if (error) { $("status").className = "error"; $("status").textContent = "Impossible de charger la galerie."; return; }
+  const frag = document.createDocumentFragment();
+  for (const it of data) {
+    if (!it.name || it.name.startsWith(".")) continue;
+    const thumb = sb.storage.from(BUCKET).getPublicUrl(`thumbs/${it.name}`).data.publicUrl;
+    const full = sb.storage.from(BUCKET).getPublicUrl(`full/${it.name}`).data.publicUrl;
+    const a = document.createElement("a");
+    a.href = full; a.target = "_blank"; a.rel = "noopener";
+    const im = document.createElement("img");
+    im.src = thumb; im.loading = "lazy"; im.alt = "Photo du mariage";
+    a.appendChild(im); frag.appendChild(a);
+  }
+  $("gallery").appendChild(frag);
+  if (reset && !data.length) {
+    $("gallery").innerHTML = '<p class="empty">Soyez les premiers à partager une photo !</p>';
+  }
+  offset += data.length;
+  $("more").style.display = data.length === PAGE ? "block" : "none";
+}
+const reload = () => loadMore(true);
+$("more").addEventListener("click", () => loadMore(false));
+$("refresh").addEventListener("click", reload);
+reload();
+</script>
+</body>
+</html>

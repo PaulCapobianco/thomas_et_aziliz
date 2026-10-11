@@ -1,0 +1,47 @@
+MISSION CODEX — MODE AUTONOME / MARIAGE 31 OCTOBRE 2026  (kit V3)
+
+ORDRE DE LECTURE (tout, avant de modifier quoi que ce soit) :
+ 1. 00_LIRE_EN_PREMIER.md
+ 2. DECISIONS_PREPAREES.md        -> PRIME sur le cahier V2 en cas de contradiction (ordre : décisions > cahier V2 > maquettes > prompts)
+ 3. CAHIER_DES_CHARGES_CODEX_MARIAGE_31_OCTOBRE_2026_V2.md
+ 4. supabase/README.md et supabase/migrations/*.sql  (base de données DÉJÀ ÉCRITE ET TESTÉE en local : à utiliser, pas à réécrire)
+ 5. assets/DESIGN_NOTES.md, assets/design_tokens.css, assets/COPY_FR.md, maquettes/*.png (références de style, pas des pages à recopier)
+ 6. index.html existant (à auditer ; conserver la logique de compression 1600/400 et les constantes de configuration)
+
+TU ES RESPONSABLE d'un MVP premium mobile-first pour ~130 invités. Termine ce qui est réalisable sans me solliciter pour des
+micro-décisions. Construis, teste, corrige, committe sur une branche dédiée. Aucune nouvelle fonctionnalité hors cahier ; les
+décisions de DECISIONS_PREPAREES.md sont déjà prises (recopie-les dans DECISIONS.md, n'y déroge que si un test réel prouve qu'elles
+sont fausses, et écris pourquoi).
+
+IMPÉRATIFS : 3 écrans, galerie publique, envoi privé aux mariés, NSFWJS côté navigateur (aide préventive, jamais "vérifié"),
+anti-doublon exact, retrait après 2 signalements (déjà atomique côté base), admin authentifié sur mobile (masquer / restaurer /
+pause). Pas de compte invité, pas de framework lourd, aucune dépense ni changement destructif à distance sans autorisation.
+Ne jamais exposer photos privées, en attente, secrets ou pouvoirs admin côté visiteur. Aucune clé service_role dans le dépôt.
+
+COMMENT TRAVAILLER AVEC LE KIT
+- La base (supabase/migrations/0001-0003) et son contrat d'API (supabase/README.md §3) sont la référence. Code le client contre ce contrat.
+  Si tu dois modifier une migration : relance supabase/tests/run_local.sh (PostgreSQL local, voir README §4) et garde tous les tests PASS.
+  Si aucun PostgreSQL n'est disponible : essaie `docker run postgres:16` ; sinon déclare ces tests NON_TESTÉ, jamais PASS.
+- Isole l'appel d'upload Storage dans UNE fonction (uploadObject) : un plan B existe (supabase/README.md §5) si la vérification n°1
+  sur le vrai Supabase échoue. N'écris pas le plan B toi-même sauf demande.
+- Tests navigateur : Playwright (émulation mobile) avec un FAUX client Supabase et un FAUX modèle NSFWJS injectés
+  (page.addInitScript) ; jeu de photos : `python3 scripts/make_test_images.py` (dossier fixtures/, non commité).
+- Bibliothèques : `scripts/vendor.sh` copie supabase-js, tfjs, nsfwjs et le modèle en local (non testé : ajuste-le). Si pas de réseau,
+  écris le code contre l'API documentée, laisse les chemins /vendor/ et note-le dans ACTIONS_HUMAINES.md.
+- Quota : lance `python3 scripts/estimate_storage.py <photos_réelles>` si des photos réelles sont fournies, sinon avec
+  `--assume-full-kb 350`, et reporte le résultat (sans choisir le plan à ma place).
+
+N'AFFIRME JAMAIS qu'un appareil réel ou un Supabase distant a été testé si tu n'y as pas eu accès. Utilise PASS / FAIL / NON_TESTÉ avec la commande et la preuve.
+
+COMMENCE MAINTENANT : 1) audit rapide du dépôt et de l'état Git, 2) plan de 5 à 7 étapes sans question non bloquante,
+3) développement réel (UI, upload, modération, admin), 4) tests et corrections, 5) livrables ci-dessous, 6) rapport final au format
+du cahier §19.
+
+LIVRABLES : site opérationnel (index.html, admin.html + petits fichiers css/js indispensables, robots.txt, _headers), ARCHITECTURE.md,
+DECISIONS.md, README_DEPLOIEMENT.md (où cliquer, quoi copier, résultat attendu, comment vérifier), CHECKLIST_TESTS.md (PASS/FAIL/NON_TESTÉ),
+ACTIONS_HUMAINES.md (max 10, numérotées), HANDOFF_CLAUDE.md, GUIDE_TEMOIN.md (1 page pour l'administrateur du jour J), liste
+« BLOQUANTS AVANT 25 OCTOBRE ».
+
+Si une fonctionnalité secondaire bloque, applique le protocole de réduction de périmètre du cahier (§11) plutôt que de livrer du code instable.
+Ce que je dois te fournir et que tu ne peux pas inventer : prénoms réels, couple.jpg, lieu (optionnel), accès Supabase. Sans eux : valeurs
+configurables, fallback élégant, jamais de données fictives sur le site final.
