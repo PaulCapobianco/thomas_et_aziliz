@@ -721,13 +721,15 @@ input[type="password"] {
 }
 /* Public lightbox: toolbar on top, photo in the middle (nothing laid over it), action bar in the thumb zone. */
 #lightbox[open] {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  /* Column: top bar, photo zone (takes the free height), bottom bar (own height). Height is 100dvh (see .lightbox). */
+  display: flex;
+  flex-direction: column;
   gap: 0;
   padding: calc(1rem + env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left));
   overflow: hidden;
 }
 #lightbox .lightbox-stage {
+  flex: 1 1 auto;
   height: auto;
   min-height: 0;
   grid-template-rows: minmax(0, 1fr);
@@ -788,33 +790,36 @@ input[type="password"] {
   outline-offset: 2px;
   box-shadow: 0 0 0 5px var(--accent);
 }
-/* The photo frame uses only the free middle cell, never intrinsic image dimensions. */
+/* Photo zone: the free middle cell. 24 px of air above the bottom bar and below the top bar; the image is centred
+   and hugs its real dimensions (no box wider than the photo, no background on the image). The frame element only
+   carries the orientation hook used by app.js, so it takes no box (the inline size app.js sets has no effect). */
 .photo-viewport {
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
   min-width: 0;
   min-height: 0;
-  display: grid;
-  place-items: center;
+  padding-block: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 .photo-frame {
-  display: grid;
-  place-items: center;
+  display: contents;
+}
+#lightbox .photo-frame img {
+  display: block;
+  flex: 0 1 auto;
+  width: auto;
+  height: auto;
   max-width: 100%;
   max-height: 100%;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
-  background: #171b16;
-}
-#lightbox .photo-frame img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
   object-fit: contain;
   object-position: center;
+  background: none;
   transform: none;
 }
 html.photo-modal-open {

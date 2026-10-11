@@ -163,3 +163,91 @@ test("report keeps its confirmation and reasons; download keeps the forced downl
     .poll(() => page.evaluate(() => mock.calls.some((c) => c[0] === "sign" && c[3]?.download === "photo-mariage.jpg")))
     .toBeTruthy();
 });
+
+// Photo zone: whole photo visible, 24 px of air above the bar and under the top bar, no band beside the photo.
+const SHAPES = [
+  ["portrait 2:3", 1200, 1800],
+  ["portrait 4:5", 1200, 1500],
+  ["tall 1:3", 600, 1800],
+  ["landscape 3:2", 1800, 1200],
+  ["landscape 16:9", 1920, 1080],
+  ["square", 1400, 1400],
+];
+const SCREENS = [
+  ["desktop 1920x1080", 1920, 1080],
+  ["phone 390x844", 390, 844],
+  ["phone 360x740", 360, 740],
+];
+for (const [screenLabel, width, height] of SCREENS) {
+  test(`photo is whole, breathing, flush with no side band (${screenLabel}, portrait and landscape)`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height });
+    await openFirst(page);
+    for (const [shape, w, h] of SHAPES) {
+      await page.evaluate(async ([cw, ch]) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = cw;
+        canvas.height = ch;
+        const x = canvas.getContext("2d");
+        x.fillStyle = "#c9b79c";
+        x.fillRect(0, 0, cw, ch);
+        x.fillStyle = "#58654b";
+        x.fillRect(0, 0, cw, 40); // markers on the extreme edges: top and bottom must stay visible
+        x.fillRect(0, ch - 40, cw, 40);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+        document.getElementById("full-photo").src = URL.createObjectURL(blob);
+      }, [w, h]);
+      await expect.poll(() => page.locator("#full-photo").evaluate((i, n) => i.complete && i.naturalWidth === n, w)).toBeTruthy();
+      const m = await page.evaluate(() => {
+        const r = (el) => el.getBoundingClientRect();
+        const img = document.getElementById("full-photo");
+        const bar = document.querySelector("#lightbox .lightbox-actions");
+        const stage = document.querySelector("#lightbox .lightbox-stage");
+        const viewport = document.querySelector(".photo-viewport");
+        const status = document.getElementById("lightbox-status");
+        const i = r(img);
+        const lum = ([a, b, c]) => 0.2126 * a + 0.7152 * b + 0.0722 * c;
+        // First opaque background met at a point just beside the photo (must be the light dialog, not a dark box).
+        const beside = (x) => {
+          let el = document.elementFromPoint(x, i.y + i.height / 2);
+          while (el) {
+            const bg = getComputedStyle(el).backgroundColor.match(/[\d.]+/g).map(Number);
+            if ((bg[3] ?? 1) > 0.5) return { tag: el.id || el.className || el.tagName, lum: lum(bg) };
+            el = el.parentElement;
+          }
+          return { tag: "none", lum: 255 };
+        };
+        const free = r(viewport);
+        return {
+          img: { x: i.x, y: i.y, w: i.width, h: i.height, right: i.right, bottom: i.bottom },
+          bar: r(bar).y,
+          viewport: { x: free.x, y: free.y, right: free.right, bottom: free.bottom },
+          statusBottom: r(status).bottom,
+          natural: [img.naturalWidth, img.naturalHeight],
+          imgBg: getComputedStyle(img).backgroundColor,
+          left: i.x > 4 ? beside(i.x - 3) : null,
+          rightSide: window.innerWidth - i.right > 4 ? beside(i.right + 3) : null,
+          docOverflow: document.documentElement.scrollWidth > innerWidth,
+          fit: getComputedStyle(img).objectFit,
+          stageDisplay: getComputedStyle(stage).display,
+        };
+      });
+      const label = `${shape} on ${screenLabel}`;
+      // The image box has the photo's own proportions: no letterbox box, hence no side band.
+      expect(Math.abs(m.img.w / m.img.h - m.natural[0] / m.natural[1]), `${label}: box ratio`).toBeLessThan(0.02);
+      expect(m.imgBg, `${label}: no background on the image`).toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+      expect(m.fit).toBe("contain");
+      for (const side of [m.left, m.rightSide]) if (side) expect(side.lum, `${label}: beside the photo is light (${side.tag})`).toBeGreaterThan(200);
+      // Whole photo inside its zone, never behind the bar, never up against it.
+      expect(m.img.bottom, `${label}: above the bottom bar`).toBeLessThanOrEqual(m.bar + 0.5);
+      expect(m.bar - m.img.bottom, `${label}: air above the bar`).toBeGreaterThanOrEqual(23);
+      expect(m.img.y - m.statusBottom, `${label}: air under the top bar`).toBeGreaterThanOrEqual(23);
+      expect(m.img.x, `${label}: not cut on the left`).toBeGreaterThanOrEqual(m.viewport.x - 0.5);
+      expect(m.img.right, `${label}: not cut on the right`).toBeLessThanOrEqual(m.viewport.right + 0.5);
+      expect(m.docOverflow).toBeFalsy();
+      // Arrows, close and bar stay where they were: reachable and on screen.
+      for (const sel of ["#previous", "#next", "#close-lightbox", "#download", "#report-open"])
+        await expect(page.locator(sel), `${label}: ${sel}`).toBeInViewport({ ratio: 1 });
+    }
+    await page.screenshot({ path: `test-results/lightbox-fit-${width}x${height}.png` });
+  });
+}

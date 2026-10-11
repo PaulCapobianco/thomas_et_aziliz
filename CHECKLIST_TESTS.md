@@ -307,3 +307,17 @@ Les premiers passages ont détecté une perte de focus Chromium quand la flèche
 Responsive : tests existants 390/768/1440, plus les quatre profils dédiés. Accessibilité : Axe, noms accessibles, focus, modalité et fond inerte ; lecteurs d'écran réels NON_TESTÉ. SEO : titres/descriptions et noindex intentionnel conservés pour l'album privé. Sécurité : RPC et permissions inchangés, aucun secret ajouté ; les mocks ne constituent pas une preuve Storage distante. Performance : aucune nouvelle dépendance, espace réservé, lazy/async et encodage mesuré.
 
 **À faire après recette : rebuilder avec `npm run build`, puis republier uniquement `dist/`. Aucun déploiement ni push n'a été effectué.**
+
+## Lightbox : image entière, marges, plus de bandes latérales (11 octobre 2026)
+
+Correctif CSS uniquement (`app.css`, règles de la lightbox publique). Cause : l'élément `.photo-frame` était dimensionné en JavaScript sur un rapport fixe 2:3 / 3:2 avec un fond sombre `#171b16`, et l'image (`object-fit: contain`) y flottait : toute photo d'un autre rapport (4:5, carré, 3:4) laissait des bandes sombres ; et la zone image touchait le bandeau du bas (0,16 px d'écart mesurés).
+Maintenant : lightbox en colonne flex (`100dvh`) : barre du haut, zone image (`flex: 1`, `min-height: 0`, 24 px de marge haut et bas, image centrée), bandeau du bas (`flex: none`, sa hauteur est réservée par le flux) ; `<img>` `width/height: auto`, `max-width/max-height: 100%`, `object-fit: contain`, **sans fond** ; le cadre n'a plus de boîte (`display: contents`, ses dimensions inline sont sans effet), le fond clair vient du conteneur. Flèches, Fermer et bandeau inchangés.
+
+| Contrôle (Chromium, Pixel 7, iPhone 13 WebKit ; 6 formes × 3 écrans) | Résultat |
+|---|---|
+| Portrait 2:3, 4:5, très haut 1:3 ; paysage 3:2, 16:9 ; carré, sur ordinateur 1920×1080, mobile 390×844 et 360×740 : la boîte de l'image a le rapport exact de la photo (aucune bande), pas de fond sur l'image, le fond à côté de la photo est clair | PASS ×3 |
+| Photo entière (repères sur les bords haut et bas), ≥ 24 px d'air au-dessus du bandeau et sous la barre du haut, aucun chevauchement, rien de coupé à gauche/droite, pas de débordement horizontal | PASS ×3 |
+| Flèches, Fermer, Télécharger et Signaler restent dans l'écran à leur place | PASS ×3 |
+| Le nouveau test échoue bien avec l'ancien CSS (0,16 px d'air au-dessus du bandeau ; rapport de boîte erroné) | confirmé |
+| `npm run test` depuis la racine | **PASS 190**, 26 ignorés (opt-in), 0 échec |
+| iPhone réel (barre d'adresse Safari dynamique) | NON_TESTÉ ; la hauteur utilise `100dvh` |
