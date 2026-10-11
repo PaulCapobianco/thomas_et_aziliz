@@ -427,3 +427,22 @@ test("polling removes hidden photos and preserves lightbox focus after refresh",
   await page.clock.fastForward(60001);
   await expect(page.locator(".photo-card")).toHaveCount(1);
 });
+
+test("retry respects a changed private destination after a public upload failure", async ({
+  page,
+}) => {
+  await installMock(page, { failures: 3 });
+  await page.goto("/#partager");
+  await upload(page, ["minuscule_1x1.png"]);
+  await expect(page.locator("#upload-status")).toContainText("1 en échec");
+  await page.locator("[value=maries]").check();
+  await page.locator("#retry").click();
+  await expect(page.locator("#upload-status")).toContainText(
+    "1 envoyée(s) aux mariés",
+  );
+  expect(
+    await page.evaluate(() => mock.records.map((row) => row.audience)),
+  ).toEqual(["maries"]);
+  await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+  await expect(page.locator(".photo-card")).toHaveCount(0);
+});

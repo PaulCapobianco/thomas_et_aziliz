@@ -331,8 +331,8 @@ export function setupUploads(sb, onComplete) {
     let processed = 0;
     for (const item of batch) {
       if (cancelled) break;
-      // A failed file retains its original destination even if the radio is changed later.
-      item.audience ??= audience;
+      // A retry must honor the destination explicitly selected for this submission.
+      item.audience = audience;
       try {
         item.result = await uploadPhoto(
           sb,
