@@ -446,3 +446,19 @@ test("retry respects a changed private destination after a public upload failure
   await page.getByRole("link", { name: "Accueil / Galerie" }).click();
   await expect(page.locator(".photo-card")).toHaveCount(0);
 });
+
+test("admin delete reports a Storage cleanup that silently removed nothing", async ({
+  page,
+}) => {
+  await installMock(page, { photos: 1, removeNothing: true });
+  await page.goto("/admin.html");
+  await page.locator("#email").fill("admin@example.test");
+  await page.locator("#password").fill("example-only");
+  await page.getByRole("button", { name: "Se connecter", exact: true }).click();
+  await page.getByRole("button", { name: "Récentes", exact: true }).click();
+  await page.getByRole("button", { name: "Supprimer", exact: true }).click();
+  await page.locator("#confirm-yes").click();
+  await expect(page.locator("#admin-message")).toContainText(
+    "n’ont pas pu être effacés",
+  );
+});

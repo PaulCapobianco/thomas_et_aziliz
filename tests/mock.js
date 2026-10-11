@@ -242,7 +242,8 @@ export async function installMock(page, options = {}) {
               },
               remove: async (paths) => {
                 calls.push(["remove", paths]);
-                return ok([]);
+                // The real Storage API returns the objects it actually deleted.
+                return ok(options.removeNothing ? [] : paths.map((name) => ({ name })));
               },
             }),
           },

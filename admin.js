@@ -220,7 +220,11 @@ async function setStatus(row, status) {
       });
     if (status === "deleted") {
       try {
-        unwrap(await storage(sb).remove([row.full_path, row.thumb_path]));
+        // Storage answers 200 with only the objects it really deleted: an empty or short list is a failure too.
+        const removed = unwrap(
+          await storage(sb).remove([row.full_path, row.thumb_path]),
+        );
+        if (removed?.length !== 2) removalFailed = true;
       } catch {
         removalFailed = true;
       }
