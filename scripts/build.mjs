@@ -31,15 +31,16 @@ for (const file of [
   "404.html",
 ])
   await copyFile(file, `dist/${file}`);
-for (const file of ["design_tokens.css", "favicon.svg"])
+for (const file of ["design_tokens.css", "favicon.svg", "botanical.svg"])
   await copyFile(`assets/${file}`, `dist/assets/${file}`);
-for (const dir of ["vendor", "fonts"])
+for (const dir of ["vendor", "fonts", "assets/couple"])
   await cp(dir, `dist/${dir}`, { recursive: true });
-if (COUPLE_PHOTO) {
+if (COUPLE_PHOTO && !/^assets\/couple\/[a-zA-Z0-9_-]+\.jpg$/.test(COUPLE_PHOTO)) {
   if (!/^[a-zA-Z0-9_-]+\.(jpg|jpeg|webp|avif)$/i.test(COUPLE_PHOTO))
     throw new Error("Use a local hero filename at project root");
   await copyFile(COUPLE_PHOTO, `dist/${COUPLE_PHOTO}`);
 }
+if (COUPLE_PHOTO) await access(`dist/${COUPLE_PHOTO}`);
 
 console.log(
   "PASS: static site prepared in dist/ (SQL, tests and source documentation excluded).",

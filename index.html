@@ -7,9 +7,9 @@
     <meta name="referrer" content="no-referrer" />
     <meta
       name="description"
-      content="Les souvenirs du mariage du 31 octobre 2026. Retrouvez les photos de la journée et partagez vos plus beaux clichés."
+      content="Les photos du mariage de Thomas et Aziliz, le 31 octobre 2026. Partagez vos souvenirs avec les invités ou envoyez-les uniquement aux mariés."
     />
-    <title>Nos souvenirs — Mariage du 31 octobre 2026</title>
+    <title>Les photos de notre mariage — Thomas &amp; Aziliz</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/design_tokens.css" />
     <link rel="stylesheet" href="app.css" />
@@ -19,14 +19,11 @@
   <body>
     <a class="skip" href="#main">Aller au contenu</a>
     <header class="site-header">
-      <a class="wordmark" href="#galerie" aria-label="Accueil, notre mariage"
-        >31 <span>/</span> 10</a
-      >
+      <a class="wordmark" href="#galerie" aria-label="Accueil, Thomas et Aziliz">T<span>&amp;</span>A</a>
       <nav aria-label="Navigation principale">
-        <a href="#galerie" data-route="galerie">Accueil / Galerie</a
-        ><a href="#partager" data-route="partager"
-          >Partager <span aria-hidden="true">↗</span></a
-        >
+        <a href="#galerie" data-route="galerie">Accueil</a>
+        <a href="#partager" data-route="partager">Partager des photos</a>
+        <a href="#souvenirs" data-route="souvenirs">Galerie</a>
       </nav>
     </header>
     <p id="locked" class="notice container" hidden>
@@ -34,27 +31,59 @@
     </p>
     <main id="main" tabindex="-1">
       <div id="gallery-view">
-        <section class="hero" aria-labelledby="names">
-          <div class="hero-art" aria-hidden="true">
-            <span>31</span><i>octobre</i><span>2026</span>
-          </div>
+        <section class="hero" aria-labelledby="hero-title">
           <div class="hero-content">
-            <p class="eyebrow" id="hero-kicker">NOTRE MARIAGE</p>
-            <h1 id="names">Une journée.<br /><em>Mille souvenirs.</em></h1>
+            <p class="eyebrow" id="hero-kicker">NOTRE JOUR, VOS SOUVENIRS</p>
+            <p class="couple-names" id="names">Thomas &amp; Aziliz</p>
             <p class="date" id="date">31 octobre 2026</p>
+            <span class="floral-divider" aria-hidden="true">❧</span>
+            <h1 id="hero-title">Les photos de<br /> notre mariage</h1>
             <p id="location" hidden></p>
-            <a class="button primary hero-cta" href="#partager" data-pick
-              ><span aria-hidden="true">↥</span> Ajouter mes photos</a
-            >
-            <p class="hero-intro">
-              Partagez vos photos et revivez ensemble les plus beaux moments de
-              cette journée.
-            </p>
+            <p class="hero-intro">Un sourire, une émotion, un éclat de rire…<br />Partagez vos instants, ils feront nos souvenirs.</p>
+            <div class="hero-actions">
+              <a class="button primary hero-cta" href="#partager" data-pick><span aria-hidden="true">↥</span> PARTAGER MES PHOTOS</a>
+              <a class="button secondary" href="#souvenirs">VOIR LA GALERIE <span aria-hidden="true">↗</span></a>
+            </div>
+            <p class="hero-note">Avec tous les invités ou juste avec nous deux.</p>
           </div>
-          <div class="hero-foot">
-            <span>LE BONHEUR, À PLUSIEURS</span
-            ><a href="#souvenirs" aria-label="Découvrir la galerie">↓</a>
+          <figure class="hero-portrait">
+            <img class="hero-photo" src="assets/couple/thomas-aziliz-au-jardin.jpg" alt="Thomas et Aziliz dans un jardin ensoleillé" width="1532" height="2048" fetchpriority="high" />
+            <figcaption>Le bonheur de vous avoir à nos côtés.</figcaption>
+          </figure>
+        </section>
+        <section class="couple-memories" aria-labelledby="couple-memories-title">
+          <div class="memories-heading"><span></span><h2 id="couple-memories-title">Quelques instants à deux</h2><span></span></div>
+          <div class="polaroid-strip" tabindex="0" role="region" aria-label="Les sept photos de Thomas et Aziliz, défilement horizontal">
+              <figure class="polaroid">
+                <img src="assets/couple/thomas-aziliz-sous-les-lanternes.jpg" alt="Thomas et Aziliz sous un parapluie dans une ruelle éclairée de lanternes" width="1366" height="2049" loading="lazy" decoding="async" />
+                <figcaption>Sous les lanternes</figcaption>
+              </figure>
+              <figure class="polaroid">
+                <img src="assets/couple/thomas-aziliz-en-bleu.jpg" alt="Thomas et Aziliz en tenues bleues dans un jardin" width="1148" height="2040" loading="lazy" decoding="async" />
+                <figcaption>Tout en bleu</figcaption>
+              </figure>
+              <figure class="polaroid">
+                <img src="assets/couple/thomas-aziliz-lumieres-du-japon.jpg" alt="Thomas et Aziliz dans une rue illuminée au Japon" width="1536" height="2048" loading="lazy" decoding="async" />
+                <figcaption>Les lumières du Japon</figcaption>
+              </figure>
+              <figure class="polaroid">
+                <img src="assets/couple/thomas-aziliz-sourires-a-deux.jpg" alt="Thomas et Aziliz souriants, enlacés dans une rue" width="1366" height="2049" loading="lazy" decoding="async" />
+                <figcaption>Sourires à deux</figcaption>
+              </figure>
+              <figure class="polaroid">
+                <img src="assets/couple/thomas-aziliz-instant-complice.jpg" alt="Thomas et Aziliz côte à côte dans un café" width="908" height="2016" loading="lazy" decoding="async" />
+                <figcaption>Un instant complice</figcaption>
+              </figure>
+              <figure class="polaroid">
+                <img src="assets/couple/thomas-aziliz-au-jardin.jpg" alt="Thomas et Aziliz devant une fontaine entourée de palmiers" width="1532" height="2048" loading="lazy" decoding="async" />
+                <figcaption>Au jardin</figcaption>
+              </figure>
+              <figure class="polaroid">
+                <img src="assets/couple/thomas-aziliz-a-la-lueur-des-bougies.jpg" alt="Thomas et Aziliz dans une pièce au papier peint fleuri, une bougie à la main" width="1536" height="2048" loading="lazy" decoding="async" />
+                <figcaption>À la lueur des bougies</figcaption>
+              </figure>
           </div>
+          <p class="memories-note">Et maintenant, écrivons la suite en images…</p>
         </section>
         <section
           id="souvenirs"
@@ -63,8 +92,8 @@
         >
           <div class="section-heading">
             <div>
-              <p class="eyebrow">NOS SOUVENIRS</p>
-              <h2 id="gallery-title">Les souvenirs de la soirée</h2>
+              <p class="eyebrow">LE MARIAGE À TRAVERS VOS YEUX</p>
+              <h2 id="gallery-title">La galerie des invités</h2>
             </div>
             <button id="refresh" class="quiet">
               Actualiser <span aria-hidden="true">↻</span>
@@ -85,24 +114,13 @@
       >
         <p class="eyebrow">VOS PHOTOS COMPTENT</p>
         <h1 id="share-title" tabindex="-1">Partager vos souvenirs</h1>
-        <p class="lead">Votre regard, notre plus bel album.</p>
+        <p class="lead">Un petit instant pour vous, un précieux souvenir pour nous.</p>
         <form id="upload-form">
           <fieldset id="upload-controls">
             <legend class="sr-only">
               Destination et sélection de vos photos
             </legend>
-            <label class="file-picker" for="files"
-              ><span aria-hidden="true">↥</span> Ajouter mes photos<input
-                id="files"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-            /></label>
-            <p class="hint pick-hint">
-              JPEG, PNG, WebP et HEIC si votre navigateur le permet · 30 Mo
-              maximum par photo.
-            </p>
-            <p id="step-destination" class="step">Où envoyer vos photos ?</p>
+            <p id="step-destination" class="step">1. À qui sont destinées vos photos ?</p>
             <div class="destinations">
               <label class="destination"
                 ><input
@@ -112,10 +130,9 @@
                   checked
                 /><span class="destination-icon" aria-hidden="true">♧</span
                 ><span
-                  ><strong>Partager avec les invités</strong
+                  ><strong>Partager avec tous les invités</strong
                   ><small
-                    >Vos photos seront visibles par tous les invités du mariage
-                    dans la galerie commune.</small
+                    >Vos photos seront publiées dans la galerie commune, visible par tous les invités.</small
                   ></span
                 ></label
               >
@@ -127,13 +144,24 @@
                 ><span
                   ><strong>Envoyer uniquement aux mariés</strong
                   ><small
-                    >Vos photos seront envoyées
-                    <span id="private-names">aux mariés</span> et ne seront pas
-                    visibles par les autres invités.</small
+                    >Vos photos seront conservées dans l’album privé de
+                    <span id="private-names">Thomas &amp; Aziliz</span>, sans être visibles par les autres invités.</small
                   ></span
                 ></label
               >
             </div>
+            <p class="step selection-step">2. Choisissez vos photos</p>
+            <label class="file-picker" for="files"
+              ><span aria-hidden="true">↥</span> Ajouter mes photos<input
+                id="files"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+            /></label>
+            <p class="hint pick-hint">
+              JPEG, PNG, WebP et HEIC si votre navigateur le permet · 30 Mo
+              maximum par photo.
+            </p>
             <div class="advice">
               <span aria-hidden="true">✧</span>
               <div>
@@ -181,13 +209,13 @@
     </main>
     <div id="fab-bar" class="fab-bar" hidden>
       <a class="button primary fab" href="#partager" data-pick
-        ><span aria-hidden="true">↥</span> Ajouter mes photos</a
+        ><span aria-hidden="true">↥</span> PARTAGER MES PHOTOS</a
       >
     </div>
     <footer class="site-footer">
       <span>31 OCTOBRE 2026</span>
       <p>Les instants passent. Les souvenirs restent.</p>
-      <span>NOTRE ALBUM</span>
+      <span>THOMAS &amp; AZILIZ</span>
     </footer>
     <dialog id="lightbox" class="lightbox" aria-label="Photo du mariage">
       <div class="lightbox-toolbar">

@@ -13,8 +13,7 @@ import { setupUploads } from "./uploads.js";
 const sb = createClient();
 if (NAMES) {
   $("names").textContent = NAMES;
-  $("hero-kicker").textContent = "LE MARIAGE DE";
-  $("private-names").textContent = `à ${NAMES}`;
+  $("private-names").textContent = NAMES;
 }
 $("date").textContent = DATE_TXT;
 if (LOCATION) {
@@ -22,14 +21,7 @@ if (LOCATION) {
   $("location").hidden = false;
 }
 if (COUPLE_PHOTO) {
-  const img = new Image();
-  img.alt = "";
-  img.className = "hero-photo";
-  img.onload = () => {
-    document.querySelector(".hero").prepend(img);
-    document.querySelector(".hero").classList.add("has-photo");
-  };
-  img.src = COUPLE_PHOTO;
+  document.querySelector(".hero-photo").src = COUPLE_PHOTO;
 }
 let allowed = true;
 const key = new URLSearchParams(location.search).get("k");
@@ -59,6 +51,11 @@ let rows = [],
   returnFocusId;
 function route(focus = false) {
   const share = location.hash === "#partager";
+  const activeRoute = share
+    ? "partager"
+    : location.hash === "#souvenirs"
+      ? "souvenirs"
+      : "galerie";
   // The floating action only helps on the gallery view; it never covers the share form.
   $("fab-bar").hidden = share || !allowed || !sb;
   document.body.classList.toggle("has-fab", !share && allowed && !!sb);
@@ -67,16 +64,18 @@ function route(focus = false) {
   document
     .querySelectorAll("[data-route]")
     .forEach((link) =>
-      share === (link.dataset.route === "partager")
+      link.dataset.route === activeRoute
         ? link.setAttribute("aria-current", "page")
         : link.removeAttribute("aria-current"),
     );
-  document.title = `${share ? "Partager vos souvenirs" : "Nos souvenirs"} — ${NAMES || "Mariage du 31 octobre 2026"}`;
+  document.title = `${share ? "Partager des photos" : "Les photos de notre mariage"} — ${NAMES || "Thomas & Aziliz"}`;
   if (focus && allowed) {
     if (share) $("share-title").focus();
     else $("main").focus();
     window.scrollTo(0, 0);
   }
+  // The anchor can be hidden when arriving from the share screen.
+  if (activeRoute === "souvenirs" && allowed) $("souvenirs").scrollIntoView();
 }
 // One gesture: a tap on "Ajouter mes photos" opens the photo chooser straight away. The link still navigates
 // to the share page (where the same button remains if the browser refuses to open the chooser).
