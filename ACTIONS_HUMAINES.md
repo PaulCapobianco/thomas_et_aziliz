@@ -1,5 +1,7 @@
 # Actions humaines — maximum 8, avant le 25 octobre 2026
 
+> **Ordre recommandé et regroupé en 4 séances : voir `GUIDE_PRODUCTION.md`.** Ce fichier reste la liste de référence.
+
 Le développement local est livré ; aucune configuration distante ni dépense n'a été faite. Références détaillées : README_DEPLOIEMENT. Le kit fait foi pour le périmètre.
 
 1. **D'ici le 15 octobre — Supabase de test.** Dashboard > New project (Europe), puis SQL Editor : copier/exécuter `0001`, `0002`, `0003` dans cet ordre. Dans Storage > photos : vérifier Private/JPEG/3 Mo. Copier Project URL + clé publique dans `config.js`. Attendu : migrations sans erreur et aucune clé privée dans le navigateur.

@@ -17,6 +17,9 @@
 | `git diff --check` | PASS | Aucun défaut d'espaces Git. |
 | `node --check scripts/verify-storage.mjs` + compilation Python | PASS | Syntaxe du script distant, serveur et estimateur. |
 | `npm audit --omit=dev` / `npm audit` | FAIL documenté | Code retour 1 : 4 entrées modérées provenant d'une seule chaîne sprintf-js → argparse → TensorFlow → NSFWJS, aucune haute/critique. Pas de correctif compatible disponible. Modules concernés exclus du bundle navigateur, assertion vérifiée lors du vendor. |
+| `bash scripts/real-stack.sh up` puis `npm run test:real` (audit Claude, 11 oct.) | PASS | Pile jetable **réelle** : PostgreSQL 16 + image officielle `supabase/storage-api` 1.14.6 + PostgREST 12.2.3, migrations 0001-0003 appliquées. `scripts/real-http-test.mjs` : 54 contrôles HTTP, tous PASS (dépôt anonyme sans compte, signature refusée sur privé/suspect/indisponible/masqué, lecture directe `/object/authenticated` et `/object/public` refusées, list() sans fuite, UPDATE/DELETE/INSERT directs refusés, 6 RPC admin refusées à anon et à un compte non admin, écrasement et suppression refusés, MIME/3 Mo/chemin refusés, 12 envois simultanés du même fichier = 1 publié + 11 doublons, 6 signalements simultanés = masquée, admin lit/publie/supprime). Test de mutation : une policy SELECT trop large fait échouer 5 contrôles. Limite : pas de GoTrue (JWT admin forgés), pas de Kong/CDN. |
+| `tests/real-stack.spec.js` sur la pile réelle, Chromium + Pixel 7 + iPhone 13 (WebKit) | PASS ×3, répété | Envoi réel via supabase-js et le vrai modèle NSFWJS, doublon exact ignoré, envoi privé absent de la galerie d'un autre navigateur, miniatures et grande photo servies par URL signée, deux signalements de deux navigateurs masquent la photo. Navigateurs de bureau/émulés, pas des téléphones. |
+| `npm test` après l'audit | PASS | 63 passés + 3 ignorés (le test de pile réelle sans `REAL_URL`). |
 | `node scripts/verify-storage.mjs --test-project` | NON TESTÉ distant | Refus local attendu, code 2 : URL/clé absentes. Aucune requête distante effectuée. Procédure A–F prête dans README_DEPLOIEMENT. |
 | Estimation `--assume-full-kb 350` et `--views 120` | PASS du calcul | Hypothèses, pas mesures sur vraies photos. 0,51–3,04 Go selon quantité ; 2,8 Go/24,6 Go de trafic selon scénario, avant marge. |
 
@@ -46,7 +49,7 @@ Référence de l'audit résiduel : [GHSA-hp3w-g68c-fv3c](https://github.com/advi
 | T16 | Upload partiel, trois essais, UUID neufs, annulation | PASS navigateur ; SQL refuse objet manquant | NON TESTÉ réseau mobile réel |
 | T17 | Pagination 48→200, ajout pendant lecture, retrait hors page 1 | PASS navigateur ; SQL keyset/date identique PASS | NON TESTÉ charge distante |
 | T18 | Lightbox, swipe, clavier, Escape, focus, téléchargement signé | PASS événements tactiles simulés, 3 projets | NON TESTÉ geste physique et téléchargement iOS réel |
-| T19 | RPC/tables/Storage invité et compte non admin refusés | PASS SQL 117 assertions ; client invité sans session admin | NON TESTÉ API Storage réelle, impératif avant mise en service |
+| T19 | RPC/tables/Storage invité et compte non admin refusés | PASS SQL 117 assertions ; client invité sans session admin | PASS sur API Storage réelle **locale** (voir ligne real-stack) ; NON TESTÉ sur votre projet Supabase hébergé (verify-storage.mjs) |
 | T20 | Réduction des animations | PASS media reduced-motion | NON TESTÉ préférences OS réelles |
 
 ## Responsive, accessibilité, SEO et performance
