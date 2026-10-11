@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Disposable REAL stack on localhost: PostgreSQL 16 + the official Supabase Storage API image + PostgREST,
-# with the three project migrations applied. No Supabase account, no cost, nothing leaves the machine.
+# with the project migrations applied. No Supabase account, no cost, nothing leaves the machine.
 # Differences with hosted Supabase (not replicated): GoTrue (admin sign-in is simulated with signed JWTs),
 # Kong/CDN, quotas. Storage RLS, signed URLs, size/mime limits and RPC permissions are the real components.
 #   bash scripts/real-stack.sh up      start the stack (images are pulled the first time)
@@ -54,7 +54,7 @@ up() {
     [ "$(docker_ps -Atc "select to_regclass('storage.objects') is not null and to_regclass('auth.users') is not null and to_regclass('auth.identities') is not null" 2>/dev/null)" = t ] && break; sleep 1
   done
   sleep 3
-  for f in 0001_schema 0002_functions 0003_rls_storage; do docker_ps -f "/tmp/supabase/migrations/$f.sql" >/dev/null 2>&1; done
+  for f in 0001_schema 0002_functions 0003_rls_storage 0004_report_first_hides; do docker_ps -f "/tmp/supabase/migrations/$f.sql" >/dev/null 2>&1; done
   docker_ps -f /tmp/supabase/tests/real_after_storage.sql >/dev/null
   # Real accounts through the GoTrue admin API (email already confirmed, as with "Auto Confirm User").
   for who in "aaaaaaaa-0000-0000-0000-000000000001 admin@example.test" "bbbbbbbb-0000-0000-0000-000000000002 invite@example.test"; do
@@ -89,6 +89,8 @@ run_tests() {
   sleep 2
   rc=0
   node scripts/real-http-test.mjs || rc=1
+  # The HTTP test exercises the global report flood guard (12 photos / 10 min): age its reports so the browser tests start clean.
+  docker exec -u postgres wreal-pg psql -q -d wedding_real -c "update public.photo_reports set created_at = created_at - interval '2 hours'" >/dev/null
   PLAYWRIGHT_REUSE=1 npx playwright test tests/real-stack.spec.js tests/real-admin.spec.js --workers=1 --reporter=line || rc=1
   exit $rc
 }

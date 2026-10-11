@@ -58,14 +58,16 @@
         </button>
         <div id="stats" class="stats"></div>
         <p class="notice">
-          Une photo est automatiquement masquée après 2 signalements. La
-          validation avant publication concerne les nouvelles photos
-          publiques : elles restent en attente jusqu’à votre validation ; les
-          envois aux mariés et la galerie existante ne sont pas concernés.
+          Une photo signalée par un invité est masquée immédiatement et attend
+          votre décision (onglet « Signalées » : Restaurer, Maintenir masquée
+          ou Supprimer). La validation avant publication concerne les nouvelles
+          photos publiques : elles restent en attente jusqu’à votre validation ;
+          les envois aux mariés et la galerie existante ne sont pas concernés.
         </p>
         <h2>Photos de l’album</h2>
         <div class="tabs" aria-label="Filtrer les photos">
-          <button data-filter="reported" aria-pressed="true">Signalées</button
+          <button data-filter="reported" aria-pressed="true">
+            Signalées<span id="reported-count"></span></button
           ><button data-filter="pending" aria-pressed="false">
             En attente<span id="pending-count"></span></button
           ><button data-filter="recent" aria-pressed="false">Récentes</button
@@ -98,6 +100,8 @@
             <button id="batch-approve" class="primary" type="button">Valider (0)</button>
             <button id="batch-reject" type="button">Refuser (0)</button>
             <button id="batch-remove" class="primary" type="button" hidden>Retirer (0)</button>
+            <button id="batch-restore" class="primary" type="button" hidden>Restaurer (0)</button>
+            <button id="batch-keep" type="button" hidden>Maintenir masquée (0)</button>
           </div>
           <div class="batch-danger">
             <button id="batch-delete" class="danger" type="button" hidden>Supprimer (0)</button>

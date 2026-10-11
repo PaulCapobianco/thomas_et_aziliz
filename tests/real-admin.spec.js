@@ -259,3 +259,75 @@ test("real stack: batch Supprimer deletes the rows and BOTH Storage objects of e
   expect(visible.has(a.id) || visible.has(b.id)).toBeFalsy();
   expect(visible.has(keep.id)).toBeTruthy();
 });
+
+
+// ---- One valid report hides the photo; the administrator sees reason and comment; Restaurer brings it back ------
+test("real stack: guest report with a reason hides the photo at once; admin sees reason and comment and restores it", async ({ page }) => {
+  test.setTimeout(150000);
+  const adminApi = client();
+  await adminApi.auth.signInWithPassword({ email: ADMIN, password: REAL_ADMIN_PASSWORD });
+  await adminApi.rpc("admin_set_paused", { p_paused: false });
+  const [target] = await guestSend(1, "report");
+  expect(target.result).toBe("published");
+  const guest = await page.context().newPage();
+  await guest.route("**/config.js", (route) =>
+    route.fulfill({
+      contentType: "application/javascript",
+      body: `export const NAMES='';export const DATE_TXT='';export const SUPABASE_URL='${REAL_URL}';export const SUPABASE_KEY='${REAL_ANON}';export const BUCKET='photos';export const SECRET='';export const LOCATION='';export const COUPLE_PHOTO='';export const NSFW_ENABLED=true;`,
+    }),
+  );
+  await guest.goto(`${REAL_URL}/#galerie`);
+  const card = guest.locator(`[data-photo-id="${target.id}"]`);
+  await expect(card).toHaveCount(1, { timeout: 20000 });
+  await card.click();
+  await guest.locator("#report-open").click();
+  await expect(guest.locator("#report-submit")).toBeDisabled();
+  await guest.getByRole("radio", { name: "Autre raison" }).check();
+  await expect(guest.locator("#report-submit")).toBeDisabled(); // description required
+  await guest.locator("#report-comment").fill("Objet qui n'a pas sa place ici");
+  await guest.getByRole("button", { name: "Envoyer le signalement" }).click();
+  await expect(guest.locator("#gallery-status")).toContainText("Merci pour votre signalement. Cette photo a été retirée temporairement", { timeout: 15000 });
+  await expect(card).toHaveCount(0);
+  // Server side: hidden, no new link for guests, files kept.
+  expect((await galleryIds()).has(target.id)).toBeFalsy();
+  expect(await guestCanSign(target.paths)).toBeFalsy();
+  const row = (await adminApi.rpc("admin_list_photos", { p_filter: "reported", p_limit: 50 })).data.find((r) => r.id === target.id);
+  expect(row).toMatchObject({ status: "hidden", review_reason: "reports", report_count: 1, open_reports: 1 });
+  expect(row.reports[0]).toMatchObject({ reason: "other", comment: "Objet qui n'a pas sa place ici" });
+  expect((await adminApi.storage.from("photos").createSignedUrls(target.paths, 60)).data.every((s) => s.signedUrl)).toBeTruthy(); // kept for review
+  // The administrator's screen.
+  await openAdmin(page);
+  await login(page, ADMIN, REAL_ADMIN_PASSWORD);
+  await expect(page.locator("#dashboard")).toBeVisible({ timeout: 15000 });
+  const adminCard = page.locator(".admin-card", { has: page.locator(`input[data-id="${target.id}"]`) });
+  await expect(adminCard).toHaveCount(1, { timeout: 15000 });
+  await expect(adminCard).toContainText("Autre raison");
+  await expect(adminCard).toContainText("« Objet qui n'a pas sa place ici »");
+  await expect(adminCard).toContainText("1 signalement au total · 1 à examiner");
+  await adminCard.getByRole("button", { name: "Restaurer", exact: true }).click();
+  await expect(adminCard).toHaveCount(0, { timeout: 15000 });
+  expect((await galleryIds()).has(target.id)).toBeTruthy();
+  expect(await guestCanSign(target.paths)).toBeTruthy();
+  const after = (await adminApi.rpc("admin_list_photos", { p_filter: "recent", p_limit: 200 })).data.find((r) => r.id === target.id);
+  expect(after).toMatchObject({ status: "published", report_count: 1, open_reports: 0 });
+  expect(after.last_decision.action).toBe("restored");
+  // The old report does not hide it again; a refresh keeps it visible.
+  await guest.locator("#refresh").click();
+  await expect(guest.locator(`[data-photo-id="${target.id}"]`)).toHaveCount(1, { timeout: 15000 });
+  expect((await galleryIds()).has(target.id)).toBeTruthy();
+});
+
+test("real stack: a guest cannot reach the moderation functions or edit a report", async () => {
+  const anon = client();
+  const guestAccount = client();
+  await guestAccount.auth.signInWithPassword({ email: GUEST_ACCOUNT, password: REAL_ADMIN_PASSWORD });
+  const [photo] = await guestSend(1, "forbidden");
+  for (const who of [anon, guestAccount]) {
+    for (const [fn, args] of [["admin_set_status", { p_id: photo.id, p_status: "published" }], ["admin_list_photos", { p_filter: "reported" }], ["admin_status", {}]])
+      expect((await who.rpc(fn, args)).error?.code).toBe("42501");
+    expect((await who.from("photo_reports").select("*")).error ?? { ok: true }).toBeTruthy();
+    expect((await who.from("photo_reports").update({ resolved_at: new Date().toISOString() }).eq("photo_id", photo.id).select()).data ?? []).toHaveLength(0);
+    expect((await who.from("photo_moderation").select("*")).data ?? []).toHaveLength(0);
+    expect((await who.from("photos").update({ status: "hidden" }).eq("id", photo.id).select()).data ?? []).toHaveLength(0);
+  }
+});

@@ -155,7 +155,7 @@ test("report keeps its confirmation and reasons; download keeps the forced downl
   await openFirst(page);
   await page.locator("#report-open").click();
   await expect(page.locator("#report-dialog")).toBeVisible();
-  await expect(page.locator("#report-reason option")).toHaveCount(3);
+  await expect(page.locator("[name=report-reason]")).toHaveCount(5);
   await page.locator("#report-cancel").click();
   await expect(page.locator("#report-dialog")).toBeHidden();
   await page.locator("#download").click();

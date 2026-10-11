@@ -20,7 +20,7 @@ async function open(page, hash = "") {
   await page.goto(`${REAL_URL}/${hash}`);
 }
 
-test("real upload: public photos appear, exact copy ignored, private stays out, 2 reports hide", async ({
+test("real upload: public photos appear, exact copy ignored, private stays out, 1 valid report hides", async ({
   browser,
 }) => {
   test.setTimeout(120000);
@@ -78,18 +78,18 @@ test("real upload: public photos appear, exact copy ignored, private stays out, 
   await expect(b.locator("#full-photo")).toBeVisible({ timeout: 15000 });
   expect(await b.locator("#full-photo").evaluate((i) => i.naturalWidth)).toBeGreaterThan(0);
 
-  // First report from B, second from a third browser => hidden for everyone.
+  // ONE valid report (reason chosen in the dialog) hides the photo for everyone.
   await b.locator("#report-open").click();
-  await b.locator("#report-form button[type=submit]").click();
-  await expect(b.locator("#gallery-status")).toContainText("signalement", { timeout: 15000 });
+  await expect(b.locator("#report-submit")).toBeDisabled();
+  await b.getByRole("radio", { name: "Photo inappropriée ou hors sujet" }).check();
+  await b.getByRole("button", { name: "Envoyer le signalement" }).click();
+  await expect(b.locator("#gallery-status")).toContainText("Merci pour votre signalement", { timeout: 15000 });
   const ctxC = await browser.newContext({ bypassCSP: true });
   const c = await ctxC.newPage();
   await open(c);
-  await expect(c.locator("#gallery .photo-card img").first()).toBeVisible({ timeout: 20000 });
-  await c.locator("#gallery .photo-card").first().click();
-  await c.locator("#report-open").click();
-  await c.locator("#report-form button[type=submit]").click();
-  await expect(c.locator("#gallery-status")).toContainText("signalement", { timeout: 15000 });
+  await expect
+    .poll(async () => c.locator("#gallery .photo-card").count(), { timeout: 20000 })
+    .toBe(publicCount - 1);
   await b.locator("#refresh").click();
   await expect
     .poll(async () => b.locator("#gallery .photo-card").count(), { timeout: 15000 })
