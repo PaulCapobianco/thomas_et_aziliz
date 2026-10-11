@@ -40,9 +40,10 @@ test("fallback, 360/tablet/desktop, semantics and no indexation", async ({
     "content",
     "noindex,nofollow",
   );
-  expect(await page.locator("img:visible").count()).toBe(0);
+  await expect(page.locator("#gallery img")).toHaveCount(0);
+  await expect(page.locator(".polaroid img")).toHaveCount(7);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-  await page.getByRole("link", { name: "Partager", exact: true }).click();
+  await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
   await expect(page.locator("#send")).toBeDisabled();
   for (const width of [360, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -63,7 +64,7 @@ test("QR persists and public client never inherits admin auth", async ({
 }) => {
   await installMock(page, { secret: "wedding" });
   await page.goto("/?k=wedding");
-  await page.getByRole("link", { name: "Partager", exact: true }).click();
+  await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
   expect(page.url()).toContain("?k=wedding#partager");
   expect(await page.evaluate(() => localStorage.getItem("wk"))).toBe("wedding");
   expect(
@@ -128,7 +129,7 @@ test("private upload skips NSFW and is absent from guest gallery", async ({
   expect(info.models).toBe(0);
   expect(info.registration.p_nsfw).toBe("skipped");
   expect(info.objects[1][1].height).toBeGreaterThan(info.objects[1][1].width);
-  await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+  await page.getByRole("link", { name: "Accueil", exact: true }).click();
   await expect(page.locator(".photo-card")).toHaveCount(0);
 });
 for (const [model, expected] of [
@@ -452,7 +453,7 @@ test("retry respects a changed private destination after a public upload failure
   expect(
     await page.evaluate(() => mock.records.map((row) => row.audience)),
   ).toEqual(["maries"]);
-  await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+  await page.getByRole("link", { name: "Accueil", exact: true }).click();
   await expect(page.locator(".photo-card")).toHaveCount(0);
 });
 
@@ -474,20 +475,20 @@ test("admin delete reports a Storage cleanup that silently removed nothing", asy
 
 test.describe("add-photos action", () => {
   test.use({ viewport: { width: 375, height: 667 } });
-  test("primary button is large, copper and visible without scrolling on 375x667", async ({
+  test("primary button is large, sage and visible without scrolling on 375x667", async ({
     page,
   }) => {
     await installMock(page);
     await page.goto("/");
     const cta = page.locator(".hero-cta");
     await expect(cta).toBeInViewport({ ratio: 1 });
-    await expect(cta).toHaveText(/Ajouter mes photos/);
+    await expect(cta).toHaveText(/PARTAGER MES PHOTOS/);
     const box = await cta.boundingBox();
     expect(box.height).toBeGreaterThanOrEqual(56);
     expect(box.width).toBeGreaterThanOrEqual(375 - 2 * 32);
     expect(
       await cta.evaluate((node) => getComputedStyle(node).backgroundColor),
-    ).toBe("rgb(146, 80, 57)");
+    ).toBe("rgb(88, 101, 75)");
   });
 
   test("floating button stays reachable while scrolling the gallery, and is absent on the share page", async ({
@@ -597,7 +598,7 @@ test.describe("gallery never loses photos around a publication", () => {
   const sendFiles = async (page, files, audience = "public") => {
     // Navigate inside the page (no reload): the mock keeps its state only while the document lives.
     if (page.url() === "about:blank") await page.goto("/#partager");
-    else await page.getByRole("link", { name: "Partager", exact: true }).click();
+    else await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
     await page.locator(`[name=audience][value=${audience}]`).check();
     await page.locator("#files").setInputFiles(files.map(fixture));
     await page.locator("#send").click();
@@ -619,7 +620,7 @@ test.describe("gallery never loses photos around a publication", () => {
     await expect(cards(page)).toHaveCount(2);
     await sendFiles(page, ["photo_03.jpg"]);
     await expect(page.locator("#upload-status")).toContainText("Terminé ✓");
-    await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+    await page.getByRole("link", { name: "Accueil", exact: true }).click();
     await expect(cards(page)).toHaveCount(3);
     await expect.poll(() => allImagesLoaded(page)).toBeTruthy();
     // The new photo opens in the lightbox with its full-resolution file.
@@ -641,7 +642,7 @@ test.describe("gallery never loses photos around a publication", () => {
     await expect(page.locator("#upload-status")).toContainText("1 doublon(s)");
     await sendFiles(page, ["photo_02.jpg"], "maries");
     await expect(page.locator("#upload-status")).toContainText("aux mariés");
-    await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+    await page.getByRole("link", { name: "Accueil", exact: true }).click();
     await expect(cards(page)).toHaveCount(3);
   });
 
@@ -652,7 +653,7 @@ test.describe("gallery never loses photos around a publication", () => {
     await page.goto("/");
     await expect(cards(page)).toHaveCount(2);
     await sendFiles(page, ["photo_01.jpg", "photo_02.jpg", "photo_03.jpg"]);
-    await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+    await page.getByRole("link", { name: "Accueil", exact: true }).click();
     await expect(cards(page)).toHaveCount(5);
     await page.evaluate(() => (mock.records[0].status = "pending_review"));
     await page.locator("#refresh").click();
@@ -667,7 +668,7 @@ test.describe("gallery never loses photos around a publication", () => {
     await expect(cards(page)).toHaveCount(2);
     await sendFiles(page, ["photo_01.jpg"]);
     await expect(page.locator("#upload-status")).toContainText("Réessayer");
-    await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+    await page.getByRole("link", { name: "Accueil", exact: true }).click();
     await expect(cards(page)).toHaveCount(2);
     await expect.poll(() => allImagesLoaded(page)).toBeTruthy();
   });
@@ -704,13 +705,13 @@ test("gallery with a freshly published photo renders correctly at 390 and 1440 p
   await installMock(page, { photos: 2 });
   await page.goto("/");
   await expect(page.locator("#gallery .photo-card")).toHaveCount(2);
-  await page.getByRole("link", { name: "Partager", exact: true }).click();
+  await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
   await page.locator("#files").setInputFiles([fixture("photo_03.jpg")]);
   await page.locator("#send").click();
   await expect(page.locator("#upload-status")).toContainText("Terminé ✓", {
     timeout: 40000,
   });
-  await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+  await page.getByRole("link", { name: "Accueil", exact: true }).click();
   await expect(page.locator("#gallery .photo-card")).toHaveCount(3);
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });

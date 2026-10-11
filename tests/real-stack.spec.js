@@ -117,13 +117,13 @@ test("regression: after publishing a 3rd photo in the same page nothing disappea
     await expect(page.locator("#upload-status")).toContainText("Terminé", { timeout: 90000 });
   };
   await sendNow([await unique("x1.jpg", "photo_01.jpg"), await unique("x2.jpg", "photo_02.jpg")]);
-  await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+  await page.getByRole("link", { name: "Accueil", exact: true }).click();
   const cards = page.locator("#gallery .photo-card");
   await expect.poll(() => cards.count(), { timeout: 20000 }).toBeGreaterThanOrEqual(2);
   const before = await cards.count();
-  await page.getByRole("link", { name: "Partager", exact: true }).click();
+  await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
   await sendNow([await unique("x3.jpg", "photo_03.jpg")]);
-  await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+  await page.getByRole("link", { name: "Accueil", exact: true }).click();
   await expect.poll(() => cards.count(), { timeout: 20000 }).toBe(before + 1);
   const loaded = () => page.locator("#gallery .photo-card img").evaluateAll((imgs, n) => imgs.slice(0, n).every((i) => i.complete && i.naturalWidth > 0), before + 1);
   await expect.poll(loaded, { timeout: 20000 }).toBeTruthy();

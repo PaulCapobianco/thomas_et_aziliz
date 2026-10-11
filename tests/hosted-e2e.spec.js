@@ -30,7 +30,7 @@ test("real send from the unmodified site to the hosted project", async ({ page }
   console.log(`[${info.project.name}] nouvelle(s) photo(s) publique(s): ${after.join(", ") || "(aucune: en attente)"}; erreurs réseau: ${errors.join(" | ") || "aucune"}`);
   if (/1 ajoutée/.test(status)) {
     expect(after.length).toBe(1);
-    await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+    await page.getByRole("link", { name: "Accueil", exact: true }).click();
     await page.locator("#refresh").click();
     await expect(page.locator(`[data-photo-id="${after[0]}"] img`)).toBeVisible({ timeout: 20000 });
   }
