@@ -12,3 +12,4 @@ fonts/
 __pycache__/
 .venv/
 .real-stack/
+.env.local

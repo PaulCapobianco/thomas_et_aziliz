@@ -72,3 +72,17 @@ Date / URL / modèle iPhone + version Safari / modèle Android + version Chrome 
 - [ ] Offre/quota, URL HTTPS/QR imprimé, témoin prêt : ____.
 
 Ne cocher que ce qui a été réellement testé. Les étapes exactes sont dans README_DEPLOIEMENT, recette express.
+
+## Projet Supabase hébergé — séance 2 (11 octobre 2026)
+
+Commande : `node scripts/hosted-check.mjs --hosted` (clé publishable de `.env.local`, non versionné). Projet `yxzxctaobzxmrcvxuifc`.
+
+| Test | Projet hébergé | Détail |
+|---|---|---|
+| Rôle de la clé | PASS | `sb_publishable_…` (anon), vérifié avant tout appel |
+| 7a Projet actif, non en pause | PASS | L'API répond (erreur PostgREST JSON, pas de timeout) |
+| 7b Offre / quota | NON_TESTÉ | Non exposés par l'API publique |
+| **Migrations 0001–0003** | **FAIL (absentes)** | `PGRST202: Could not find the function public.check_duplicates(p_audience, p_hashes) in the schema cache` ; `GET /storage/v1/bucket/photos` : `404 Bucket not found`. Le script s'arrête avant toute écriture |
+| 1 A–E, 2, 3, 4, 5, 6 | NON_TESTÉ | Dépendent des migrations. Aucun fichier ni ligne déposé |
+
+À refaire après exécution des migrations : même commande, sans autre changement.
