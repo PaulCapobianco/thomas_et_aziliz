@@ -4,7 +4,8 @@
 Usage : python3 scripts/estimate_storage.py <dossier_de_photos> [--guests 130] [--views 6] [--lightbox 25]
 Dépendances : Pillow.
 
-Reproduit la compression de l'application : full = 1600 px max, JPEG q0.8 ; thumb = 400 px max, JPEG q0.7.
+Reproduit la compression de l'application (uploads.js) : full = 2560 px max, JPEG q0.85 ; thumb = 640 px max, JPEG q0.75.
+Pillow n'est pas le moteur du navigateur : l'écart de poids est de quelques %, mesurez avec scripts/measure-quality.mjs pour les chiffres du navigateur.
 IMPORTANT : donnez-lui 20 à 50 VRAIES photos de téléphone (pas les photos synthétiques de make_test_images.py,
 dont le poids ne reflète pas la réalité).
 
@@ -24,8 +25,8 @@ from PIL import Image, ImageOps
 
 ap = argparse.ArgumentParser()
 ap.add_argument("folder", nargs="?", help="dossier de vraies photos (facultatif si --assume-full-kb est donné)")
-ap.add_argument("--assume-full-kb", type=float, help="sans photos : poids moyen supposé d'un full 1600 px (typiquement 250 à 500)")
-ap.add_argument("--assume-thumb-kb", type=float, default=30, help="poids moyen supposé d'une miniature 400 px (défaut 30)")
+ap.add_argument("--assume-full-kb", type=float, help="sans photos : poids moyen supposé d'un full 2560 px (typiquement 350 à 900)")
+ap.add_argument("--assume-thumb-kb", type=float, default=40, help="poids moyen supposé d'une miniature 640 px (défaut 40)")
 ap.add_argument("--guests", type=int, default=130)
 ap.add_argument("--views", type=int, default=6)
 ap.add_argument("--lightbox", type=int, default=25)
@@ -38,7 +39,7 @@ exts = {".jpg", ".jpeg", ".png", ".webp", ".heic"}
 
 def encode(img, side, q):
     im = img.copy()
-    im.thumbnail((side, side))
+    im.thumbnail((side, side))   # ne grossit jamais une image plus petite que side
     buf = io.BytesIO()
     im.convert("RGB").save(buf, "JPEG", quality=q)
     return buf.tell()
@@ -57,8 +58,8 @@ else:
     for p in files:
         try:
             img = ImageOps.exif_transpose(Image.open(p))
-            fulls.append(encode(img, 1600, 80))
-            thumbs.append(encode(img, 400, 70))
+            fulls.append(encode(img, 2560, 85))
+            thumbs.append(encode(img, 640, 75))
         except Exception:
             skipped += 1
     if not fulls:
@@ -74,8 +75,8 @@ print(f"\nTrafic sortant estimé ({a.guests} invités, {a.views} chargements de 
 print("(En pratique, les gens téléchargent plus dans les jours qui suivent : prévoir x2 sur le trafic.)\n")
 
 print(f"{'Photos':>8} {'/invité':>8} {'Stockage':>10}   " + "   ".join(f"{n:>18}" for n in PLANS))
-for per_guest in (10, 25, 40, 60):
-    n = per_guest * a.guests
+for n in (1300, 3000, 5000, 10000):
+    per_guest = round(n / a.guests)
     gb = n * (avg_full + avg_thumb) / 1e9
     cells = []
     for name, (sto, egr) in PLANS.items():

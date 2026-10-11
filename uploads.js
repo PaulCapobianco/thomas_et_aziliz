@@ -14,6 +14,12 @@ export const NSFW_SEXY_STRONG = 0.85;
 export const NSFW_SEXY_WITH_PORN = 0.25;
 export const NSFW_LOAD_TIMEOUT_MS = 15000;
 export const NSFW_CLASSIFY_TIMEOUT_MS = 8000;
+// Output sizes. The bucket refuses objects above 3 MiB (migration 0003), so the full image keeps a safety margin.
+export const FULL_MAX_SIDE = 2560;
+export const FULL_QUALITY = 0.85;
+export const THUMB_MAX_SIDE = 640;
+export const THUMB_QUALITY = 0.75;
+const OBJECT_BUDGET_BYTES = 2_900_000;
 const MAX_FILE_BYTES = 30 * 1024 * 1024;
 const MAX_PIXELS = 60_000_000;
 const RETRY_DELAYS = [1000, 3000];
@@ -111,15 +117,39 @@ export async function decode(file) {
   }
   return source;
 }
+// Downscale in steps of at most 2x with high-quality smoothing: one big drawImage step aliases and softens fine detail.
+// Never enlarges a source that is already smaller than maxSide.
 export function canvasFor(source, maxSide) {
   const ratio = Math.min(1, maxSide / Math.max(source.width, source.height));
+  const width = Math.max(1, Math.round(source.width * ratio));
+  const height = Math.max(1, Math.round(source.height * ratio));
+  let current = source,
+    currentWidth = source.width,
+    currentHeight = source.height,
+    previous = null;
+  while (currentWidth / 2 > width && currentHeight / 2 > height) {
+    const stepWidth = Math.ceil(currentWidth / 2),
+      stepHeight = Math.ceil(currentHeight / 2);
+    const step = document.createElement("canvas");
+    step.width = stepWidth;
+    step.height = stepHeight;
+    const stepContext = step.getContext("2d");
+    stepContext.imageSmoothingQuality = "high";
+    stepContext.drawImage(current, 0, 0, stepWidth, stepHeight);
+    if (previous) previous.width = previous.height = 0;
+    previous = current = step;
+    currentWidth = stepWidth;
+    currentHeight = stepHeight;
+  }
   const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(source.width * ratio));
-  canvas.height = Math.max(1, Math.round(source.height * ratio));
+  canvas.width = width;
+  canvas.height = height;
   const context = canvas.getContext("2d");
+  context.imageSmoothingQuality = "high";
   context.fillStyle = "#fff";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.drawImage(source, 0, 0, canvas.width, canvas.height);
+  context.fillRect(0, 0, width, height);
+  context.drawImage(current, 0, 0, width, height);
+  if (previous) previous.width = previous.height = 0;
   return canvas;
 }
 export function jpeg(canvas, quality) {
@@ -133,6 +163,15 @@ export function jpeg(canvas, quality) {
       quality,
     ),
   );
+}
+// Keeps the target quality; only a very detailed photo is encoded a little lighter so it always fits the bucket limit.
+export async function jpegWithin(canvas, quality, maxBytes = OBJECT_BUDGET_BYTES) {
+  let blob;
+  for (const q of [quality, quality - 0.05, quality - 0.1, quality - 0.15, quality - 0.2]) {
+    blob = await jpeg(canvas, q);
+    if (blob.size <= maxBytes) return blob;
+  }
+  return blob;
 }
 export async function uploadObject(sb, path, blob) {
   // Plan B integration point: replace only this implementation if real Storage test A fails.
@@ -164,8 +203,8 @@ export async function uploadPhoto(sb, file, audience, seen, update = () => {}) {
       (byte) => byte.toString(16).padStart(2, "0"),
     ).join("");
     if (seen.has(`${audience}:${hash}`)) return "duplicate";
-    thumbCanvas = canvasFor(source, 400);
-    fullCanvas = canvasFor(source, 1600);
+    thumbCanvas = canvasFor(source, THUMB_MAX_SIDE);
+    fullCanvas = canvasFor(source, FULL_MAX_SIDE);
     source.close?.();
     source = null;
     let verdictValue, thumb, full;
@@ -188,8 +227,8 @@ export async function uploadPhoto(sb, file, audience, seen, update = () => {}) {
           );
           verdictValue =
             audience === "public" ? await classify(thumbCanvas) : "skipped";
-          thumb = await jpeg(thumbCanvas, 0.7);
-          full = await jpeg(fullCanvas, 0.8);
+          thumb = await jpegWithin(thumbCanvas, THUMB_QUALITY);
+          full = await jpegWithin(fullCanvas, FULL_QUALITY);
           thumbCanvas.width =
             thumbCanvas.height =
             fullCanvas.width =

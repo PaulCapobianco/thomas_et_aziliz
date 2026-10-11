@@ -132,3 +132,35 @@ La pile jetable (`bash scripts/real-stack.sh up`) inclut maintenant l'image offi
 photo « mariés » illisible pour anon et pour un compte réel non admin, lisible par l'admin ; navigateur : connexion, rechargement avec session, miniature privée chargée par URL signée,
 déconnexion (un rechargement ne reconnecte pas) ; compte non admin refusé et déconnecté ; mauvais mot de passe et e-mail non confirmé : messages explicites. **PASS 18/18** avec `tests/real-stack.spec.js`.
 `npm test` : 78 PASS, 21 ignorés (opt-in). Connexion admin sur **votre projet hébergé** : NON_TESTÉ (mot de passe non utilisé) ; diagnostic dans ACCES_ADMIN.md.
+
+## Qualité des photos (11 octobre 2026)
+
+**Cause exacte** : (1) les nouvelles photos étaient réduites à **1600 px / JPEG 0,80** en une seule étape de dessin (`drawImage` direct de 4000 px vers 1600 px, sans lissage haute qualité ⇒ crénelage et perte de détail fin) ;
+(2) surtout, les **miniatures de 400 px / JPEG 0,70** sont affichées dans des cases **4/5 en `object-fit: cover`** : une photo paysage de 400×300 est agrandie ≈ 2× en hauteur (et 4× sur écran 3×) ⇒ grille floue, et cartes admin idem ;
+(3) la lightbox et l'aperçu admin utilisaient bien le fichier **full** (pas la miniature agrandie), mais celui-ci n'avait que 1600 px : sur un iPhone portrait en plein écran (≈ 1170×2530 px physiques) l'image est agrandie 1,6×. Le téléchargement livre le même full 1600. Rien de tout cela n'est récupérable pour les photos déjà envoyées (détail perdu à la compression).
+
+**Corrections** : full 2560 px / q0,85 ; miniature 640 px / q0,75 ; réduction par paliers ≤ 2× en haute qualité ; jamais d'agrandissement ; EXIF respecté (inchangé) ; repli de qualité si > 2,9 Mo ;
+lightbox et aperçu admin : miniature immédiate puis haute définition (chargement progressif) ; URL signées des miniatures **conservées** d'un rafraîchissement à l'autre (45 min) pour ne pas retélécharger la grille chaque minute (sinon le poids des miniatures x2,7 aurait gonflé le trafic). Aucune migration, aucune suppression.
+
+Mesure en navigateur (Chromium, `scripts/measure-quality.mjs` + `scripts/quality_report.py`), fidélité (PSNR, dB) contre un redimensionnement Lanczos de la source :
+
+| Photo | Full avant → après (poids) | PSNR full | PSNR miniature |
+|---|---|---|---|
+| Fixture 4032×3024 (synthétique) | 229 → 697 Ko | 32,8 → 35,5 | 33,7 → 39,2 |
+| Fixture portrait EXIF 6 | 219 → 665 Ko | 33,1 → 35,8 | 34,1 → 39,7 |
+| Photo 4000×3000 | 127 → 356 Ko | 41,4 → 45,0 | 33,5 → 38,3 |
+| Photo 5760×3840 | 148 → 365 Ko | 38,1 → 41,5 | 33,6 → 37,5 |
+| 1500×2000 (type WhatsApp) | 477 → 782 Ko | 30,3 → 42,6 | 22,9 → 29,2 |
+
+Poids moyen sur 9 vraies photos (4 grandes + 5 déjà réduites ≈ 1200-1500 px) : **avant** full 375 Ko + miniature 24 Ko ; **après** full **550 Ko** + miniature **66 Ko** (≈ 616 Ko/photo, +54 %). Max observé 782 Ko ; sur la pile réelle, 12 fichiers full : moyenne 555 Ko, maximum 930 Ko.
+Estimation du stockage (616 Ko/photo) : **3 000 photos ≈ 1,9 Go ; 5 000 ≈ 3,2 Go ; 10 000 ≈ 6,3 Go** (avant : 1,2 / 2,0 / 4,1 Go). Échantillon petit et peu détaillé : une scène chargée en photo de téléphone peut dépasser 1 Mo en full (≈ 10 000 photos ≈ 10-12 Go). Offre gratuite (1 Go) insuffisante dès ≈ 1 600 photos ; Pro (100 Go) très large.
+**Originaux non conservés** : les stocker (3-8 Mo chacun) multiplierait le stockage par 6 à 10 (3 000 photos ≈ 10-25 Go, 10 000 ≈ 40-80 Go, hors du quota gratuit et près de nécessiter un add-on), et la limite du bucket (3 Mo) l'interdit sans migration. Non fait ; à décider avec vous.
+
+| Contrôle | Résultat |
+|---|---|
+| `npm run check`, `npm test` | PASS 84, 21 ignorés (opt-in) ; dimensions de sortie 640/2560 vérifiées sur 6 photos JPEG/PNG par moteur |
+| Test « un rafraîchissement ne re-signe pas les miniatures déjà affichées » ; lightbox miniature puis haute définition | PASS ×3 moteurs |
+| Pile réelle (Storage officiel) : envois du nouveau pipeline, lecture par URL signée, **photo privée refusée au public et aux comptes non admin**, téléchargement (`attachment; filename=photo-mariage.jpg`, octets identiques), admin | PASS (`npm run test:real`) |
+| Portrait/paysage + EXIF 6 | PASS (dimensions 1920×2560 et 2560×1920 relevées) |
+| HEIC natif, iPhone/Android physiques, temps de traitement sur téléphone (≈ 140-220 ms sur ordinateur, à multiplier par 3-5), netteté ressentie en plein écran sur appareil | NON_TESTÉ |
+| Envoi réel avec le nouveau pipeline vers le projet hébergé | NON_TESTÉ (aucun fichier supplémentaire déposé) |

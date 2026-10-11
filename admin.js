@@ -325,16 +325,24 @@ $("admin-more").onclick = () => load(true);
 bindDialog($("admin-preview"), $("preview-close"));
 async function showPreview(row) {
   previewRow = row;
-  $("preview-image").hidden = true;
-  $("preview-image").removeAttribute("src");
-  $("preview-message").textContent = "Chargement…";
+  // The grid thumbnail appears at once; the full-resolution file replaces it when decoded.
+  $("preview-image").src = row.thumbUrl;
+  $("preview-image").hidden = false;
+  $("preview-message").textContent = "Chargement en haute définition…";
   $("admin-preview").showModal();
   try {
     const url = await fullUrl(sb, row);
     if (!$("admin-preview").open || previewRow !== row) return;
-    $("preview-image").src = url;
-    $("preview-image").hidden = false;
-    $("preview-message").textContent = "";
+    const loader = new Image();
+    loader.onload = () => {
+      if (!$("admin-preview").open || previewRow !== row) return;
+      $("preview-image").src = url;
+      $("preview-message").textContent = "";
+    };
+    loader.onerror = () => {
+      if (previewRow === row) $("preview-message").textContent = "Photo indisponible. Réessayez.";
+    };
+    loader.src = url;
   } catch {
     $("preview-message").textContent = "Photo indisponible. Réessayez.";
   }

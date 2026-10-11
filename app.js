@@ -139,6 +139,32 @@ function renderGallery() {
       .find((node) => node.dataset.photoId === focusedId)
       ?.focus({ preventScroll: true });
 }
+// A signed URL stays valid for an hour: keep the one of a photo already on screen so a refresh does not
+// re-download every thumbnail (new signatures mean new URLs, which bypass the browser cache).
+const SIGNATURE_REUSE_MS = 45 * 60000;
+async function signNewRows(page) {
+  const known = new Map(rows.map((row) => [row.id, row]));
+  const reusable = (row) => {
+    const old = known.get(row.id);
+    return old?.thumbUrl && Date.now() - old.signedAt < SIGNATURE_REUSE_MS
+      ? old
+      : null;
+  };
+  const signed = new Map(
+    (await signPhotos(sb, page.filter((row) => !reusable(row)))).map((row) => [
+      row.id,
+      { ...row, signedAt: Date.now() },
+    ]),
+  );
+  return page.flatMap((row) => {
+    const old = reusable(row);
+    return old
+      ? [{ ...row, thumbUrl: old.thumbUrl, signedAt: old.signedAt }]
+      : signed.has(row.id)
+        ? [signed.get(row.id)]
+        : [];
+  });
+}
 async function loadGallery(more = false) {
   if (!sb || !allowed || busy) return;
   busy = true;
@@ -156,7 +182,7 @@ async function loadGallery(more = false) {
         p_before_published: before?.published_at ?? null,
         p_before_id: before?.id ?? null,
       });
-      fetched.push(...(await signPhotos(sb, lastPage)));
+      fetched.push(...(await signNewRows(lastPage)));
       before = lastPage.at(-1) || before;
     } while (!more && lastPage.length === 48 && fetched.length < target);
     rows = [
@@ -214,27 +240,34 @@ async function openPhoto(index) {
     returnFocusId = rows[index].id;
     dialog.showModal();
   }
-  $("full-photo").hidden = true;
-  $("full-photo").removeAttribute("src");
-  $("lightbox-status").textContent = "Chargement…";
+  // Show the already loaded thumbnail at once, then swap in the full-resolution file when it has been decoded.
+  $("full-photo").onload = $("full-photo").onerror = null;
+  $("full-photo").src = rows[index].thumbUrl;
+  $("full-photo").hidden = false;
+  $("lightbox-status").textContent = "Chargement en haute définition…";
   updatePosition();
   try {
     const url = await fullUrl(sb, rows[index]);
     if (request !== lightboxRequest || !dialog.open) return;
-    $("full-photo").onload = () => {
-      if (request === lightboxRequest) $("lightbox-status").textContent = "";
+    const loader = new Image();
+    loader.onload = () => {
+      if (request !== lightboxRequest) return;
+      $("full-photo").src = url;
+      $("lightbox-status").textContent = "";
     };
-    $("full-photo").onerror = () => {
+    loader.onerror = () => {
+      if (request !== lightboxRequest) return;
       $("full-photo").hidden = true;
       $("lightbox-status").textContent =
         "Cette photo n’est plus disponible. Actualisez la galerie.";
     };
-    $("full-photo").src = url;
-    $("full-photo").hidden = false;
+    loader.src = url;
   } catch {
-    if (request === lightboxRequest)
+    if (request === lightboxRequest) {
+      $("full-photo").hidden = true;
       $("lightbox-status").textContent =
         "Cette photo n’est plus disponible. Actualisez la galerie.";
+    }
   }
 }
 bindDialog($("lightbox"), $("close-lightbox"));

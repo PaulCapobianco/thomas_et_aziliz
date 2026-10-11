@@ -11,7 +11,7 @@ Le dossier fourni est `KIT_CODEX_MARIAGE_V3/`, initialement sans Git, README gé
 - `app.css` + tokens du kit : mobile-first, ivoire/anthracite/cuivre, polices locales Cormorant Garamond et Jost. Aucun faux couple ni contenu de galerie fictif. La page 404 est uniquement la réponse d'erreur de l'hébergement.
 - `config.js` : constantes publiques historiques en tête, puis lieu, photo réelle et drapeau NSFW. Aucun identifiant personnel inventé.
 - `app.js` : galerie, pagination keyset, lightbox, clavier, swipe, téléchargement et signalements.
-- `uploads.js` : validation, décodage orienté, SHA-256 original, NSFW, JPEG 1600/0,8 et 400/0,7, envoi séquentiel, reprise et progression du lot.
+- `uploads.js` : validation, décodage orienté, SHA-256 original, NSFW, JPEG 2560/0,85 et 640/0,75 (réduction par paliers ≤ 2×, jamais d'agrandissement), envoi séquentiel, reprise et progression du lot.
 - `shared.js` : clients, identité navigateur, RPC, signature, erreurs et dialogs accessibles.
 - `admin.js` : accès, listes, modération, pause, libération contrôlée et suppression des fichiers best effort.
 

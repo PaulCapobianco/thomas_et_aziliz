@@ -70,6 +70,13 @@ if (signed.data?.[0]?.signedUrl) {
   check("signed URL downloads the identical bytes", res.status === 200 && bytes.equals(pub.body), `HTTP ${res.status}`);
 }
 
+// Download link: the signed URL with the download option must answer as an attachment with the same bytes.
+const dl = await bucket(anon).createSignedUrl(`public/full/${pub.id}.jpg`, 60, { download: "photo-mariage.jpg" });
+const dlRes = dl.data?.signedUrl ? await fetch(dl.data.signedUrl) : null;
+check("download link answers as an attachment 'photo-mariage.jpg' with identical bytes",
+  dlRes?.status === 200 && /attachment/i.test(dlRes.headers.get("content-disposition") || "") && /photo-mariage\.jpg/.test(dlRes.headers.get("content-disposition") || "") &&
+  Buffer.from(await dlRes.arrayBuffer()).equals(pub.body), `${dlRes?.status} ${dlRes?.headers.get("content-disposition")}`);
+
 // ---- 2. Privacy of private / suspect / unavailable photos --------------------------------------
 const priv = await send("maries", "skipped");
 check("private (maries) upload accepted", priv.reg.data?.result === "published" && !priv.uploadErrors.length);

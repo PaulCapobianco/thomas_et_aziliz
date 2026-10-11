@@ -99,7 +99,7 @@ test("public JPEG PNG uploads, exact duplicate, similar photos and compressed di
   expect(data.objects).toHaveLength(12);
   for (const [path, obj] of data.objects)
     expect(Math.max(obj.width, obj.height)).toBe(
-      path.includes("thumbs") ? 400 : 1600,
+      path.includes("thumbs") ? 640 : 2560,
     );
   expect(data.calls.filter((c) => c[0] === "model-load")).toHaveLength(1);
   const uploadCalls = data.calls.filter((c) => c[0] === "upload");
@@ -562,4 +562,33 @@ test.describe("add-photos action", () => {
     await expect(page.locator("#files")).toBeDisabled();
     await expect(page.locator("#fab-bar")).toBeHidden();
   });
+});
+
+test("a refresh reuses the signed thumbnail URLs already on screen (no re-download of the grid)", async ({
+  page,
+}) => {
+  await installMock(page, { photos: 6 });
+  await page.goto("/");
+  await expect(page.locator("#gallery .photo-card")).toHaveCount(6);
+  const signs = () =>
+    page.evaluate(() => mock.calls.filter((c) => c[0] === "signs").length);
+  const before = await signs();
+  await page.locator("#refresh").click();
+  await expect(page.locator("#refresh")).toBeEnabled();
+  await page.locator("#refresh").click();
+  await expect(page.locator("#refresh")).toBeEnabled();
+  expect(await signs()).toBe(before);
+});
+
+test("lightbox shows the thumbnail instantly then the full-resolution file", async ({
+  page,
+}) => {
+  await installMock(page, { photos: 3 });
+  await page.goto("/");
+  await page.locator("#gallery .photo-card").first().click();
+  await expect(page.locator("#full-photo")).toBeVisible();
+  await expect
+    .poll(() => page.locator("#full-photo").evaluate((i) => i.complete && i.naturalWidth > 0))
+    .toBeTruthy();
+  await expect(page.locator("#lightbox-status")).toHaveText("");
 });
