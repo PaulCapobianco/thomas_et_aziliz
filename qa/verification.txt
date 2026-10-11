@@ -129,3 +129,7 @@ npm test -- --grep 'polling|lightbox|modal|real locally' --reporter=line
 npm audit --omit=dev : FAIL (4 entrées modérées, même chaîne transitive, aucun high/critical).
 npm run vendor : PASS, argparse/sprintf-js exclus du bundle navigateur.
 Supabase distant / vrais téléphones / déploiement : NON TESTÉ.
+
+Vérification finale après correction du réessai et du choix de destination
+npm test -- --reporter=line
+60 passed (40.2s)

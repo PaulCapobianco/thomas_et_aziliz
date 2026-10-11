@@ -4,7 +4,7 @@
 
 Trois écrans réalisés : accueil/galerie premium, partage public/privé, administration. Lightbox, navigation clavier/tactile, téléchargement signé, sélection multiple, compression 1600/400, SHA-256 original, dédoublonnage, modèle NSFW local différé, attente sûre si indisponible, progression du lot, erreurs/retries et annulation. Signalements via RPC, admin Auth avec listes, masquage/restauration/suppression confirmée, pause/reprise et libération contrôlée.
 
-Preuves locales : 54 tests navigateur complets PASS puis 12 ciblés PASS après dernier ajustement de focus/polling, sur Chromium bureau/mobile et WebKit ; modèle réel chargé sur les deux moteurs. SQL : 117 assertions du kit + concurrence T12 PASS. Les tests qui utilisent Supabase sont **mockés côté navigateur**, et les tests SQL utilisent le **stub local**. Aucun fonctionnement distant n'est affirmé. Détail et sorties : `CHECKLIST_TESTS.md`, `qa/verification.txt`.
+Preuves locales : 60 tests navigateur complets PASS après les derniers correctifs de focus/polling et de destination des réessais, sur Chromium bureau/mobile et WebKit ; modèle réel chargé sur les deux moteurs. SQL : 117 assertions du kit + concurrence T12 PASS. Les tests qui utilisent Supabase sont **mockés côté navigateur**, et les tests SQL utilisent le **stub local**. Aucun fonctionnement distant n'est affirmé. Détail et sorties : `CHECKLIST_TESTS.md`, `qa/verification.txt`.
 
 ## 2. FICHIERS CRÉÉS/MODIFIÉS
 
@@ -31,8 +31,8 @@ Responsive vérifié à 360/768/1440 px sur les trois écrans ; images lazy, pol
 | `npm run vendor` | PASS, auto-hébergement et exclusion argparse/sprintf-js |
 | `npm run build` | PASS, sortie dist filtrée, warning config manquante attendu |
 | `npm run test:sql` | PASS, 117 assertions + T12, PostgreSQL 16, migrations rejouées |
-| `npm test -- --reporter=line` | PASS, 54/54, 34,5 s |
-| `npm test -- --grep 'polling\|lightbox\|modal\|real locally' --reporter=line` | PASS, 12/12, 7,9 s après dernière correction ; suite désormais 57 cas |
+| `npm test -- --reporter=line` | PASS, 60/60, 40,2 s |
+| `npm test -- --grep 'polling\|lightbox\|modal\|real locally' --reporter=line` | PASS, 12/12, 7,9 s après dernière correction ; cas inclus dans la passe finale de 60 tests |
 | `git diff --check` | PASS |
 | `node --check scripts/verify-storage.mjs` / compilation Python | PASS |
 | `npm audit --omit=dev` et `npm audit` | FAIL résiduel documenté : 4 entrées modérées, chaîne unique transitive hors bundle navigateur, aucun high/critical |
@@ -40,7 +40,7 @@ Responsive vérifié à 360/768/1440 px sur les trois écrans ; images lazy, pol
 | Safari iPhone / Chrome Android physiques, HEIC réel, réseau mobile | NON TESTÉ |
 | En-têtes/HTTPS/Storage/Auth/quota du site déployé | NON TESTÉ |
 
-Les erreurs détectées pendant la QA (titres, landmark, focus) ont été corrigées. Le problème initial de lancement WebKit provenait des variables GTK/GIO Snap, neutralisées seulement pour son processus. Les tests ne désactivent aucune protection du produit.
+Les erreurs détectées pendant la QA (titres, landmark, focus et destination publique conservée au réessai après choix privé) ont été corrigées ; le dernier défaut a été reproduit par un test FAIL avant correction puis PASS sur les trois projets. Le problème initial de lancement WebKit provenait des variables GTK/GIO Snap, neutralisées seulement pour son processus. Les tests ne désactivent aucune protection du produit.
 
 ## 5. SÉCURITÉ : RLS / Storage / Admin / 2 votes
 
@@ -82,7 +82,9 @@ Branche locale `feat/mariage-photos-mvp`, Git initialisé dans le kit sans écra
 - `9e5a7d5` — `chore: preserve original wedding V3 kit`
 - `c92efb6` — `feat: implement wedding gallery uploads and secure moderation client`
 - `1eaee4a` — `test: verify browser flows SQL permissions and local security headers`
-- Commit documentaire final : `docs: deliver wedding deployment checklist and handoff` (retrouver son identifiant avec `git log -1 --oneline`).
+- `3e463c8` — `docs: deliver wedding deployment checklist and handoff`
+- `6f4641d` — `fix: honor selected audience when retrying failed uploads`
+- Commit de clôture : `docs: record final 60-test verification` (retrouver son identifiant avec `git log -1 --oneline`).
 
 Aucun remote configuré/push effectué. Les sorties régénérables sont ignorées. Vérifier `git status --short` : attendu vide après le commit documentaire.
 

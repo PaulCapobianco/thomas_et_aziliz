@@ -10,8 +10,8 @@
 | `npm run vendor` | PASS | SDK, bundle NSFW/TensorFlow, modèle et polices locaux. Assertion esbuild : argparse/sprintf-js absents du bundle. |
 | `npm run build` | PASS | `dist/` généré par liste autorisée, sans tests, SQL, maquettes ou fixtures. Avertissement Supabase non configuré attendu. |
 | `npm run test:sql` | PASS | PostgreSQL 16 jetable : 117 lignes d'assertions, plus T12 concurrence = 118 PASS, zéro FAIL. Deux assertions RETURNING* sont informatives : elles ne prouvent pas Storage HTTP. Migrations rejouées deux fois. |
-| `npm test -- --reporter=line` | PASS | 54/54 cas au passage complet, en 34,5 s : Chromium bureau, Chromium 360 px, WebKit iPhone émulé. Client Supabase simulé. Aucun test ignoré. |
-| `npm test -- --grep 'polling\|lightbox\|modal\|real locally' --reporter=line` | PASS | 12/12 après la dernière correction du focus/rafraîchissement, en 7,9 s. Inclut les 3 nouveaux cas de polling (un par projet). La suite compte désormais 57 cas. |
+| `npm test -- --reporter=line` | PASS | 60/60 cas au passage final complet, en 40,2 s : Chromium bureau, Chromium 360 px, WebKit iPhone émulé. Client Supabase simulé. Aucun test ignoré. |
+| `npm test -- --grep 'polling\|lightbox\|modal\|real locally' --reporter=line` | PASS | 12/12 après la dernière correction du focus/rafraîchissement, en 7,9 s. Inclut les 3 nouveaux cas de polling (un par projet). Ces cas sont inclus dans la passe finale de 60 tests. |
 | Modèle NSFW réel local | PASS | Chargement JSON + poids, inférence canvas et cinq classes sur Chromium et WebKit. Qualité de classification sur vraies photos : NON TESTÉ. |
 | axe-core | PASS | Zéro violation détectée sur accueil, partage et administration dans les tests automatisés. N'est pas un audit lecteur d'écran complet. |
 | `git diff --check` | PASS | Aucun défaut d'espaces Git. |
@@ -20,7 +20,7 @@
 | `node scripts/verify-storage.mjs --test-project` | NON TESTÉ distant | Refus local attendu, code 2 : URL/clé absentes. Aucune requête distante effectuée. Procédure A–F prête dans README_DEPLOIEMENT. |
 | Estimation `--assume-full-kb 350` et `--views 120` | PASS du calcul | Hypothèses, pas mesures sur vraies photos. 0,51–3,04 Go selon quantité ; 2,8 Go/24,6 Go de trafic selon scénario, avant marge. |
 
-Les premières passes ont détecté puis corrigé : hiérarchie h1→h3 admin, landmark aside imbriqué, bouclage du focus et retour de focus après rafraîchissement. Les tests eux-mêmes ont été corrigés pour ignorer l'icône décorative dans le nom accessible et simuler correctement les événements tactiles. WebKit échouait initialement à cause des variables GTK/GIO Snap de l'environnement ; elles sont retirées uniquement du processus de test lorsqu'elles pointent vers Snap. Tous ces défauts sont résolus dans les passes PASS indiquées.
+Les premières passes ont détecté puis corrigé : hiérarchie h1→h3 admin, landmark aside imbriqué, bouclage du focus et retour de focus après rafraîchissement. Les tests eux-mêmes ont été corrigés pour ignorer l'icône décorative dans le nom accessible et simuler correctement les événements tactiles. WebKit échouait initialement à cause des variables GTK/GIO Snap de l'environnement ; elles sont retirées uniquement du processus de test lorsqu'elles pointent vers Snap. Une dernière régression a été reproduite : un réessai conservait la destination publique malgré un nouveau choix privé. Le réessai prend désormais le choix affiché au clic ; les trois projets navigateur couvrent ce cas. Tous ces défauts sont résolus dans la passe finale de 60 tests PASS.
 
 Référence de l'audit résiduel : [GHSA-hp3w-g68c-fv3c](https://github.com/advisories/GHSA-hp3w-g68c-fv3c). Ne pas rétrograder automatiquement TensorFlow/NSFWJS via `npm audit fix --force`.
 
@@ -51,7 +51,7 @@ Référence de l'audit résiduel : [GHSA-hp3w-g68c-fv3c](https://github.com/advi
 
 ## Responsive, accessibilité, SEO et performance
 
-- **PASS** absence de débordement à 360 / 768 / 1440 px sur les trois écrans, avec captures dans `test-results/`. Captures mobile examinées visuellement ; CTA accueil visible, cartes/formulaires et boutons admin adaptés. Grille galerie testée sur 200 métadonnées synthétiques.
+- **PASS** absence de débordement à 360 / 768 / 1440 px sur les trois écrans, avec captures dans `test-results/`. Captures mobile, tablette et bureau examinées visuellement ; CTA accueil visible, cartes/formulaires et boutons admin adaptés. Grille galerie testée sur 200 métadonnées synthétiques.
 - **PASS** contrôles ≥44 px par CSS, labels et radios natifs, image alt, focus visible, modal native + Tab/Shift-Tab, Escape, restitution du focus après relecture. Axe vérifie notamment les contrastes des écrans testés. **NON TESTÉ** VoiceOver/TalkBack et toutes les combinaisons de zoom système.
 - **PASS** titres/descriptions distincts, h1 unique visible, textes HTML, meta noindex/nofollow/no-referrer, robots, favicon et CSP/X-Robots-Tag réellement servis en local. **NON TESTÉ** en-têtes de l'hébergement final. Pas de sitemap/JSON-LD/OG photographique pour cet album non indexable.
 - **PASS** miniatures 400 px, grands formats 1600 px, orientation EXIF 6 → portrait, JPEG/PNG/1px, fichier invalide isolé, URLs temporaires et canvas libérés, NSFW absent du chargement initial, polices/bibliothèques locales. Poids gzip mesurés : SDK ~55,7 Ko, JS app/partage/shared ~9,8 Ko avant petits correctifs finaux, CSS ~3,2 Ko ; NSFW/TensorFlow ~296 Ko différés + poids du modèle ~2,6 Mo non compressés. **NON TESTÉ** Lighthouse/CWV terrain, 48 Mpx sur téléphone, lot prolongé sur réseau faible.

@@ -85,3 +85,5 @@ Ces précisions complètent D01–D23 sans modifier le périmètre ni les migrat
 - Aucun forfait choisi, achat ou déploiement. NSFW_ENABLED=false maintient les photos publiques en attente ; aucune nouvelle fonction reportée ne remplace la sécurité.
 - Le runner SQL du kit pouvait ignorer une erreur psql au milieu de son pipeline. Arrêt explicite ajouté pour ne pas déclarer PASS sur des assertions interrompues ; SQL de production inchangé.
 - Audit npm : quatre entrées modérées proviennent d'une même vulnérabilité sprintf-js/argparse (outillage transitif TensorFlow). Aucun correctif compatible publié au moment de l'exécution ; le vendor vérifie leur exclusion du bundle. Ne pas exécuter npm audit fix --force, qui rétrograderait la pile NSFW.
+
+- Après un échec, « Réessayer les échecs » respecte la destination actuellement sélectionnée. Cette règle évite un envoi public contraire au nouveau choix privé ; test de régression exécuté sur Chromium, mobile émulé et WebKit. Elle ne révoque pas un envoi déjà enregistré antérieurement.
