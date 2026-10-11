@@ -11,6 +11,7 @@ import {
   errorText,
 } from "./shared.js";
 const sb = createClient(true);
+$("admin-message").textContent = "";
 bindDialog($("confirm-dialog"));
 let offset = 0;
 let filter = "reported",
@@ -34,6 +35,25 @@ const statuses = {
   pending_review: "En attente de validation",
   hidden: "Masquée",
 };
+function loginErrorText(error) {
+  const text = String(error?.message || "");
+  // Hosted GoTrue sends a stable code; older versions only send the message.
+  const code =
+    error?.code ||
+    (/invalid login credentials/i.test(text) ? "invalid_credentials" : "") ||
+    (/email not confirmed/i.test(text) ? "email_not_confirmed" : "") ||
+    (/rate limit/i.test(text) ? "over_request_rate_limit" : "");
+  const status = Number(error?.status || 0);
+  if (code === "invalid_credentials")
+    return "Adresse e-mail ou mot de passe incorrect.";
+  if (code === "email_not_confirmed")
+    return "Cette adresse e-mail n’est pas confirmée. Dans Supabase, ouvrez Authentication > Users et confirmez l’utilisateur.";
+  if (code === "over_request_rate_limit" || status === 429)
+    return "Trop de tentatives de connexion. Patientez quelques minutes puis réessayez.";
+  if (status >= 400 && status < 500)
+    return `Connexion refusée par le service (${code || status}). Contactez l’organisateur.`;
+  return "Connexion impossible : service injoignable. Vérifiez votre réseau puis réessayez.";
+}
 function clearSessionUI() {
   generation++;
   rows = [];
@@ -163,8 +183,10 @@ async function load(more = false) {
     if (request !== generation) return;
     if (error.code === "42501" || Number(error.status) === 401) {
       clearSessionUI();
+      // A connected account that is not in public.admin_users must not stay signed in.
+      await sb.auth.signOut({ scope: "local" }).catch(() => {});
       $("admin-message").textContent =
-        "Ce compte n’a pas accès à l’administration.";
+        "Ce compte n’a pas accès à l’administration : il est bien connecté, mais n’est pas dans la liste des administrateurs.";
     } else $("admin-message").textContent = errorText(error);
   } finally {
     busy = false;
@@ -248,9 +270,8 @@ $("login").onsubmit = async (event) => {
     );
     $("password").value = "";
     await load();
-  } catch {
-    $("admin-message").textContent =
-      "Connexion impossible. Vérifiez vos identifiants et votre connexion.";
+  } catch (error) {
+    $("admin-message").textContent = loginErrorText(error);
   } finally {
     $("password").value = "";
     button.disabled = false;

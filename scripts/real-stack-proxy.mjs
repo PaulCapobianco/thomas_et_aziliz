@@ -1,9 +1,9 @@
 // Same-origin reverse proxy for the DISPOSABLE local test stack (scripts/real-stack.sh).
-// /storage/v1 -> Storage API, /rest/v1 -> PostgREST, everything else -> the local static preview (npm run dev).
+// /storage/v1 -> Storage API, /rest/v1 -> PostgREST, /auth/v1 -> GoTrue, everything else -> the local static preview (npm run dev).
 // Imitates the Supabase gateway (Kong) routing; it is NOT used in production.
 import http from "node:http";
 const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS", "access-control-expose-headers": "*" };
-const route = (u) => u.startsWith("/storage/v1") ? [5055, u.slice("/storage/v1".length) || "/"] : u.startsWith("/rest/v1") ? [5056, u.slice("/rest/v1".length) || "/"] : [4173, u];
+const route = (u) => u.startsWith("/storage/v1") ? [5055, u.slice("/storage/v1".length) || "/"] : u.startsWith("/rest/v1") ? [5056, u.slice("/rest/v1".length) || "/"] : u.startsWith("/auth/v1") ? [5058, u.slice("/auth/v1".length) || "/"] : [4173, u];
 http.createServer((req, res) => {
   if (req.method === "OPTIONS") { res.writeHead(204, cors); return res.end(); }
   const r = route(req.url);

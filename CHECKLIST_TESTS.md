@@ -124,3 +124,11 @@ section 0 de README_DEPLOIEMENT et `npm run preview`.
 | `HOSTED_E2E=1 npx playwright test tests/hosted-e2e.spec.js --workers=1 --project=webkit --project=mobile` | PASS ×2 : envoi réel de bout en bout vers le projet hébergé (Storage + RPC + vrai modèle NSFWJS), « 1 ajoutée(s) à la galerie », miniature affichée, 0 erreur réseau |
 | `node scripts/hosted-check.mjs --hosted` (relancé) | PASS 48/48 |
 | Safari/Chrome sur téléphones physiques, sélecteur de fichiers iOS natif | NON_TESTÉ |
+
+## Accès administrateur (11 octobre 2026) — GoTrue réel en local
+
+La pile jetable (`bash scripts/real-stack.sh up`) inclut maintenant l'image officielle `supabase/gotrue` 2.158.1 : vrais comptes, vrais mots de passe, vrais JWT, session dans le navigateur.
+`tests/real-admin.spec.js` (15 cas = 5 × Chromium / Pixel 7 / iPhone 13) : RPC `admin_status` (public et compte réel non admin ⇒ 42501, admin listé ⇒ données) ;
+photo « mariés » illisible pour anon et pour un compte réel non admin, lisible par l'admin ; navigateur : connexion, rechargement avec session, miniature privée chargée par URL signée,
+déconnexion (un rechargement ne reconnecte pas) ; compte non admin refusé et déconnecté ; mauvais mot de passe et e-mail non confirmé : messages explicites. **PASS 18/18** avec `tests/real-stack.spec.js`.
+`npm test` : 78 PASS, 21 ignorés (opt-in). Connexion admin sur **votre projet hébergé** : NON_TESTÉ (mot de passe non utilisé) ; diagnostic dans ACCES_ADMIN.md.

@@ -6,11 +6,11 @@ create role service_role nologin noinherit bypassrls;
 create role authenticator login noinherit password 'pw';
 create role supabase_storage_admin login createrole password 'pw';
 grant anon, authenticated, service_role to authenticator, supabase_storage_admin;
-create schema auth;
-create table auth.users (id uuid primary key default gen_random_uuid(), email text);
-create function auth.uid() returns uuid language sql stable as $$ select nullif(coalesce(current_setting('request.jwt.claim.sub', true), (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')), '')::uuid $$;
-create function auth.role() returns text language sql stable as $$ select coalesce(current_setting('request.jwt.claim.role', true), (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role')) $$;
-create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
+-- GoTrue (auth) creates its own tables in the "auth" schema; only the role and the schema are prepared here.
+create role supabase_auth_admin login createrole noinherit password 'pw';
+create schema auth authorization supabase_auth_admin;
+alter role supabase_auth_admin set search_path = auth;
+grant all on database wedding_real to supabase_auth_admin;
 grant usage on schema auth to anon, authenticated, service_role, supabase_storage_admin;
 grant usage on schema public to anon, authenticated, service_role, supabase_storage_admin;
 grant create on schema public to supabase_storage_admin;

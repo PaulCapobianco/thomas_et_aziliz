@@ -30,8 +30,12 @@
         </div>
         <button id="logout" hidden>Se déconnecter</button>
       </div>
-      <p id="admin-message" role="status"></p>
-      <form id="login" class="login">
+      <p id="admin-message" role="status">
+        Chargement de l’administration… Si ce message reste affiché, ouvrez
+        cette page depuis l’adresse HTTPS du site (jamais depuis un fichier de
+        l’ordinateur) et activez JavaScript.
+      </p>
+      <form id="login" class="login" method="dialog">
         <h2>Connexion</h2>
         <label for="email">Adresse e-mail</label
         ><input
