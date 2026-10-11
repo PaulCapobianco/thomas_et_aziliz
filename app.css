@@ -1426,3 +1426,103 @@ body.has-send-bar .site-footer {
   outline: 3px solid var(--danger);
   outline-offset: 2px;
 }
+
+/* ---- Share page: step 1 (destination cards), hidden file input, step 2 (preview) ---- */
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+.choose-step[hidden],
+.preview-step[hidden] {
+  display: none;
+}
+.choose-step > h2 {
+  font-size: clamp(1.7rem, 4vw, 2.2rem);
+  margin-bottom: 1.2rem;
+}
+.destination-cards {
+  display: grid;
+  gap: 1rem;
+}
+.destination-card {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+  text-align: left;
+  min-height: 150px;
+  padding: 1.3rem;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.destination-card strong {
+  font: 1.65rem/1.1 var(--font-display);
+}
+.destination-card small {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.destination-badge {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font: 500 0.72rem/1.5 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.destination-go {
+  margin-top: 0.3rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+/* Two clearly different cards: public = sage fill, private = paper with a heavier frame. */
+.destination-card.is-public {
+  background: linear-gradient(125deg, #edf0e3, #e3e8d7);
+  border-color: var(--accent);
+}
+.destination-card.is-public .destination-badge {
+  background: var(--accent);
+  color: #fffaf3;
+}
+.destination-card.is-private {
+  background: linear-gradient(140deg, #fffdf8, #f8f3e9);
+  border-color: #a39a86;
+}
+.destination-card.is-private .destination-badge {
+  border: 1px solid #6f685a;
+  color: #4b4638;
+}
+.destination-card:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.destination-card:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.preview-summary {
+  margin: 0 0 1rem;
+  font-weight: 500;
+}
+.preview-summary:empty {
+  display: none;
+}
+#add-more {
+  min-height: 52px;
+  margin-top: 1rem;
+  font-weight: 500;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+@media (min-width: 640px) {
+  .destination-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

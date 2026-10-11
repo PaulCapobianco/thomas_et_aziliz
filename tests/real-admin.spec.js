@@ -184,7 +184,7 @@ test("validation before publication: server keeps photos pending, batch Valider 
 });
 
 // ---- Guest send bar: the destination chosen in the bar is the one the server receives ------------------------
-test("real stack: the destination picked in the send bar decides the Storage path and the audience", async ({ page }) => {
+test("real stack: the destination card picked first decides the Storage path and the audience", async ({ page }) => {
   test.setTimeout(150000);
   const adminApi = client();
   await adminApi.auth.signInWithPassword({ email: ADMIN, password: REAL_ADMIN_PASSWORD });
@@ -199,12 +199,16 @@ test("real stack: the destination picked in the send bar decides the Storage pat
   );
   await page.goto(`${REAL_URL}/#partager`);
   const send = async (value) => {
-    await page.locator("#files").setInputFiles([await photo(`${value}.jpg`, value)]);
-    await expect(page.locator("#send")).toBeDisabled(); // nothing preselected
-    await page.locator(`[name=audience][value=${value}]`).check();
+    // The real journey: destination card first (it opens the chooser), then preview, then confirm.
+    const chooser = page.waitForEvent("filechooser");
+    await page.locator(`[data-destination=${value}]`).click();
+    await (await chooser).setFiles([await photo(`${value}.jpg`, value)]);
+    await expect(page.locator(`[name=audience][value=${value}]`)).toBeChecked();
+    await expect(page.locator("#send")).toBeEnabled();
     await page.locator("#send").click();
     await expect(page.locator("#upload-message")).toHaveAttribute("data-kind", /success|pending/, { timeout: 90000 });
     await expect(page.locator("[name=audience]:checked")).toHaveCount(0); // forgotten after a successful send
+    await expect(page.locator("#choose-step")).toBeVisible(); // back to step 1
   };
   const newest = async (filter) => (await adminApi.rpc("admin_list_photos", { p_filter: filter, p_limit: 5 })).data;
   await send("maries");

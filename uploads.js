@@ -437,7 +437,9 @@ export function setupUploads(sb, onComplete) {
       remove.onclick = () => {
         revoke(item);
         items = items.filter((candidate) => candidate !== item);
-        render();
+        // An empty list is back to step 1: the destination must be chosen again.
+        if (!items.length) clearChoice();
+        else render();
       };
       li.append(
         remove,
@@ -456,26 +458,58 @@ export function setupUploads(sb, onComplete) {
     // Retrying only makes sense for photos that failed while sending (not for files that could not be read).
     const retryable = failures.filter((item) => !item.unreadable).length;
     const barVisible = busy || waiting > 0 || retryable > 0;
+    // Step 1 (destination cards) while nothing is selected; step 2 (preview, bar) once photos are listed.
+    $("choose-step").hidden = items.length > 0 || busy;
+    $("upload-controls").hidden = !items.length && !busy;
     $("send-bar").hidden = !barVisible;
     document.body.classList.toggle("has-send-bar", barVisible);
     $("send-choice").hidden = busy;
     const count = waiting || retryable;
-    const where = choice === "maries" ? "les mariés" : "la galerie commune";
+    const where = choice === "maries" ? "Envoyer uniquement aux mariés (privé)" : "Partager avec tous les invités (galerie commune)";
     $("send-help").hidden = Boolean(choice);
+    $("preview-summary").textContent = choice
+      ? `${plural(count, "photo à envoyer", "photos à envoyer")} · Destination : ${where}`
+      : "";
     $("send").disabled = busy || !sb || !count || !choice;
-    $("send").textContent = `${waiting || !retryable ? "Envoyer" : "Réessayer"} ${plural(count, "photo", "photos")}${choice ? ` vers ${where}` : ""}`;
+    $("send").textContent = waiting || !retryable ? "Envoyer mes photos" : "Réessayer les photos en échec";
     $("retry").hidden =
       !items.some((item) => item.result === "error") ||
       !$("message-retry").hidden;
     $("retry").disabled = busy;
     $("upload-controls").disabled = busy;
   }
+  function clearChoice() {
+    document.querySelectorAll("[name=audience]").forEach((radio) => (radio.checked = false));
+    render();
+  }
+  // The ONLY way to open the file chooser: a click on a destination card (or "Ajouter d'autres photos" once a
+  // destination exists). The destination is stored first and the chooser is opened synchronously inside the same
+  // click, so iOS Safari and Android Chrome accept it as a user gesture (no await, no timer in between).
+  document.querySelectorAll("[data-destination]").forEach((card) =>
+    card.addEventListener("click", () => {
+      if (busy || !sb) return;
+      const radio = document.querySelector(`[name=audience][value="${card.dataset.destination}"]`);
+      if (radio) radio.checked = true;
+      $("files").click();
+    }),
+  );
+  $("add-more").addEventListener("click", () => {
+    if (!busy && sb && chosenAudience()) $("files").click();
+  });
+  // Cancelling the chooser sends nothing and, with no photo listed, forgets the destination (back to step 1).
+  $("files").addEventListener("cancel", () => {
+    if (!items.length && !busy) clearChoice();
+  });
   document
     .querySelectorAll("[name=audience]")
     .forEach((radio) => radio.addEventListener("change", render));
   $("files").onchange = async (event) => {
     const files = [...event.target.files];
     event.target.value = "";
+    if (!files.length) {
+      if (!items.length && !busy) clearChoice();
+      return;
+    }
     busy = true;
     render();
     message.show("info", "Préparation des aperçus…");
@@ -617,6 +651,14 @@ export function setupUploads(sb, onComplete) {
       "Les envois ne sont pas encore ouverts : le service photo n'est pas configuré sur ce site. Prévenez les organisateurs.",
     );
     $("files").disabled = true;
+    document.querySelectorAll("[data-destination]").forEach((card) => (card.disabled = true));
   }
   render();
+  return {
+    // Entering the share page, or pressing "Partager mes photos" again: back to the destination choice.
+    // A selection that is still waiting is kept (nothing is thrown away), with its destination visible.
+    startSharing() {
+      if (!busy && !items.length) clearChoice();
+    },
+  };
 }

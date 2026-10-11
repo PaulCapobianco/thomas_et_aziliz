@@ -57,7 +57,7 @@ test("nothing preselected: help text, inactive send button, and no way to send w
   await expect(page.locator("[name=audience]:checked")).toHaveCount(0);
   await expect(page.locator("#send-help")).toHaveText("Choisissez où envoyer vos photos");
   await expect(page.locator("#send")).toBeDisabled();
-  await expect(page.locator("#send")).toHaveText("Envoyer 2 photos");
+  await expect(page.locator("#send")).toHaveText("Envoyer mes photos");
   // Even a forced submit (Enter key, script) sends nothing.
   await page.evaluate(() => document.getElementById("upload-form").requestSubmit());
   await page.waitForTimeout(600);
@@ -67,13 +67,14 @@ test("nothing preselected: help text, inactive send button, and no way to send w
   await expect(page.locator("#send-help")).toBeHidden();
 });
 
-test("the choice can be changed until sending starts; the button recalls it; singular wording", async ({ page }) => {
+test("the destination can be changed until sending starts; the summary recalls it; singular wording", async ({ page }) => {
   await installMock(page);
   await selectPhotos(page, ["photo_01.jpg"]);
   await page.locator("[name=audience][value=public]").check();
-  await expect(page.locator("#send")).toHaveText("Envoyer 1 photo vers la galerie commune");
+  await expect(page.locator("#preview-summary")).toHaveText("1 photo à envoyer · Destination : Partager avec tous les invités (galerie commune)");
   await page.locator("[name=audience][value=maries]").check();
-  await expect(page.locator("#send")).toHaveText("Envoyer 1 photo vers les mariés");
+  await expect(page.locator("#preview-summary")).toHaveText("1 photo à envoyer · Destination : Envoyer uniquement aux mariés (privé)");
+  await expect(page.locator("#send")).toHaveText("Envoyer mes photos");
   await page.locator("#send").click();
   await settled(page);
   const records = await page.evaluate(() => mock.records.map((r) => r.audience));
@@ -106,7 +107,7 @@ test("after a successful send the choice is forgotten and the bar goes away", as
   await expect(bar(page)).toBeVisible();
   await expect(page.locator("[name=audience]:checked")).toHaveCount(0);
   await expect(page.locator("#send")).toBeDisabled();
-  await expect(page.locator("#send")).toHaveText("Envoyer 1 photo");
+  await expect(page.locator("#send")).toHaveText("Envoyer mes photos");
   await page.locator("[name=audience][value=public]").check();
   await page.locator("#send").click();
   await settled(page);
@@ -153,7 +154,8 @@ test("partial failure then retry keep the destination", async ({ page }) => {
   await expect(page.locator("#selection li")).toHaveCount(1);
   await expect(page.locator("[name=audience][value=maries]")).toBeChecked();
   await expect(bar(page)).toBeVisible();
-  await expect(page.locator("#send")).toHaveText("Réessayer 1 photo vers les mariés");
+  await expect(page.locator("#send")).toHaveText("Réessayer les photos en échec");
+  await expect(page.locator("#preview-summary")).toContainText("Envoyer uniquement aux mariés");
   await expect(page.locator("#send")).toBeEnabled();
   await page.locator("#send").click();
   await settled(page);
@@ -185,10 +187,10 @@ test("duplicates stay separate between destinations", async ({ page }) => {
 test("accessibility: real radio group with a legend, keyboard use, focus ring, axe-core clean", async ({ page, isMobile }) => {
   await installMock(page);
   await selectPhotos(page, ["photo_01.jpg"]);
-  const group = page.getByRole("group", { name: "Où envoyer vos photos ?" });
+  const group = page.getByRole("group", { name: "Destination (modifiable avant l’envoi)" });
   await expect(group).toBeVisible();
   await expect(group.getByRole("radio")).toHaveCount(2);
-  await expect(group.getByRole("radio", { name: /Galerie commune/ })).not.toBeChecked();
+  await expect(group.getByRole("radio", { name: /Partager avec tous les invités/ })).not.toBeChecked();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   if (!isMobile) {
     await page.locator("[name=audience][value=public]").focus();

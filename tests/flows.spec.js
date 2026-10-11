@@ -514,30 +514,32 @@ test.describe("add-photos action", () => {
     await expect(page.locator("#fab-bar")).toBeHidden();
   });
 
-  test("one tap opens the chooser; select, send and finish with explicit states", async ({
+  test("share, choose a destination, pick files, preview, then confirm: explicit states", async ({
     page,
   }) => {
     await installMock(page);
     await page.goto("/");
-    const chooser = page.waitForEvent("filechooser");
+    let choosers = 0;
+    page.on("filechooser", () => choosers++);
     await page.locator(".hero-cta").click();
-    await (await chooser).setFiles([fixture("photo_01.jpg"), fixture("photo_02.jpg")]);
+    // Step 1 only: no file chooser, two destinations, nothing preselected.
     await expect(page.locator("#share-view")).toBeVisible();
+    await expect(page.locator("#choose-step")).toBeVisible();
+    await expect(page.locator("[name=audience]:checked")).toHaveCount(0);
+    expect(choosers).toBe(0);
+    const chooser = page.waitForEvent("filechooser");
+    await page.locator("[data-destination=public]").click();
+    await (await chooser).setFiles([fixture("photo_01.jpg"), fixture("photo_02.jpg")]);
     await expect(page.locator("#upload-status")).toContainText(
       "2 photo(s) prête(s)",
     );
-    // Nothing is preselected: the bar asks for a destination and the send button stays inactive.
     await expect(page.locator("#send-bar")).toBeVisible();
-    await expect(page.locator("[name=audience]:checked")).toHaveCount(0);
-    await expect(page.locator("#send-help")).toHaveText("Choisissez où envoyer vos photos");
-    await expect(page.locator("#send")).toBeDisabled();
-    await expect(page.locator("#send")).toHaveText("Envoyer 2 photos");
-    await page.locator("[name=audience][value=maries]").check();
+    await expect(page.locator("#preview-summary")).toContainText("Partager avec tous les invités");
     await expect(page.locator("#send")).toBeEnabled();
-    await expect(page.locator("#send")).toHaveText("Envoyer 2 photos vers les mariés");
+    await expect(page.locator("#send")).toHaveText("Envoyer mes photos");
+    await page.locator("[name=audience][value=maries]").check();
+    await expect(page.locator("#preview-summary")).toContainText("Envoyer uniquement aux mariés");
     await page.locator("[name=audience][value=public]").check();
-    await expect(page.locator("#send")).toHaveText("Envoyer 2 photos vers la galerie commune");
-    await expect(page.locator("#send-help")).toBeHidden();
     await page.evaluate(() => {
       window.__progressSeen = false;
       new MutationObserver(() => {

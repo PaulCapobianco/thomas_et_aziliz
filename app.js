@@ -52,6 +52,7 @@ const galleryWaiters = [];
 let navigating = false;
 let savedScroll;
 let backgroundNodes = [];
+let uploads;
 const frame = $("photo-frame");
 const viewport = document.querySelector(".photo-viewport");
 function sizePhotoFrame() {
@@ -87,8 +88,12 @@ function unlockBackground() {
   root.style.scrollBehavior = behavior;
   savedScroll = null;
 }
+let wasShare = false;
 function route(focus = false) {
   const share = location.hash === "#partager";
+  // Arriving on the share page by any path starts again from the destination choice.
+  if (share && !wasShare) uploads?.startSharing();
+  wasShare = share;
   const activeRoute = share
     ? "partager"
     : location.hash === "#souvenirs"
@@ -122,16 +127,14 @@ if ("IntersectionObserver" in window)
   new IntersectionObserver(([entry]) =>
     $("fab-bar").classList.toggle("is-quiet", entry.isIntersecting),
   ).observe(document.querySelector(".hero-cta"));
-document.querySelectorAll("[data-pick]").forEach((link) =>
+// Every "share" entry point (hero button, floating bar, menu link) leads to the same first step: the destination
+// choice. None of them opens the file chooser; that only happens from a destination card.
+document.querySelectorAll("[data-pick], [data-route=partager]").forEach((link) =>
   link.addEventListener("click", () => {
-    if (!sb || !allowed) return;
+    uploads?.startSharing();
+    if (!link.matches("[data-pick]") || !sb || !allowed) return;
     location.hash = "#partager";
     route(true);
-    try {
-      $("files").click();
-    } catch {
-      /* The share page shows the same button. */
-    }
   }),
 );
 window.addEventListener("hashchange", () =>
@@ -483,7 +486,7 @@ $("report-form").onsubmit = async (event) => {
     button.disabled = false;
   }
 };
-setupUploads(allowed ? sb : null, () => loadGallery());
+uploads = setupUploads(allowed ? sb : null, () => loadGallery());
 if (!sb) loaded = true;
 renderGallery();
 if (!sb)
