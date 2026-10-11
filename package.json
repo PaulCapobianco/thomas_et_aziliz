@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "python3 scripts/serve.py --port 4173",
+    "deploy": "bash scripts/deploy.sh",
     "preview": "npm run build && cd dist && python3 ../scripts/serve.py --port 4173",
     "vendor": "bash scripts/vendor.sh",
     "build": "node scripts/build.mjs",
@@ -18,10 +19,11 @@
     "nsfwjs": "4.4.0"
   },
   "devDependencies": {
-    "@playwright/test": "1.58.2",
     "@axe-core/playwright": "4.11.1",
-    "esbuild": "0.25.12",
     "@fontsource/cormorant-garamond": "5.2.8",
-    "@fontsource/jost": "5.2.8"
+    "@fontsource/jost": "5.2.8",
+    "@playwright/test": "1.58.2",
+    "esbuild": "0.25.12",
+    "wrangler": "^4.149.0"
   }
 }
