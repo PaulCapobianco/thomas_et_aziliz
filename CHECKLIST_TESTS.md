@@ -191,3 +191,20 @@ Qualité 2560 px / 85 % conservée. Aucune migration, aucune donnée distante mo
 | `npm run test:real` (pile réelle) dont la régression « 3ᵉ photo, rechargement, lightbox à 2560 px » | PASS 21/21 + 54 contrôles HTTP |
 | Projet hébergé : envoi réel / affichage de la nouvelle photo | NON_TESTÉ (aucune écriture distante sans votre accord) ; lecture publique : galerie vide |
 | iPhone / Android physiques | NON_TESTÉ |
+
+## Déploiement Cloudflare Pages (11 octobre 2026)
+
+Projet `thomas-aziliz-mariage` (Direct Upload, branche de production `main`), créé sur votre compte (le seul projet Pages existant ; aucun autre touché). URL : **https://thomas-aziliz-mariage.pages.dev** ; administration : **https://thomas-aziliz-mariage.pages.dev/admin** (`/admin.html` redirige en 308 vers `/admin`, comportement normal de Cloudflare Pages).
+Republier : `npm run deploy` (vérifie la syntaxe, construit, refuse de publier si `config.js` est vide ou si une clé secrète/JWT `service_role` est détectée dans `dist/`, puis `wrangler pages deploy`). `npm run deploy -- --test` lance aussi les tests navigateur.
+
+| Contrôle (automatisé, site en ligne) | Résultat |
+|---|---|
+| `npm run check`, `npm test` avant publication | PASS, 102 réussis / 24 ignorés (opt-in) |
+| `npm run build`, `dist/` : `index.html`, `admin.html`, JS, CSS, polices, `vendor/` (Supabase, NSFWJS, modèle 2,6 Mo), `_headers`, `robots.txt` | PASS, 24 fichiers déposés |
+| HTTPS, HTTP/2 ; 17 ressources (JS, CSS, polices, favicon, modèle) en 200 avec le bon type ; URL inconnue = 404 réel | PASS |
+| En-têtes réellement servis : CSP, `X-Robots-Tag: noindex, nofollow`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY`, `nosniff`, `Cache-Control: no-cache` (y compris sur `app.js`) | PASS |
+| Aucun secret dans les fichiers publics (seuls URL et clé publishable ; aucun `sb_secret_…` ni JWT `service_role`) | PASS |
+| Navigateur iPhone 13 (WebKit) et Pixel 7 (Chromium) émulés sur le site en ligne : accueil, bouton 56 px, galerie (appel `gallery_page` 200 vers le projet Supabase), page Partager, `/admin` avec formulaire, 0 erreur console/réseau | PASS |
+| Modèle NSFWJS chargé et exécuté sous la CSP de production (WebKit 0,7 s, Chromium 1,8 s) | PASS |
+| Envoi réel de photo, connexion admin avec vos identifiants, téléphones physiques, QR imprimé | NON_TESTÉ (nécessitent votre accord / votre téléphone ; aucune photo de test créée) |
+| Galerie en ligne | vide : aucune photo publiée dans le projet Supabase |
