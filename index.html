@@ -1,41 +1,233 @@
 <!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
-  <meta name="description" content="Les souvenirs du mariage du 31 octobre 2026. Retrouvez les photos de la journée et partagez vos plus beaux clichés.">
-  <title>Nos souvenirs — Mariage du 31 octobre 2026</title>
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/design_tokens.css"><link rel="stylesheet" href="app.css">
-  <script src="vendor/supabase.js" defer></script><script src="app.js" type="module"></script>
-</head>
-<body>
-  <a class="skip" href="#main">Aller au contenu</a>
-  <header class="site-header"><a class="wordmark" href="#galerie" aria-label="Accueil, notre mariage">31 <span>/</span> 10</a><nav aria-label="Navigation principale"><a href="#galerie" data-route="galerie">Accueil / Galerie</a><a href="#partager" data-route="partager">Partager <span aria-hidden="true">↗</span></a></nav></header>
-  <p id="locked" class="notice container" hidden>Lien incomplet. Merci de scanner à nouveau le QR code.</p>
-  <main id="main" tabindex="-1">
-    <div id="gallery-view">
-      <section class="hero" aria-labelledby="names"><div class="hero-art" aria-hidden="true"><span>31</span><i>octobre</i><span>2026</span></div><div class="hero-content"><p class="eyebrow" id="hero-kicker">NOTRE MARIAGE</p><h1 id="names">Une journée.<br><em>Mille souvenirs.</em></h1><p class="date" id="date">31 octobre 2026</p><p id="location" hidden></p><a class="button primary hero-cta" href="#partager"><span aria-hidden="true">↥</span> Ajouter mes photos <span aria-hidden="true">⟶</span></a><p class="hero-intro">Partagez vos photos et revivez ensemble les plus beaux moments de cette journée.</p></div><div class="hero-foot"><span>LE BONHEUR, À PLUSIEURS</span><a href="#souvenirs" aria-label="Découvrir la galerie">↓</a></div></section>
-      <section id="souvenirs" class="container gallery-section" aria-labelledby="gallery-title"><div class="section-heading"><div><p class="eyebrow">NOS SOUVENIRS</p><h2 id="gallery-title">Les souvenirs de la soirée</h2></div><button id="refresh" class="quiet">Actualiser <span aria-hidden="true">↻</span></button></div><p id="gallery-status" role="status"></p><div id="gallery" class="gallery"></div><button id="more" class="button centered" hidden>Voir plus de photos</button></section>
-    </div>
-    <section id="share-view" class="container share-section" aria-labelledby="share-title" hidden>
-      <p class="eyebrow">VOS PHOTOS COMPTENT</p><h1 id="share-title" tabindex="-1">Partager vos souvenirs</h1><p class="lead">Votre regard, notre plus bel album.</p>
-      <form id="upload-form"><fieldset id="upload-controls"><legend class="sr-only">Destination et sélection de vos photos</legend><div class="destinations">
-        <label class="destination"><input type="radio" name="audience" value="public" checked><span class="destination-icon" aria-hidden="true">♧</span><span><strong>Partager avec les invités</strong><small>Vos photos seront visibles par tous les invités du mariage dans la galerie commune.</small></span></label>
-        <label class="destination"><input type="radio" name="audience" value="maries"><span class="destination-icon" aria-hidden="true">◇</span><span><strong>Envoyer uniquement aux mariés</strong><small>Vos photos seront envoyées <span id="private-names">aux mariés</span> et ne seront pas visibles par les autres invités.</small></span></label>
-      </div><aside class="advice"><span aria-hidden="true">✧</span><div><strong>Un petit conseil</strong><p>Privilégiez vos plus beaux clichés et évitez d’envoyer plusieurs fois la même photo. Une seule suffit pour immortaliser le moment !</p></div></aside>
-      <div class="selection-header"><h2 id="selection-title">Vos photos sélectionnées (0)</h2><label class="file-picker" for="files">+ Ajouter des photos<input id="files" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple></label></div>
-      <p class="hint">JPEG, PNG, WebP et HEIC si votre navigateur le permet · 30 Mo maximum par photo.</p>
-      <ul id="selection" class="selection"></ul></fieldset>
-      <div class="upload-actions"><button id="send" class="button primary" type="submit" disabled>Envoyer mes photos <span aria-hidden="true">↗</span></button><button id="retry" type="button" hidden>Réessayer les échecs</button></div>
-      <p class="hint">Les photos sont allégées avant l’envoi : ce ne sont pas les originaux en haute résolution. Les métadonnées, dont la position GPS, sont retirées.</p>
-      <div id="progress-panel" class="progress-panel" hidden><div><p id="progress-label">Préparation…</p><progress id="progress" max="100" value="0" aria-labelledby="progress-label"></progress></div><button id="cancel-upload" type="button">Annuler</button></div>
-      <p id="upload-status" role="status" aria-live="polite"></p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <meta
+      name="description"
+      content="Les souvenirs du mariage du 31 octobre 2026. Retrouvez les photos de la journée et partagez vos plus beaux clichés."
+    />
+    <title>Nos souvenirs — Mariage du 31 octobre 2026</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/design_tokens.css" />
+    <link rel="stylesheet" href="app.css" />
+    <script src="vendor/supabase.js" defer></script>
+    <script src="app.js" type="module"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Aller au contenu</a>
+    <header class="site-header">
+      <a class="wordmark" href="#galerie" aria-label="Accueil, notre mariage"
+        >31 <span>/</span> 10</a
+      >
+      <nav aria-label="Navigation principale">
+        <a href="#galerie" data-route="galerie">Accueil / Galerie</a
+        ><a href="#partager" data-route="partager"
+          >Partager <span aria-hidden="true">↗</span></a
+        >
+      </nav>
+    </header>
+    <p id="locked" class="notice container" hidden>
+      Lien incomplet. Merci de scanner à nouveau le QR code.
+    </p>
+    <main id="main" tabindex="-1">
+      <div id="gallery-view">
+        <section class="hero" aria-labelledby="names">
+          <div class="hero-art" aria-hidden="true">
+            <span>31</span><i>octobre</i><span>2026</span>
+          </div>
+          <div class="hero-content">
+            <p class="eyebrow" id="hero-kicker">NOTRE MARIAGE</p>
+            <h1 id="names">Une journée.<br /><em>Mille souvenirs.</em></h1>
+            <p class="date" id="date">31 octobre 2026</p>
+            <p id="location" hidden></p>
+            <a class="button primary hero-cta" href="#partager"
+              ><span aria-hidden="true">↥</span> Ajouter mes photos
+              <span aria-hidden="true">⟶</span></a
+            >
+            <p class="hero-intro">
+              Partagez vos photos et revivez ensemble les plus beaux moments de
+              cette journée.
+            </p>
+          </div>
+          <div class="hero-foot">
+            <span>LE BONHEUR, À PLUSIEURS</span
+            ><a href="#souvenirs" aria-label="Découvrir la galerie">↓</a>
+          </div>
+        </section>
+        <section
+          id="souvenirs"
+          class="container gallery-section"
+          aria-labelledby="gallery-title"
+        >
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">NOS SOUVENIRS</p>
+              <h2 id="gallery-title">Les souvenirs de la soirée</h2>
+            </div>
+            <button id="refresh" class="quiet">
+              Actualiser <span aria-hidden="true">↻</span>
+            </button>
+          </div>
+          <p id="gallery-status" role="status"></p>
+          <div id="gallery" class="gallery"></div>
+          <button id="more" class="button centered" hidden>
+            Voir plus de photos
+          </button>
+        </section>
+      </div>
+      <section
+        id="share-view"
+        class="container share-section"
+        aria-labelledby="share-title"
+        hidden
+      >
+        <p class="eyebrow">VOS PHOTOS COMPTENT</p>
+        <h1 id="share-title" tabindex="-1">Partager vos souvenirs</h1>
+        <p class="lead">Votre regard, notre plus bel album.</p>
+        <form id="upload-form">
+          <fieldset id="upload-controls">
+            <legend class="sr-only">
+              Destination et sélection de vos photos
+            </legend>
+            <div class="destinations">
+              <label class="destination"
+                ><input
+                  type="radio"
+                  name="audience"
+                  value="public"
+                  checked
+                /><span class="destination-icon" aria-hidden="true">♧</span
+                ><span
+                  ><strong>Partager avec les invités</strong
+                  ><small
+                    >Vos photos seront visibles par tous les invités du mariage
+                    dans la galerie commune.</small
+                  ></span
+                ></label
+              >
+              <label class="destination"
+                ><input type="radio" name="audience" value="maries" /><span
+                  class="destination-icon"
+                  aria-hidden="true"
+                  >◇</span
+                ><span
+                  ><strong>Envoyer uniquement aux mariés</strong
+                  ><small
+                    >Vos photos seront envoyées
+                    <span id="private-names">aux mariés</span> et ne seront pas
+                    visibles par les autres invités.</small
+                  ></span
+                ></label
+              >
+            </div>
+            <div class="advice">
+              <span aria-hidden="true">✧</span>
+              <div>
+                <strong>Un petit conseil</strong>
+                <p>
+                  Privilégiez vos plus beaux clichés et évitez d’envoyer
+                  plusieurs fois la même photo. Une seule suffit pour
+                  immortaliser le moment !
+                </p>
+              </div>
+            </div>
+            <div class="selection-header">
+              <h2 id="selection-title">Vos photos sélectionnées (0)</h2>
+              <label class="file-picker" for="files"
+                >+ Ajouter des photos<input
+                  id="files"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                  multiple
+              /></label>
+            </div>
+            <p class="hint">
+              JPEG, PNG, WebP et HEIC si votre navigateur le permet · 30 Mo
+              maximum par photo.
+            </p>
+            <ul id="selection" class="selection"></ul>
+          </fieldset>
+          <div class="upload-actions">
+            <button id="send" class="button primary" type="submit" disabled>
+              Envoyer mes photos <span aria-hidden="true">↗</span></button
+            ><button id="retry" type="button" hidden>
+              Réessayer les échecs
+            </button>
+          </div>
+          <p class="hint">
+            Les photos sont allégées avant l’envoi : ce ne sont pas les
+            originaux en haute résolution. Les métadonnées, dont la position
+            GPS, sont retirées.
+          </p>
+          <div id="progress-panel" class="progress-panel" hidden>
+            <div>
+              <p id="progress-label">Préparation…</p>
+              <progress
+                id="progress"
+                max="100"
+                value="0"
+                aria-labelledby="progress-label"
+              ></progress>
+            </div>
+            <button id="cancel-upload" type="button">Annuler</button>
+          </div>
+          <p id="upload-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <span>31 OCTOBRE 2026</span>
+      <p>Les instants passent. Les souvenirs restent.</p>
+      <span>NOTRE ALBUM</span>
+    </footer>
+    <dialog id="lightbox" class="lightbox" aria-label="Photo du mariage">
+      <div class="lightbox-toolbar">
+        <p id="photo-position"></p>
+        <button id="close-lightbox" autofocus>Fermer ×</button>
+      </div>
+      <p id="lightbox-status" role="status"></p>
+      <div class="lightbox-stage">
+        <button id="previous" aria-label="Photo précédente">←</button
+        ><img id="full-photo" alt="Souvenir partagé du mariage" hidden /><button
+          id="next"
+          aria-label="Photo suivante"
+        >
+          →
+        </button>
+      </div>
+      <div class="lightbox-actions">
+        <button id="download">Télécharger ↓</button
+        ><button id="report-open" class="quiet">Signaler cette photo</button>
+      </div>
+    </dialog>
+    <dialog id="report-dialog" aria-labelledby="report-title">
+      <h2 id="report-title">Signaler cette photo ?</h2>
+      <p>Merci de nous aider à garder cet album agréable pour tous.</p>
+      <form id="report-form">
+        <label for="report-reason">Motif du signalement</label
+        ><select id="report-reason">
+          <option value="embarrassing">Photo gênante</option>
+          <option value="child">Photo d’un enfant</option>
+          <option value="other">Autre</option>
+        </select>
+        <p class="hint">
+          Une photo est automatiquement masquée après deux signalements
+          distincts.
+        </p>
+        <div class="actions">
+          <button class="primary" type="submit">Signaler</button
+          ><button type="button" id="report-cancel">Annuler</button>
+        </div>
+        <p id="report-status" role="status"></p>
       </form>
-    </section>
-  </main>
-  <footer class="site-footer"><span>31 OCTOBRE 2026</span><p>Les instants passent. Les souvenirs restent.</p><span>NOTRE ALBUM</span></footer>
-  <dialog id="lightbox" class="lightbox" aria-label="Photo du mariage"><div class="lightbox-toolbar"><p id="photo-position"></p><button id="close-lightbox" autofocus>Fermer ×</button></div><p id="lightbox-status" role="status"></p><div class="lightbox-stage"><button id="previous" aria-label="Photo précédente">←</button><img id="full-photo" alt="Souvenir partagé du mariage" hidden><button id="next" aria-label="Photo suivante">→</button></div><div class="lightbox-actions"><button id="download">Télécharger ↓</button><button id="report-open" class="quiet">Signaler cette photo</button></div></dialog>
-  <dialog id="report-dialog" aria-labelledby="report-title"><h2 id="report-title">Signaler cette photo ?</h2><p>Merci de nous aider à garder cet album agréable pour tous.</p><form id="report-form"><label for="report-reason">Motif du signalement</label><select id="report-reason"><option value="embarrassing">Photo gênante</option><option value="child">Photo d’un enfant</option><option value="other">Autre</option></select><p class="hint">Une photo est automatiquement masquée après deux signalements distincts.</p><div class="actions"><button class="primary" type="submit">Signaler</button><button type="button" id="report-cancel">Annuler</button></div><p id="report-status" role="status"></p></form></dialog>
-  <noscript><p class="notice">Activez JavaScript pour consulter et envoyer les photos de cet album.</p></noscript>
-</body></html>
+    </dialog>
+    <noscript
+      ><p class="notice">
+        Activez JavaScript pour consulter et envoyer les photos de cet album.
+      </p></noscript
+    >
+  </body>
+</html>

@@ -1,6 +1,15 @@
-import { NSFW_ENABLED } from './config.js';
-import { $, el, browserId, rpc, storage, unwrap, errorText, userError } from './shared.js';
-export const NSFW_SUSPECT_PORN_HENTAI = 0.60;
+import { NSFW_ENABLED } from "./config.js";
+import {
+  $,
+  el,
+  browserId,
+  rpc,
+  storage,
+  unwrap,
+  errorText,
+  userError,
+} from "./shared.js";
+export const NSFW_SUSPECT_PORN_HENTAI = 0.6;
 export const NSFW_SEXY_STRONG = 0.85;
 export const NSFW_SEXY_WITH_PORN = 0.25;
 export const NSFW_LOAD_TIMEOUT_MS = 15000;
@@ -12,175 +21,383 @@ let modelPromise;
 let modelUnavailable = false;
 function timeout(promise, ms) {
   let timer;
-  return Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('timeout')), ms); })]).finally(() => clearTimeout(timer));
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("timeout")), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
 }
 export function verdict(predictions) {
-  const classes = new Map(predictions.map(item => [item.className, item.probability]));
-  if (!['Porn', 'Hentai', 'Sexy', 'Neutral', 'Drawing'].every(name => Number.isFinite(classes.get(name)) && classes.get(name) >= 0 && classes.get(name) <= 1)) return 'unavailable';
-  const explicit = classes.get('Porn') + classes.get('Hentai');
-  return explicit >= NSFW_SUSPECT_PORN_HENTAI || (classes.get('Sexy') >= NSFW_SEXY_STRONG && explicit >= NSFW_SEXY_WITH_PORN) ? 'suspect' : 'clean';
+  const classes = new Map(
+    predictions.map((item) => [item.className, item.probability]),
+  );
+  if (
+    !["Porn", "Hentai", "Sexy", "Neutral", "Drawing"].every(
+      (name) =>
+        Number.isFinite(classes.get(name)) &&
+        classes.get(name) >= 0 &&
+        classes.get(name) <= 1,
+    )
+  )
+    return "unavailable";
+  const explicit = classes.get("Porn") + classes.get("Hentai");
+  return explicit >= NSFW_SUSPECT_PORN_HENTAI ||
+    (classes.get("Sexy") >= NSFW_SEXY_STRONG && explicit >= NSFW_SEXY_WITH_PORN)
+    ? "suspect"
+    : "clean";
 }
 async function classify(canvas) {
-  if (!NSFW_ENABLED || modelUnavailable) return 'unavailable';
+  if (!NSFW_ENABLED || modelUnavailable) return "unavailable";
   try {
     // Tests replace the library API before page load, never via a production URL flag.
     modelPromise ??= (async () => {
-      const library = window.nsfwjs || await import('./vendor/nsfwjs/nsfwjs.js');
-      return library.load(new URL('./vendor/nsfwjs/models/mobilenet_v2/', import.meta.url).href);
+      const library =
+        window.nsfwjs || (await import("./vendor/nsfwjs/nsfwjs.js"));
+      return library.load(
+        new URL("./vendor/nsfwjs/models/mobilenet_v2/", import.meta.url).href,
+      );
     })();
     const model = await timeout(modelPromise, NSFW_LOAD_TIMEOUT_MS);
-    return verdict(await timeout(model.classify(canvas), NSFW_CLASSIFY_TIMEOUT_MS));
+    return verdict(
+      await timeout(model.classify(canvas), NSFW_CLASSIFY_TIMEOUT_MS),
+    );
   } catch {
     // A timed-out inference must not overlap with subsequent photos on a small phone.
     modelUnavailable = true;
-    return 'unavailable';
+    return "unavailable";
   }
 }
 export function validateFile(file) {
-  if (!/^(image\/(jpeg|png|webp|heic|heif))$/i.test(file.type) && !(file.type === '' && /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name))) throw userError('Format non pris en charge');
-  if (!file.size || file.size > MAX_FILE_BYTES) throw userError('La photo doit peser entre 1 octet et 30 Mo.');
+  if (
+    !/^(image\/(jpeg|png|webp|heic|heif))$/i.test(file.type) &&
+    !(file.type === "" && /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name))
+  )
+    throw userError("Format non pris en charge");
+  if (!file.size || file.size > MAX_FILE_BYTES)
+    throw userError("La photo doit peser entre 1 octet et 30 Mo.");
 }
 export async function decode(file) {
   validateFile(file);
   let source;
-  try { source = await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch {
+  try {
+    source = await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
     const url = URL.createObjectURL(file);
     try {
       source = await new Promise((resolve, reject) => {
-        const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = url;
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
       });
-    } catch { throw userError('Image illisible. Pour une photo HEIC, essayez une copie JPEG.'); }
-    finally { URL.revokeObjectURL(url); }
+    } catch {
+      throw userError(
+        "Image illisible. Pour une photo HEIC, essayez une copie JPEG.",
+      );
+    } finally {
+      URL.revokeObjectURL(url);
+    }
   }
-  if (!source.width || !source.height || source.width * source.height > MAX_PIXELS) {
-    source.close?.(); throw userError('Image trop grande : utilisez une photo de 60 mégapixels maximum.');
+  if (
+    !source.width ||
+    !source.height ||
+    source.width * source.height > MAX_PIXELS
+  ) {
+    source.close?.();
+    throw userError(
+      "Image trop grande : utilisez une photo de 60 mégapixels maximum.",
+    );
   }
   return source;
 }
 export function canvasFor(source, maxSide) {
   const ratio = Math.min(1, maxSide / Math.max(source.width, source.height));
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(source.width * ratio)); canvas.height = Math.max(1, Math.round(source.height * ratio));
-  const context = canvas.getContext('2d');
-  context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(source.width * ratio));
+  canvas.height = Math.max(1, Math.round(source.height * ratio));
+  const context = canvas.getContext("2d");
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
   context.drawImage(source, 0, 0, canvas.width, canvas.height);
   return canvas;
 }
 export function jpeg(canvas, quality) {
-  return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(userError('Impossible de préparer cette image.')), 'image/jpeg', quality));
+  return new Promise((resolve, reject) =>
+    canvas.toBlob(
+      (blob) =>
+        blob
+          ? resolve(blob)
+          : reject(userError("Impossible de préparer cette image.")),
+      "image/jpeg",
+      quality,
+    ),
+  );
 }
 export async function uploadObject(sb, path, blob) {
   // Plan B integration point: replace only this implementation if real Storage test A fails.
-  return unwrap(await storage(sb).upload(path, blob, { contentType: 'image/jpeg', upsert: false }));
+  return unwrap(
+    await storage(sb).upload(path, blob, {
+      contentType: "image/jpeg",
+      upsert: false,
+    }),
+  );
 }
 function networkError(error) {
   const status = Number(error?.status || error?.statusCode || 0);
-  return !error?.userMessage && !error?.code && (!status || status >= 500 || status === 408);
+  return (
+    ["TimeoutError", "AbortError"].includes(error?.name) ||
+    (!error?.userMessage &&
+      !error?.code &&
+      (!status || status >= 500 || status === 408))
+  );
 }
 export async function uploadPhoto(sb, file, audience, seen, update = () => {}) {
   let source, thumbCanvas, fullCanvas;
   try {
-    update('Préparation…'); source = await decode(file);
-    const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await file.arrayBuffer())), byte => byte.toString(16).padStart(2, '0')).join('');
-    if (seen.has(`${audience}:${hash}`)) return 'duplicate';
+    update("Préparation…");
+    source = await decode(file);
+    const hash = Array.from(
+      new Uint8Array(
+        await crypto.subtle.digest("SHA-256", await file.arrayBuffer()),
+      ),
+      (byte) => byte.toString(16).padStart(2, "0"),
+    ).join("");
+    if (seen.has(`${audience}:${hash}`)) return "duplicate";
     thumbCanvas = canvasFor(source, 400);
     fullCanvas = canvasFor(source, 1600);
-    source.close?.(); source = null;
+    source.close?.();
+    source = null;
     let verdictValue, thumb, full;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         // One hash per RPC is within the <=200 contract; repeat after uncertain finalization.
-        const duplicates = await rpc(sb, 'check_duplicates', { p_audience: audience, p_hashes: [hash] });
-        if (duplicates.includes(hash)) { seen.add(`${audience}:${hash}`); return 'duplicate'; }
+        const duplicates = await rpc(sb, "check_duplicates", {
+          p_audience: audience,
+          p_hashes: [hash],
+        });
+        if (duplicates.includes(hash)) {
+          seen.add(`${audience}:${hash}`);
+          return "duplicate";
+        }
         if (!thumb) {
-          update(audience === 'public' ? 'Préparation et premier filtrage…' : 'Préparation…');
-          verdictValue = audience === 'public' ? await classify(thumbCanvas) : 'skipped';
-          thumb = await jpeg(thumbCanvas, .7); full = await jpeg(fullCanvas, .8);
-          thumbCanvas.width = thumbCanvas.height = fullCanvas.width = fullCanvas.height = 0;
-          if (thumb.size > 3145728 || full.size > 3145728) throw userError('Photo trop lourde après compression. Essayez une copie plus petite.');
+          update(
+            audience === "public"
+              ? "Préparation et premier filtrage…"
+              : "Préparation…",
+          );
+          verdictValue =
+            audience === "public" ? await classify(thumbCanvas) : "skipped";
+          thumb = await jpeg(thumbCanvas, 0.7);
+          full = await jpeg(fullCanvas, 0.8);
+          thumbCanvas.width =
+            thumbCanvas.height =
+            fullCanvas.width =
+            fullCanvas.height =
+              0;
+          if (thumb.size > 3145728 || full.size > 3145728)
+            throw userError(
+              "Photo trop lourde après compression. Essayez une copie plus petite.",
+            );
         }
         const id = crypto.randomUUID();
-        update(attempt ? `Nouvelle tentative ${attempt + 1}/3…` : 'Envoi…');
+        update(attempt ? `Nouvelle tentative ${attempt + 1}/3…` : "Envoi…");
         await uploadObject(sb, `${audience}/thumbs/${id}.jpg`, thumb);
         await uploadObject(sb, `${audience}/full/${id}.jpg`, full);
-        const result = await rpc(sb, 'register_photo', { p_id: id, p_audience: audience, p_sha256: hash, p_uploader: browserId(), p_nsfw: verdictValue });
-        if (result.result === 'rate_limited') throw Object.assign(new Error('rate_limited'), { code: 'rate_limited' });
-        if (!['published', 'pending_review', 'duplicate', 'registered'].includes(result.result)) throw userError('Réponse inattendue. Réessayez cet envoi.');
-        seen.add(`${audience}:${hash}`); return result.result;
+        const result = await rpc(sb, "register_photo", {
+          p_id: id,
+          p_audience: audience,
+          p_sha256: hash,
+          p_uploader: browserId(),
+          p_nsfw: verdictValue,
+        });
+        if (result.result === "rate_limited")
+          throw Object.assign(new Error("rate_limited"), {
+            code: "rate_limited",
+          });
+        if (
+          !["published", "pending_review", "duplicate", "registered"].includes(
+            result.result,
+          )
+        )
+          throw userError("Réponse inattendue. Réessayez cet envoi.");
+        seen.add(`${audience}:${hash}`);
+        return result.result;
       } catch (error) {
         if (attempt === 2 || !networkError(error)) throw error;
-        update('Connexion interrompue. Nouvelle tentative…');
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS[attempt]));
+        update("Connexion interrompue. Nouvelle tentative…");
+        await new Promise((resolve) =>
+          setTimeout(resolve, RETRY_DELAYS[attempt]),
+        );
       }
     }
   } finally {
     source?.close?.();
-    for (const canvas of [thumbCanvas, fullCanvas]) if (canvas) canvas.width = canvas.height = 0;
+    for (const canvas of [thumbCanvas, fullCanvas])
+      if (canvas) canvas.width = canvas.height = 0;
   }
 }
 export function setupUploads(sb, onComplete) {
-  let items = [], busy = false, cancelled = false;
-  const revoke = item => { if (item.url) { URL.revokeObjectURL(item.url); item.url = null; } };
+  let items = [],
+    busy = false,
+    cancelled = false;
+  const revoke = (item) => {
+    if (item.url) {
+      URL.revokeObjectURL(item.url);
+      item.url = null;
+    }
+  };
   function render() {
-    $('selection').replaceChildren();
-    $('selection-title').textContent = `Vos photos sélectionnées (${items.length})`;
-    items.forEach(item => {
-      const li = el('li');
-      if (item.url) { const img = el('img'); img.src = item.url; img.alt = `Aperçu de ${item.file.name}`; img.width = 160; img.height = 160; li.append(img); }
-      const remove = el('button', '×', 'remove'); remove.type = 'button'; remove.setAttribute('aria-label', `Retirer ${item.file.name}`); remove.disabled = busy;
-      remove.onclick = () => { revoke(item); items = items.filter(candidate => candidate !== item); render(); };
-      li.append(remove, el('p', item.file.name), el('p', item.message || 'Prête à envoyer', item.result === 'error' ? 'error' : ''));
-      $('selection').append(li);
+    $("selection").replaceChildren();
+    $("selection-title").textContent =
+      `Vos photos sélectionnées (${items.length})`;
+    items.forEach((item) => {
+      const li = el("li");
+      if (item.url) {
+        const img = el("img");
+        img.src = item.url;
+        img.alt = `Aperçu de ${item.file.name}`;
+        img.width = 160;
+        img.height = 160;
+        li.append(img);
+      }
+      const remove = el("button", "×", "remove");
+      remove.type = "button";
+      remove.setAttribute("aria-label", `Retirer ${item.file.name}`);
+      remove.disabled = busy;
+      remove.onclick = () => {
+        revoke(item);
+        items = items.filter((candidate) => candidate !== item);
+        render();
+      };
+      li.append(
+        remove,
+        el("p", item.file.name),
+        el(
+          "p",
+          item.message || "Prête à envoyer",
+          item.result === "error" ? "error" : "",
+        ),
+      );
+      $("selection").append(li);
     });
-    $('send').disabled = busy || !sb || !items.some(item => !item.result);
-    $('send').textContent = `Envoyer ${items.filter(item => !item.result).length} photo(s)`;
-    $('retry').hidden = !items.some(item => item.result === 'error'); $('retry').disabled = busy;
-    $('upload-controls').disabled = busy;
+    $("send").disabled = busy || !sb || !items.some((item) => !item.result);
+    $("send").textContent =
+      `Envoyer ${items.filter((item) => !item.result).length} photo(s)`;
+    $("retry").hidden = !items.some((item) => item.result === "error");
+    $("retry").disabled = busy;
+    $("upload-controls").disabled = busy;
   }
-  $('files').onchange = async event => {
-    const files = [...event.target.files]; event.target.value = ''; busy = true; render();
-    $('upload-status').textContent = 'Préparation des aperçus…';
+  $("files").onchange = async (event) => {
+    const files = [...event.target.files];
+    event.target.value = "";
+    busy = true;
+    render();
+    $("upload-status").textContent = "Préparation des aperçus…";
     for (const file of files) {
-      const item = { file }; let source, canvas;
-      try { source = await decode(file); canvas = canvasFor(source, 180); item.url = URL.createObjectURL(await jpeg(canvas, .6)); }
-      catch (error) { item.result = 'error'; item.message = `Échec : ${errorText(error)}`; }
-      finally { source?.close?.(); if (canvas) canvas.width = canvas.height = 0; }
+      const item = { file };
+      let source, canvas;
+      try {
+        source = await decode(file);
+        canvas = canvasFor(source, 180);
+        item.url = URL.createObjectURL(await jpeg(canvas, 0.6));
+      } catch (error) {
+        item.result = "error";
+        item.message = `Échec : ${errorText(error)}`;
+      } finally {
+        source?.close?.();
+        if (canvas) canvas.width = canvas.height = 0;
+      }
       items.push(item);
     }
-    busy = false; $('upload-status').textContent = ''; render();
+    busy = false;
+    $("upload-status").textContent = "";
+    render();
   };
   async function run(retry = false) {
     if (busy || !sb) return;
-    const audience = document.querySelector('[name=audience]:checked').value;
-    const batch = items.filter(item => retry ? item.result === 'error' : !item.result);
+    const audience = document.querySelector("[name=audience]:checked").value;
+    const batch = items.filter((item) =>
+      retry ? item.result === "error" : !item.result,
+    );
     if (!batch.length) return;
-    busy = true; cancelled = false; render();
-    $('progress-panel').hidden = false; $('cancel-upload').disabled = false; $('progress').value = 0;
-    const seen = new Set(); let processed = 0;
+    busy = true;
+    cancelled = false;
+    render();
+    $("progress-panel").hidden = false;
+    $("cancel-upload").disabled = false;
+    $("progress").value = 0;
+    const seen = new Set();
+    let processed = 0;
     for (const item of batch) {
       if (cancelled) break;
       // A failed file retains its original destination even if the radio is changed later.
       item.audience ??= audience;
       try {
-        item.result = await uploadPhoto(sb, item.file, item.audience, seen, message => { $('progress-label').textContent = `${processed} sur ${batch.length} photos traitées · ${message}`; });
-        item.message = item.result === 'duplicate' ? 'Déjà envoyée, ignorée' : item.result === 'pending_review' ? 'Reçue, elle apparaîtra après validation' : item.audience === 'maries' ? 'Envoyé aux mariés.' : item.result === 'published' ? 'Ajoutée à la galerie' : 'Photo reçue.';
+        item.result = await uploadPhoto(
+          sb,
+          item.file,
+          item.audience,
+          seen,
+          (message) => {
+            $("progress-label").textContent =
+              `${processed} sur ${batch.length} photos traitées · ${message}`;
+          },
+        );
+        item.message =
+          item.result === "duplicate"
+            ? "Déjà envoyée, ignorée"
+            : item.result === "pending_review"
+              ? "Reçue, elle apparaîtra après validation"
+              : item.audience === "maries"
+                ? "Envoyé aux mariés."
+                : item.result === "published"
+                  ? "Ajoutée à la galerie"
+                  : "Photo reçue.";
         revoke(item);
-      } catch (error) { item.result = 'error'; item.message = `Échec : ${errorText(error)}`; }
-      processed++; $('progress').value = Math.round(processed / batch.length * 100);
-      $('progress-label').textContent = `${processed} sur ${batch.length} photos traitées (${Math.round(processed / batch.length * 100)} %)`;
+      } catch (error) {
+        item.result = "error";
+        item.message = `Échec : ${errorText(error)}`;
+      }
+      processed++;
+      $("progress").value = Math.round((processed / batch.length) * 100);
+      $("progress-label").textContent =
+        `${processed} sur ${batch.length} photos traitées (${Math.round((processed / batch.length) * 100)} %)`;
       render();
     }
-    busy = false; $('cancel-upload').disabled = true; render();
-    const count = result => items.filter(item => item.result === result).length;
-    const privateCount = items.filter(item => item.audience === 'maries' && ['published','registered'].includes(item.result)).length;
-    $('upload-status').textContent = `${count('published') + count('registered') - privateCount} ajoutée(s) à la galerie · ${privateCount} envoyée(s) aux mariés · ${count('duplicate')} doublon(s) ignoré(s) · ${count('pending_review')} en attente · ${count('error')} en échec.${cancelled ? ' Envoi arrêté ; les photos restantes peuvent être envoyées.' : ''}`;
+    busy = false;
+    $("cancel-upload").disabled = true;
+    render();
+    const count = (result) =>
+      items.filter((item) => item.result === result).length;
+    const privateCount = items.filter(
+      (item) =>
+        item.audience === "maries" &&
+        ["published", "registered"].includes(item.result),
+    ).length;
+    $("upload-status").textContent =
+      `${count("published") + count("registered") - privateCount} ajoutée(s) à la galerie · ${privateCount} envoyée(s) aux mariés · ${count("duplicate")} doublon(s) ignoré(s) · ${count("pending_review")} en attente · ${count("error")} en échec.${cancelled ? " Envoi arrêté ; les photos restantes peuvent être envoyées." : ""}`;
     onComplete();
   }
-  $('upload-form').onsubmit = event => { event.preventDefault(); run(); };
-  $('retry').onclick = () => run(true);
-  $('cancel-upload').onclick = () => { cancelled = true; $('cancel-upload').disabled = true; $('upload-status').textContent = 'Arrêt demandé après la photo en cours.'; };
-  window.addEventListener('beforeunload', event => { if (busy) { event.preventDefault(); event.returnValue = ''; } });
-  window.addEventListener('pagehide', () => items.forEach(revoke));
-  if (!sb) $('upload-status').textContent = 'Les envois ne sont pas encore ouverts. Revenez un peu plus tard.';
+  $("upload-form").onsubmit = (event) => {
+    event.preventDefault();
+    run();
+  };
+  $("retry").onclick = () => run(true);
+  $("cancel-upload").onclick = () => {
+    cancelled = true;
+    $("cancel-upload").disabled = true;
+    $("upload-status").textContent = "Arrêt demandé après la photo en cours.";
+  };
+  window.addEventListener("beforeunload", (event) => {
+    if (busy) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+  });
+  window.addEventListener("pagehide", () => items.forEach(revoke));
+  if (!sb)
+    $("upload-status").textContent =
+      "Les envois ne sont pas encore ouverts. Revenez un peu plus tard.";
   render();
 }

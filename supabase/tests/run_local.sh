@@ -10,7 +10,7 @@
 # Variables : PGHOST PGPORT PGUSER PGPASSWORD (standard psql). Base créée : wedding_test (recréée à chaque fois).
 # Sortie : tableau PASS/FAIL ; code retour 1 si un seul FAIL.
 # =====================================================================
-set -u
+set -euo pipefail
 cd "$(dirname "$0")"
 DB=wedding_test
 export PGDATABASE=postgres
@@ -30,7 +30,9 @@ done
 
 echo ">> tests SQL"
 RES=$(mktemp)
-$PSQL -A -F ' | ' -f 10_tests.sql | tee "$RES" | grep -E '^T[0-9]|^id ' || true
+trap 'rm -f "$RES"' EXIT
+$PSQL -A -F ' | ' -f 10_tests.sql > "$RES" || { echo "FAIL: SQL assertions aborted"; exit 2; }
+grep -E '^T[0-9]|^id ' "$RES" || true
 FAILS=$(grep -c ' | FAIL | ' "$RES" || true)
 
 echo ">> T12 : concurrence (signalements simultanés, vrais processus parallèles)"

@@ -61,6 +61,8 @@ else:
             thumbs.append(encode(img, 400, 70))
         except Exception:
             skipped += 1
+    if not fulls:
+        sys.exit("Aucune image décodable : estimation impossible.")
     avg_full, avg_thumb = sum(fulls) / len(fulls), sum(thumbs) / len(thumbs)
     print(f"{len(fulls)} photos mesurées ({skipped} ignorées).  full moyen = {avg_full/1024:.0f} Ko   thumb moyen = {avg_thumb/1024:.0f} Ko")
     if len(fulls) < 20:
@@ -80,5 +82,5 @@ for per_guest in (10, 25, 40, 60):
         ok = gb <= sto and egress_gb * 2 <= egr
         cells.append(f"{'OK' if ok else 'DÉPASSE':>18}")
     print(f"{n:>8} {per_guest:>8} {gb:>8.2f} Go   " + "   ".join(cells))
-print("\nOK = stockage <= quota ET (egress x2) <= quota. Sans moyen de paiement enregistré, une offre gratuite s'ARRÊTE au quota :")
-print("les envois échouent pendant la soirée. Décision à prendre AVANT le 25 octobre (voir ACTIONS_HUMAINES_PREREMPLI.md).")
+print("\nComparaison conservatrice : stockage <= quota ET trafic entièrement non caché x2 <= quota. Les quotas de trafic caché sont distincts.")
+print("Vérifier les quotas et conditions actuels dans Supabase avant le 25 octobre ; la saturation peut empêcher les envois. Le polling augmente les chargements de galerie.")
