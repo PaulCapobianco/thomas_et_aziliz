@@ -40,6 +40,9 @@ export async function installMock(page, options = {}) {
       records,
       objects,
       calls,
+      galleryDown: Boolean(options.galleryDown),
+      galleryDelay: 0,
+      badSignOnce: Boolean(options.badSignOnce),
       get paused() {
         return paused;
       },
@@ -80,6 +83,10 @@ export async function installMock(page, options = {}) {
           rpc: async (name, p = {}) => {
             calls.push([name, p]);
             if (name.startsWith("admin_") && !allowed()) return fail();
+            if (name === "gallery_page" && window.mock.galleryDown)
+              return { data: null, error: { code: "500", message: "down" } };
+            if (name === "gallery_page" && window.mock.galleryDelay)
+              await new Promise((r) => setTimeout(r, window.mock.galleryDelay));
             if (name === "gallery_page")
               return ok(
                 records
@@ -232,6 +239,10 @@ export async function installMock(page, options = {}) {
               },
               createSignedUrls: async (paths) => {
                 calls.push(["signs", paths]);
+                if (window.mock.badSignOnce) {
+                  window.mock.badSignOnce = false;
+                  return ok(paths.map((path) => ({ path, signedUrl: "/fixtures/absent-signature.jpg" })));
+                }
                 return ok(paths.map((path) => ({ path, signedUrl: url })));
               },
               createSignedUrl: async (path, ttl, opts) => {

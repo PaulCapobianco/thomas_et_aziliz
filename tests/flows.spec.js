@@ -592,3 +592,142 @@ test("lightbox shows the thumbnail instantly then the full-resolution file", asy
     .toBeTruthy();
   await expect(page.locator("#lightbox-status")).toHaveText("");
 });
+
+test.describe("gallery never loses photos around a publication", () => {
+  const sendFiles = async (page, files, audience = "public") => {
+    // Navigate inside the page (no reload): the mock keeps its state only while the document lives.
+    if (page.url() === "about:blank") await page.goto("/#partager");
+    else await page.getByRole("link", { name: "Partager", exact: true }).click();
+    await page.locator(`[name=audience][value=${audience}]`).check();
+    await page.locator("#files").setInputFiles(files.map(fixture));
+    await page.locator("#send").click();
+    await expect(page.locator("#upload-status")).toContainText("en échec", {
+      timeout: 40000,
+    });
+  };
+  const cards = (page) => page.locator("#gallery .photo-card");
+  const allImagesLoaded = (page) =>
+    page
+      .locator("#gallery .photo-card img")
+      .evaluateAll((imgs) => imgs.every((i) => i.complete && i.naturalWidth > 0));
+
+  test("2 photos, publish a 3rd: 3 stay visible; a failing refresh keeps them; duplicate and private sends change nothing", async ({
+    page,
+  }) => {
+    await installMock(page, { photos: 2 });
+    await page.goto("/");
+    await expect(cards(page)).toHaveCount(2);
+    await sendFiles(page, ["photo_03.jpg"]);
+    await expect(page.locator("#upload-status")).toContainText("Terminé ✓");
+    await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+    await expect(cards(page)).toHaveCount(3);
+    await expect.poll(() => allImagesLoaded(page)).toBeTruthy();
+    // The new photo opens in the lightbox with its full-resolution file.
+    await cards(page).first().click();
+    await expect(page.locator("#lightbox-status")).toHaveText("");
+    await expect(page.locator("#full-photo")).toBeVisible();
+    await page.locator("#close-lightbox").click();
+    // A refresh that fails keeps the photos on screen and says so.
+    await page.evaluate(() => (mock.galleryDown = true));
+    await page.locator("#refresh").click();
+    await expect(page.locator("#gallery-status")).toContainText("Impossible");
+    await expect(cards(page)).toHaveCount(3);
+    await page.evaluate(() => (mock.galleryDown = false));
+    await page.locator("#refresh").click();
+    await expect(page.locator("#gallery-status")).toHaveText("");
+    await expect(cards(page)).toHaveCount(3);
+    // Same file again: ignored. Private send: not in the shared gallery.
+    await sendFiles(page, ["photo_03.jpg"]);
+    await expect(page.locator("#upload-status")).toContainText("1 doublon(s)");
+    await sendFiles(page, ["photo_02.jpg"], "maries");
+    await expect(page.locator("#upload-status")).toContainText("aux mariés");
+    await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+    await expect(cards(page)).toHaveCount(3);
+  });
+
+  test("several photos at once, and a photo kept for review does not hide the others", async ({
+    page,
+  }) => {
+    await installMock(page, { photos: 2 });
+    await page.goto("/");
+    await expect(cards(page)).toHaveCount(2);
+    await sendFiles(page, ["photo_01.jpg", "photo_02.jpg", "photo_03.jpg"]);
+    await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+    await expect(cards(page)).toHaveCount(5);
+    await page.evaluate(() => (mock.records[0].status = "pending_review"));
+    await page.locator("#refresh").click();
+    await expect(cards(page)).toHaveCount(4);
+  });
+
+  test("a failed network during the upload does not blank the gallery", async ({
+    page,
+  }) => {
+    await installMock(page, { photos: 2, failures: 99 });
+    await page.goto("/");
+    await expect(cards(page)).toHaveCount(2);
+    await sendFiles(page, ["photo_01.jpg"]);
+    await expect(page.locator("#upload-status")).toContainText("Réessayer");
+    await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+    await expect(cards(page)).toHaveCount(2);
+    await expect.poll(() => allImagesLoaded(page)).toBeTruthy();
+  });
+
+  test("the album is never declared empty after a failed first load, and recovers by itself", async ({
+    page,
+  }) => {
+    await installMock(page, { photos: 2, galleryDown: true });
+    await page.goto("/");
+    await expect(page.locator("#gallery-status")).toContainText("Impossible");
+    await expect(page.locator("#gallery")).not.toContainText("encore vide");
+    await expect(page.locator("#gallery")).toContainText("pas pu être chargés");
+    await page.evaluate(() => (mock.galleryDown = false));
+    await expect(cards(page)).toHaveCount(2, { timeout: 15000 });
+    await expect(page.locator("#gallery-status")).toHaveText("");
+  });
+
+  test("a thumbnail that fails to load triggers fresh signatures and then displays", async ({
+    page,
+  }) => {
+    await installMock(page, { photos: 3, badSignOnce: true });
+    await page.goto("/");
+    await expect(cards(page)).toHaveCount(3);
+    await expect.poll(() => allImagesLoaded(page), { timeout: 15000 }).toBeTruthy();
+    expect(
+      await page.evaluate(() => mock.calls.filter((c) => c[0] === "signs").length),
+    ).toBeGreaterThanOrEqual(2);
+  });
+});
+
+test("gallery with a freshly published photo renders correctly at 390 and 1440 px", async ({
+  page,
+}) => {
+  await installMock(page, { photos: 2 });
+  await page.goto("/");
+  await expect(page.locator("#gallery .photo-card")).toHaveCount(2);
+  await page.getByRole("link", { name: "Partager", exact: true }).click();
+  await page.locator("#files").setInputFiles([fixture("photo_03.jpg")]);
+  await page.locator("#send").click();
+  await expect(page.locator("#upload-status")).toContainText("Terminé ✓", {
+    timeout: 40000,
+  });
+  await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+  await expect(page.locator("#gallery .photo-card")).toHaveCount(3);
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.locator("#gallery").scrollIntoViewIfNeeded();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+    ).toBeTruthy();
+    const boxes = await page
+      .locator("#gallery .photo-card")
+      .evaluateAll((nodes) => nodes.map((n) => n.getBoundingClientRect()).map((r) => [r.width, r.height]));
+    expect(boxes).toHaveLength(3);
+    expect(boxes.every(([w, h]) => w > 100 && h > 100)).toBeTruthy();
+    expect(
+      await page
+        .locator("#gallery .photo-card img")
+        .evaluateAll((imgs) => imgs.every((i) => i.complete && i.naturalWidth > 0)),
+    ).toBeTruthy();
+    await page.locator("#gallery").screenshot({ path: `test-results/gallery-after-publish-${width}.png` });
+  }
+});

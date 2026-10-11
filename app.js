@@ -48,6 +48,11 @@ if (SECRET && savedKey !== SECRET) {
 let rows = [],
   cursor = null,
   busy = false,
+  refreshQueued = false,
+  forceSign = false,
+  loaded = false,
+  loadFailures = 0,
+  lastResign = 0,
   lastRefresh = 0,
   activeIndex = 0,
   lightboxRequest = 0,
@@ -99,6 +104,21 @@ route();
 function renderGallery() {
   const focusedId = document.activeElement?.dataset.photoId;
   $("gallery").replaceChildren();
+  if (!rows.length && !loaded) {
+    // Never claim the album is empty before the first successful answer (or after a failed one).
+    const wait = el("div", undefined, "empty");
+    wait.append(
+      el("h3", loadFailures ? "Les souvenirs n’ont pas pu être chargés." : "Chargement des souvenirs…"),
+      el(
+        "p",
+        loadFailures
+          ? "Nouvelle tentative en cours. Vous pouvez aussi appuyer sur « Actualiser »."
+          : "Quelques secondes…",
+      ),
+    );
+    $("gallery").append(wait);
+    return;
+  }
   if (!rows.length) {
     const empty = el("div", undefined, "empty");
     empty.append(
@@ -129,6 +149,12 @@ function renderGallery() {
         "Photo indisponible, actualisez la galerie",
       );
       img.hidden = true;
+      // Most likely an expired or refused signature: ask for fresh ones, at most every 20 seconds.
+      if (Date.now() - lastResign > 20000) {
+        lastResign = Date.now();
+        forceSign = true;
+        loadGallery();
+      }
     };
     button.append(img);
     button.onclick = () => openPhoto(index);
@@ -146,7 +172,7 @@ async function signNewRows(page) {
   const known = new Map(rows.map((row) => [row.id, row]));
   const reusable = (row) => {
     const old = known.get(row.id);
-    return old?.thumbUrl && Date.now() - old.signedAt < SIGNATURE_REUSE_MS
+    return !forceSign && old?.thumbUrl && Date.now() - old.signedAt < SIGNATURE_REUSE_MS
       ? old
       : null;
   };
@@ -166,7 +192,12 @@ async function signNewRows(page) {
   });
 }
 async function loadGallery(more = false) {
-  if (!sb || !allowed || busy) return;
+  if (!sb || !allowed) return;
+  if (busy) {
+    // A refresh asked while another one runs (typically right after an upload) must not be lost.
+    refreshQueued = true;
+    return;
+  }
   busy = true;
   $("refresh").disabled = $("more").disabled = true;
   const currentId = rows[activeIndex]?.id;
@@ -193,6 +224,9 @@ async function loadGallery(more = false) {
     cursor = before;
     $("more").hidden = lastPage.length !== 48;
     lastRefresh = Date.now();
+    loaded = true;
+    loadFailures = 0;
+    forceSign = false;
     $("gallery-status").textContent = "";
     renderGallery();
     if ($("lightbox").open) {
@@ -206,11 +240,19 @@ async function loadGallery(more = false) {
       }
     }
   } catch {
+    // Photos already on screen stay on screen: only the message changes.
+    loadFailures++;
     $("gallery-status").textContent =
       "Impossible de charger les photos pour le moment. Vérifiez votre connexion et réessayez.";
+    if (!loaded) renderGallery();
+    if (!loaded && loadFailures <= 3) setTimeout(() => loadGallery(), 5000);
   } finally {
     busy = false;
     $("refresh").disabled = $("more").disabled = false;
+    if (refreshQueued) {
+      refreshQueued = false;
+      loadGallery();
+    }
   }
 }
 $("refresh").onclick = () => loadGallery();
@@ -365,6 +407,7 @@ $("report-form").onsubmit = async (event) => {
   }
 };
 setupUploads(allowed ? sb : null, () => loadGallery());
+if (!sb) loaded = true;
 renderGallery();
 if (!sb)
   $("gallery-status").textContent =

@@ -5,14 +5,4 @@
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'
-  Cache-Control: public, max-age=300
-/*.html
   Cache-Control: no-cache
-/
-  Cache-Control: no-cache
-/config.js
-  Cache-Control: no-cache
-/vendor/*
-  Cache-Control: public, max-age=86400
-/fonts/*
-  Cache-Control: public, max-age=604800

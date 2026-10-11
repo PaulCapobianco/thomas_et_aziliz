@@ -164,3 +164,30 @@ Estimation du stockage (616 Ko/photo) : **3 000 photos ≈ 1,9 Go ; 5 000 ≈ 3,
 | Portrait/paysage + EXIF 6 | PASS (dimensions 1920×2560 et 2560×1920 relevées) |
 | HEIC natif, iPhone/Android physiques, temps de traitement sur téléphone (≈ 140-220 ms sur ordinateur, à multiplier par 3-5), netteté ressentie en plein écran sur appareil | NON_TESTÉ |
 | Envoi réel avec le nouveau pipeline vers le projet hébergé | NON_TESTÉ (aucun fichier supplémentaire déposé) |
+
+## Régression « plus rien n'est visible après une publication » (11 octobre 2026)
+
+**Diagnostic honnête.** Le scénario demandé (2 photos, envoi d'une 3ᵉ, retour galerie, rechargement, lightbox haute définition) a été rejoué **sur la pile réelle** (Storage officiel + PostgREST + PostgreSQL, vrai modèle NSFWJS)
+sur Chromium, Pixel 7 et iPhone 13 : **les 3 photos restent visibles, avant et après rechargement, miniatures décodées, lightbox à 2560 px, aucune erreur JavaScript**. Le pipeline 2560/0,85 + 640/0,75, les chemins Storage, les enregistrements `public.photos`,
+`gallery_page` et le cache de 45 min des URL signées ne produisent donc **pas** de disparition reproductible : le commit `4211b67` n'est pas démontré fautif.
+Lecture publique du projet hébergé (sans écriture) : `gallery_page` renvoie **`[]`** et `list('public/thumbs')` aussi : il n'y a actuellement **aucune photo publiée** sur votre projet (la galerie affiche alors « Le premier souvenir sera le vôtre »).
+Une photo envoyée qui reste en `pending_review` (modèle de filtrage indisponible sur le téléphone, pause activée, ou photo jugée suspecte) n'apparaît pas dans la galerie, et l'invité ne voit que « Reçue, elle apparaîtra après validation » : c'est **l'explication la plus probable** de ce que vous observez sur le vrai site.
+À vérifier dans le SQL Editor (lecture seule) : `select id, audience, status, review_reason, created_at from public.photos order by created_at desc limit 10;` et `select value from public.app_settings where key = 'publications_paused';`
+(`published` + `public` = doit être visible ; `pending_review` + `model_unavailable` / `paused` / `nsfw` = en attente, à publier depuis l'admin, onglet « En attente »).
+
+**Défauts réels trouvés et corrigés** (chacun peut donner l'impression d'une galerie vide) :
+1. Avant la première réponse du serveur, ou après un premier chargement en échec, la galerie affichait **« La galerie est encore vide »** : message faux. Remplacé par « Chargement des souvenirs… » / « Les souvenirs n'ont pas pu être chargés », avec **nouvelle tentative automatique** (3 fois, 5 s).
+2. Un rafraîchissement demandé pendant un autre (typiquement juste après un envoi, pendant le polling) était **ignoré silencieusement** : il est désormais mis en file et exécuté.
+3. Une miniature qui ne se charge pas (signature expirée ou refusée) était simplement masquée, laissant une case vide : elle déclenche maintenant de **nouvelles signatures** (au plus toutes les 20 s).
+4. En cas d'échec d'un rafraîchissement, les photos déjà affichées **restent affichées** (testé) et seul le message change.
+5. `_headers` : les fichiers JS/CSS étaient servis avec `Cache-Control: max-age=300` alors que le HTML était en `no-cache` : après un déploiement, un navigateur pouvait mélanger un `index.html` neuf avec d'anciens modules (identifiants absents ⇒ erreur JavaScript ⇒ page figée). Désormais `no-cache` partout (revalidation, 304 peu coûteux). **Risque prouvé par lecture, non reproduit.**
+Qualité 2560 px / 85 % conservée. Aucune migration, aucune donnée distante modifiée, aucune photo supprimée, RLS inchangée.
+
+| Contrôle | Résultat |
+|---|---|
+| `npm run check` | PASS |
+| `npm test` (Chromium, Pixel 7, iPhone 13 WebKit) | **PASS 102**, 24 ignorés (opt-in : pile réelle, projet hébergé) |
+| Nouveaux tests : 3ᵉ photo publiée ⇒ 3 visibles ; rafraîchissement en échec garde les photos ; doublon et envoi privé sans effet ; envoi de 3 photos ; photo mise en attente ; échec réseau pendant l'envoi ; premier chargement en échec puis reprise automatique ; miniature défaillante re-signée ; rendus 390 et 1440 px | PASS ×3 moteurs |
+| `npm run test:real` (pile réelle) dont la régression « 3ᵉ photo, rechargement, lightbox à 2560 px » | PASS 21/21 + 54 contrôles HTTP |
+| Projet hébergé : envoi réel / affichage de la nouvelle photo | NON_TESTÉ (aucune écriture distante sans votre accord) ; lecture publique : galerie vide |
+| iPhone / Android physiques | NON_TESTÉ |

@@ -95,3 +95,47 @@ test("real upload: public photos appear, exact copy ignored, private stays out, 
   await ctxB.close();
   await ctxC.close();
 });
+
+test("regression: after publishing a 3rd photo in the same page nothing disappears (also after reload), full-resolution lightbox", async ({
+  browser,
+}) => {
+  test.setTimeout(150000);
+  const fs = await import("node:fs/promises");
+  const unique = async (name, src) => ({
+    name,
+    mimeType: "image/jpeg",
+    buffer: Buffer.concat([await fs.readFile(`fixtures/${src}`), Buffer.from(`${name}${Date.now()}${Math.random()}`)]),
+  });
+  const ctx = await browser.newContext({ bypassCSP: true });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await open(page, "#partager");
+  const sendNow = async (files) => {
+    await page.locator("#files").setInputFiles(files);
+    await page.locator("#send").click();
+    await expect(page.locator("#upload-status")).toContainText("Terminé", { timeout: 90000 });
+  };
+  await sendNow([await unique("x1.jpg", "photo_01.jpg"), await unique("x2.jpg", "photo_02.jpg")]);
+  await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+  const cards = page.locator("#gallery .photo-card");
+  await expect.poll(() => cards.count(), { timeout: 20000 }).toBeGreaterThanOrEqual(2);
+  const before = await cards.count();
+  await page.getByRole("link", { name: "Partager", exact: true }).click();
+  await sendNow([await unique("x3.jpg", "photo_03.jpg")]);
+  await page.getByRole("link", { name: "Accueil / Galerie" }).click();
+  await expect.poll(() => cards.count(), { timeout: 20000 }).toBe(before + 1);
+  const loaded = () => page.locator("#gallery .photo-card img").evaluateAll((imgs, n) => imgs.slice(0, n).every((i) => i.complete && i.naturalWidth > 0), before + 1);
+  await expect.poll(loaded, { timeout: 20000 }).toBeTruthy();
+  await page.reload();
+  await expect.poll(() => cards.count(), { timeout: 20000 }).toBe(before + 1);
+  await expect.poll(loaded, { timeout: 20000 }).toBeTruthy();
+  await cards.first().click();
+  await expect(page.locator("#lightbox-status")).toHaveText("", { timeout: 20000 });
+  // The newest photo (4032 px source) is served in full resolution: 2560 px, not the 640 px thumbnail.
+  await expect
+    .poll(() => page.locator("#full-photo").evaluate((i) => Math.max(i.naturalWidth, i.naturalHeight)), { timeout: 20000 })
+    .toBe(2560);
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
