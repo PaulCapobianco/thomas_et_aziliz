@@ -30,13 +30,15 @@ for (const width of [390, 768, 1440]) {
     };
     await capture("home");
     await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
-    // No destination is preselected, and the choice only appears (in the fixed bar) once photos are selected.
+    // Step 1: destination cards, nothing preselected, no file chooser. Step 2 after picking files from a card.
     await expect(page.locator("[name=audience]:checked")).toHaveCount(0);
+    await expect(page.locator("#choose-step")).toBeVisible();
     await expect(page.locator("#send-bar")).toBeHidden();
-    await page.locator("#files").setInputFiles(["fixtures/photo_01.jpg"]);
+    await capture("share-choice");
+    const chooser = page.waitForEvent("filechooser");
+    await page.locator("[data-destination=maries]").click();
+    await (await chooser).setFiles(["fixtures/photo_01.jpg"]);
     await expect(page.locator("#send-bar")).toBeVisible();
-    await expect(page.locator("[name=audience]:checked")).toHaveCount(0);
-    await page.getByRole("radio", { name: /Uniquement aux mariés/ }).check();
     await expect(page.locator("[value=maries]")).toBeChecked();
     const bar = await page.locator("#send-bar").boundingBox();
     expect(Math.round(bar.y + bar.height)).toBe(900);

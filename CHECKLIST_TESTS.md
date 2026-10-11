@@ -391,3 +391,25 @@ Interface uniquement : aucune migration, `register_photo` et règles d'accès in
 | `npm run test` depuis la racine | **PASS 301**, 35 ignorés (opt-in), 0 échec |
 | `npm run test:real` (Storage, PostgREST, GoTrue réels) | **PASS 30/30** + 54 contrôles HTTP |
 | Vrai téléphone (barre fixe avec la barre d'adresse, clavier virtuel, appui sur les cartes de choix, sélecteur de fichiers natif), projet Supabase hébergé | NON_TESTÉ |
+
+## Partage : destination d'abord, puis sélecteur de fichiers (11 octobre 2026, branche `partage-destination-et-moderation`)
+
+**Cause de la disparition du choix public/privé (historique Git).** Le kit d'origine plaçait les deux cartes de destination (public présélectionné) avant le bouton de sélection de fichiers. Le commit `8ffbf52` (« bouton Ajouter mes photos : un appui ouvre directement le choix des photos », demande d'ergonomie) a branché `data-pick` sur le bouton de l'accueil, la barre flottante : un clic ouvrait `#files` immédiatement, les cartes restaient en haut de la page Partager, hors de vue. Le commit `0e3e6ca` (point 3 d'une demande suivante) a ensuite déplacé le choix dans la barre fixe *après* la sélection. Ce n'était donc pas un bogue d'un label HTML mais le résultat de ces deux demandes successives ; aucun `label[for=files]` ne subsiste.
+**Parcours actuel.** « Partager mes photos » (accueil, barre flottante mobile, lien du menu, URL `/#partager`) mène à l'étape 1 : « Où souhaitez-vous partager vos photos ? », deux grandes cartes (Public / Privé), **rien de présélectionné, aucun sélecteur ouvert**. Un clic sur une carte enregistre la destination puis appelle `files.click()` **de façon synchrone dans le même clic** (aucun `await`, aucun minuteur : le geste utilisateur est encore actif, condition d'iOS Safari et d'Android Chrome). Le champ fichier n'est dans aucun `<label>`. Étape 2 : aperçus, « Vos photos sélectionnées (n) », résumé « n photos à envoyer · Destination : … », retrait d'une photo, « + Ajouter d'autres photos », destination modifiable (radios de la barre fixe), bouton « Envoyer mes photos » ; **aucun envoi automatique**. Annulation du sélecteur (événement `cancel` ou sélection vide) : rien n'est envoyé et le choix de l'étape 1 est de nouveau proposé. Après un envoi qui vide la liste, ou si la liste est vidée, la destination est oubliée ; un nouveau clic sur un point d'entrée de partage revient à l'étape 1 (une sélection non envoyée est conservée, destination affichée). La destination part inchangée au serveur (`p_audience`) et reste identique pendant les tentatives automatiques et le réessai. `register_photo`, RLS et les migrations ne sont pas touchés.
+
+| Contrôle (Chromium 1440 px, Pixel 7 360 px, iPhone 13 WebKit, client Supabase simulé) | Résultat |
+|---|---|
+| Étape 1 depuis le bouton de l'accueil, la barre flottante (mobile) ou le lien du menu, et par l'URL directe : deux cartes, rien de coché, aucun sélecteur, aucun envoi | PASS ×3 |
+| Aucun `label[for=files]`, champ fichier hors de tout label, `aria-hidden`/`tabindex=-1`, un seul champ fichier | PASS ×3 |
+| Clic sur la carte Public / Privé : le sélecteur s'ouvre (sélection multiple), destination enregistrée, appel de `input.click()` pendant l'activation utilisateur (`navigator.userActivation.isActive`), pas de minuteur | PASS ×3 |
+| Annulation du sélecteur et sélection vide : aucun envoi, étape 1 de retour, nouvel essai possible | PASS ×3 |
+| Plusieurs photos : aperçus, compteur, destination affichée, retrait d'une photo ; aucun envoi avant « Envoyer mes photos » (attente de 1,5 s) | PASS ×3 |
+| Envoi public : `p_audience = public`, chemins `public/…` ; envoi privé : `maries`, chemins `maries/…`, absent de la galerie publique | PASS ×3 |
+| Changement de destination avant confirmation : résumé mis à jour, rien d'envoyé, appliqué à toutes les photos | PASS ×3 |
+| Échec puis réessai (tentatives automatiques comprises) : toujours `maries/…` | PASS ×3 |
+| Nouveau clic sur un point d'entrée : étape 1 (après envoi, après retrait) ; sélection en attente conservée avec sa destination visible | PASS ×3 |
+| Site non configuré : cartes désactivées et explication ; axe-core 0 violation sur l'étape 1 | PASS ×3 |
+| **Pile réelle** (Storage, PostgREST, GoTrue) : carte « mariés » puis « public » ⇒ chemins et `audience` en base conformes, le privé n'est pas téléchargeable par un invité | PASS ×3 |
+| `npm run test` depuis la racine | **PASS 349**, 35 ignorés (opt-in), 0 échec |
+| `npm run test:real` | **PASS 30/30** + 54 contrôles HTTP |
+| **Safari iPhone et Chrome Android réels** : ouverture du sélecteur par un appui sur la carte, annulation, HEIC natif | **NON_TESTÉ** (seuls des émulateurs WebKit/Chromium ont tourné ; la conformité au geste utilisateur est vérifiée par `navigator.userActivation`, pas par un appareil) |

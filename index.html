@@ -116,18 +116,33 @@
         <h1 id="share-title" tabindex="-1">Partager vos souvenirs</h1>
         <p class="lead">Un petit instant pour vous, un précieux souvenir pour nous.</p>
         <form id="upload-form">
-          <fieldset id="upload-controls">
-            <legend class="sr-only">
-              Sélection de vos photos
-            </legend>
-            <p class="step selection-step">Choisissez vos photos</p>
-            <label class="file-picker" for="files"
-              ><span aria-hidden="true">↥</span> Ajouter mes photos<input
-                id="files"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-            /></label>
+          <!-- The file input is opened ONLY from a destination card (see uploads.js). It is deliberately not
+               inside any <label> and has no label[for]: nothing else can open the chooser. -->
+          <input
+            id="files"
+            class="file-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            tabindex="-1"
+            aria-hidden="true"
+          />
+          <section id="choose-step" class="choose-step" aria-labelledby="choose-title">
+            <h2 id="choose-title">Où souhaitez-vous partager vos photos ?</h2>
+            <div class="destination-cards" role="group" aria-labelledby="choose-title">
+              <button type="button" class="destination-card is-public" data-destination="public">
+                <span class="destination-badge">Public</span>
+                <strong>Partager avec tous les invités</strong>
+                <small>Vos photos rejoindront la galerie commune après les contrôles éventuels.</small>
+                <span class="destination-go" aria-hidden="true">Choisir mes photos →</span>
+              </button>
+              <button type="button" class="destination-card is-private" data-destination="maries">
+                <span class="destination-badge">Privé</span>
+                <strong>Envoyer uniquement aux mariés</strong>
+                <small>Vos photos resteront privées et seront visibles uniquement par Thomas et Aziliz.</small>
+                <span class="destination-go" aria-hidden="true">Choisir mes photos →</span>
+              </button>
+            </div>
             <p class="hint pick-hint">
               JPEG, PNG, WebP et HEIC si votre navigateur le permet · 30 Mo
               maximum par photo.
@@ -143,10 +158,15 @@
                 </p>
               </div>
             </div>
+          </section>
+          <fieldset id="upload-controls" class="preview-step" hidden>
+            <legend class="sr-only">Photos sélectionnées avant envoi</legend>
+            <p id="preview-summary" class="preview-summary" role="status" aria-live="polite"></p>
             <div class="selection-header">
               <h2 id="selection-title">Vos photos sélectionnées (0)</h2>
             </div>
             <ul id="selection" class="selection"></ul>
+            <button id="add-more" type="button" class="quiet">+ Ajouter d’autres photos</button>
           </fieldset>
           <div class="upload-actions">
             <button id="retry" type="button" hidden>
@@ -170,25 +190,23 @@
           <div id="send-bar" class="send-bar" hidden>
             <div id="send-choice" class="send-choice">
               <fieldset id="destination-choice" class="destination-choice">
-                <legend>Où envoyer vos photos ?</legend>
+                <legend>Destination (modifiable avant l’envoi)</legend>
                 <div class="destinations">
                   <label class="destination"
                     ><input type="radio" name="audience" value="public" /><span
-                      ><strong>Galerie commune</strong
-                      ><small>Visible par tous les invités après validation par les mariés.</small></span
+                      ><strong>Partager avec tous les invités</strong></span
                     ></label
                   >
                   <label class="destination"
                     ><input type="radio" name="audience" value="maries" /><span
-                      ><strong>Uniquement aux mariés</strong
-                      ><small>Les autres invités ne verront pas cette photo.</small></span
+                      ><strong>Envoyer uniquement aux mariés</strong></span
                     ></label
                   >
                 </div>
               </fieldset>
               <p id="send-help" class="send-help" role="status">Choisissez où envoyer vos photos</p>
               <button id="send" class="button primary" type="submit" disabled>
-                Envoyer
+                Envoyer mes photos
               </button>
             </div>
             <div id="progress-panel" class="progress-panel" hidden>
