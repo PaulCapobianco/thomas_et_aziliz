@@ -11,3 +11,4 @@ playwright-report/
 fonts/
 __pycache__/
 .venv/
+.real-stack/

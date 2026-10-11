@@ -6,7 +6,7 @@ export default defineConfig({
   fullyParallel: true,
   workers: 3,
   use: { baseURL: "http://127.0.0.1:4173", trace: "retain-on-failure" },
-  webServer: { command: "npm run dev", port: 4173, reuseExistingServer: false },
+  webServer: { command: "npm run dev", port: 4173, reuseExistingServer: Boolean(process.env.PLAYWRIGHT_REUSE) },
   projects: [
     {
       name: "chromium",
