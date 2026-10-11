@@ -164,6 +164,7 @@ test.describe("administration", () => {
     await expect(card.locator("img")).toBeVisible();
     await expect(card.locator("h3")).toHaveText("Masquée");
     await expect(card).toContainText("2 signalements au total · 2 à examiner · dernier le");
+    await expect(card.locator(".report-reason-line")).toHaveText("Motif du signalement : Contenu sexuel, nudité ou sextoy · Violence ou contenu choquant");
     await expect(card).toContainText("Masquée à la suite d’un signalement");
     await expect(card.locator(".report-list li")).toHaveCount(2);
     await expect(card).toContainText("Contenu sexuel, nudité ou sextoy");
@@ -243,7 +244,18 @@ test.describe("administration", () => {
 
   test("a legacy report with an old reason is still readable", async ({ page }) => {
     await openReported(page, { reported: [{ reports: [{ reason: "embarrassing" }, { reason: "child" }] }] });
+    await expect(cards(page).first().locator(".report-reason-line")).toContainText("Photo gênante (ancien motif)");
     await expect(cards(page).first()).toContainText("Photo gênante (ancien motif)");
     await expect(cards(page).first()).toContainText("Photo d’un enfant (ancien motif)");
   });
+});
+
+test("the reason stays visible on a reported photo found in 'Masquées' and 'Récentes', and with the previous list format", async ({ page }) => {
+  await installMock(page, { admin: true, reported: [{ reports: [{ reason: "privacy", comment: "droit à l'image" }] }] });
+  await page.goto("/admin.html");
+  for (const tab of ["Masquées", "Récentes"]) {
+    await page.getByRole("button", { name: tab, exact: true }).click();
+    await expect(page.locator(".admin-card").first().locator(".report-reason-line")).toHaveText("Motif du signalement : Atteinte à la vie privée / droit à l’image");
+    await expect(page.locator(".admin-card").first()).toContainText("« droit à l'image »");
+  }
 });

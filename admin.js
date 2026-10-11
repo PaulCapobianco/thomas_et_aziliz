@@ -161,6 +161,18 @@ function render() {
           : `Envoyée le ${dateTime(row.created_at)}`,
       ),
     );
+    // The reason(s) of the open reports, up front (also works with the previous list format: report_reasons only).
+    const openReasons = row.reports?.length
+      ? [...new Set(row.reports.filter((report) => !report.resolved).map((report) => report.reason))]
+      : [...new Set(row.report_reasons || [])];
+    if (openReasons.length)
+      card.append(
+        el(
+          "p",
+          `Motif du signalement : ${openReasons.map((reason) => reasons[reason] || "Autre raison").join(" · ")}`,
+          "report-reason-line",
+        ),
+      );
     if (row.review_reason)
       card.append(el("p", reasons[row.review_reason] || "À examiner"));
     if (row.reports?.length) {
