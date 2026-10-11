@@ -276,3 +276,34 @@ réapparaît dans le message final d'un envoi suivant (un succès ne l'efface pa
 | Lecteur d'écran réel (VoiceOver/TalkBack), photo réelle très claire ou très sombre sur téléphone, safe-area d'un vrai iPhone | NON_TESTÉ |
 
 **À faire : `npm run build` puis `npm run deploy` pour publier.**
+
+## Galerie uniforme et lightbox au-dessus du bandeau — 11 octobre 2026
+
+Cette section remplace les réglages et résultats antérieurs pour la présente livraison. Miniatures **640 px maximum / JPEG 0,84**, grands formats **3000 / 0,90**. [Rapport complet : mesures, calcul DPR, cause non reproduite, captures avant/après et recette physique](qa/GALERIE_LIGHTBOX.md).
+
+Paul situe le défaut sous Chrome, au niveau du bandeau Télécharger/Signaler. **NON REPRODUIT sur le commit initial local `c1e9875`** : 24 cas avant modification (4 appareils × 3 formats × initial/rotation), images déjà contenues et sans chevauchement. Cela ne permet pas d'affirmer la cause exacte sur son appareil/site. La nouvelle structure dimensionne explicitement les cadres dans la place restante au-dessus du bandeau et sous Fermer.
+
+| Contrôle / commande | Résultat |
+|---|---|
+| `node scripts/reproduce-lightbox.mjs c1e9875 http://127.0.0.1:4175` (serveur local 4175 lancé) | **PASS**, 24 mesures ; zéro indice de recadrage/débordement sur la version initiale testée |
+| `node scripts/measure-thumbnails.mjs /tmp/wedding-thumbnails http://127.0.0.1:4175` | **PASS**, 14 combinaisons × 7 originaux ; 640/0,84 = 59,5 Ko moyens, 34,7–77,9 Ko ; tableaux/PSNR archivés |
+| `PLAYWRIGHT_REUSE=1 npx playwright test --config=playwright.media.config.js --workers=1 --reporter=line` | **PASS 28/28** sur iPhone SE 375×667, iPhone 13 390×664, Pixel 7 412×839, ordinateur 1440×900 |
+| Rectangles DOM : 2 portraits, 2 paysages, 1 carré, 4 tailles/orientations de viewport, 4 appareils | **PASS**, 80 mesures ; image hors bandeau/en-tête, sans défilement interne, cadres égaux par orientation et contrôles immobiles |
+| Grille 4:5 avec anciens grands fichiers, `cover` vers le haut, lazy/async, dimensions avant/après décodage | **PASS** sur les 4 profils ; tolérance sous-pixel 0,1 px pour les colonnes fractionnaires |
+| Clavier, swipe simulé, gestes à 2 doigts non traités comme swipe, blocage du fond et restitution de position | **PASS** sur les 4 profils ; zoom natif autorisé, geste physique NON_TESTÉ |
+| Passage 48→49, échec/reprise de pagination, rafraîchissement en cours, retour arrière/fermeture pendant une réponse tardive | **PASS** sur les 4 profils |
+| 150 URL distinctes, 7 vrais originaux répétés ; même scénario avec JPEG produits à 640/0,84 | **PASS** chargement et stabilité ; les 150 images sont décodées en fin de chaque scénario |
+| Fluidité pendant défilement des 150 miniatures, un worker, aucune charge réseau simulée | **PASS Chromium** sur ce banc (p95 16,8 ms) ; **FAIL fluidité uniforme WebKit headless**, saccades observées (p95 103/117 ms), mieux que les originaux (322/179 ms). **NON_TESTÉ appareils physiques** ; aucune garantie de cadence terrain |
+| CLS pendant le défilement | **PASS 0** sous Chromium ; **NON_TESTÉ via cette API sous WebKit**, API indisponible, dimensions fixes vérifiées séparément |
+| Suites locales : `PLAYWRIGHT_REUSE=1 npx playwright test tests/flows.spec.js tests/design.spec.js tests/lightbox.spec.js tests/messages.spec.js --output=/tmp/wedding-core-results --reporter=line` (serveur 4173 existant) | **PASS 160**, 2 ignorés (focus clavier non applicable aux projets mobiles) ; envoi public/privé, doublons, NSFW, réseau, état vide, signalement, téléchargement, admin, Axe et responsive |
+| `npm run check` ; `npm run build` ; `git diff --check` | **PASS** |
+| `sha256sum -c qa/design/photos.sha256` | **PASS**, 7 originaux inchangés |
+| `node --check scripts/reproduce-lightbox.mjs` ; `node --check scripts/measure-thumbnails.mjs` | **PASS** |
+| Supabase hébergé, migrations, URL signées distantes, Auth/Storage réels | **NON_TESTÉ dans cette mission** ; aucune écriture distante |
+| iPhone Safari/Chrome : bandeau, barre d'adresse, rotation, safe-areas, pincement, VoiceOver ; Android Chrome : mêmes contrôles et TalkBack | **NON_TESTÉ**, recette manuelle nécessaire sur les vrais appareils |
+
+Les premiers passages ont détecté une perte de focus Chromium quand la flèche devenait désactivée et des violations Axe sur le fond pendant la fixation du body : corrigées par conservation du focus dans la modale et fond explicitement `inert` puis restauré. Le scénario de réponse tardive vérifie aussi que l'index correspond toujours à la photo courante après un changement pendant le chargement. Les erreurs initiales du nouveau banc (clic sur Précédente déjà désactivée, molette non supportée par WebKit mobile, construction de Touch synthétique) ont été corrigées dans les tests, sans désactiver de contrôle du produit.
+
+Responsive : tests existants 390/768/1440, plus les quatre profils dédiés. Accessibilité : Axe, noms accessibles, focus, modalité et fond inerte ; lecteurs d'écran réels NON_TESTÉ. SEO : titres/descriptions et noindex intentionnel conservés pour l'album privé. Sécurité : RPC et permissions inchangés, aucun secret ajouté ; les mocks ne constituent pas une preuve Storage distante. Performance : aucune nouvelle dépendance, espace réservé, lazy/async et encodage mesuré.
+
+**À faire après recette : rebuilder avec `npm run build`, puis republier uniquement `dist/`. Aucun déploiement ni push n'a été effectué.**

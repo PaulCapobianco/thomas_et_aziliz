@@ -1,0 +1,1000 @@
+{
+  "rows": [
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 800,
+      "quality": 0.75,
+      "width": 600,
+      "height": 800,
+      "bytes": 83467,
+      "psnr": 37.24810514556419
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 640,
+      "quality": 0.84,
+      "width": 480,
+      "height": 640,
+      "bytes": 74060,
+      "psnr": 36.83426379455282
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 480,
+      "quality": 0.85,
+      "width": 360,
+      "height": 480,
+      "bytes": 41382,
+      "psnr": 33.684164923449686
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 480,
+      "quality": 0.9,
+      "width": 360,
+      "height": 480,
+      "bytes": 52126,
+      "psnr": 34.22230223140888
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 480,
+      "quality": 0.93,
+      "width": 360,
+      "height": 480,
+      "bytes": 62082,
+      "psnr": 34.569568621665006
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 480,
+      "quality": 0.95,
+      "width": 360,
+      "height": 480,
+      "bytes": 73796,
+      "psnr": 34.8118063175986
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 560,
+      "quality": 0.85,
+      "width": 420,
+      "height": 560,
+      "bytes": 60032,
+      "psnr": 35.76982854076324
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 560,
+      "quality": 0.9,
+      "width": 420,
+      "height": 560,
+      "bytes": 75711,
+      "psnr": 36.47859381543361
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 560,
+      "quality": 0.93,
+      "width": 420,
+      "height": 560,
+      "bytes": 89893,
+      "psnr": 36.95114287335092
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 560,
+      "quality": 0.95,
+      "width": 420,
+      "height": 560,
+      "bytes": 106374,
+      "psnr": 37.2755686607147
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 640,
+      "quality": 0.85,
+      "width": 480,
+      "height": 640,
+      "bytes": 76492,
+      "psnr": 36.97702346321431
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 640,
+      "quality": 0.9,
+      "width": 480,
+      "height": 640,
+      "bytes": 96280,
+      "psnr": 37.6246410082438
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 640,
+      "quality": 0.93,
+      "width": 480,
+      "height": 640,
+      "bytes": 114409,
+      "psnr": 38.05707366186316
+    },
+    {
+      "name": "thomas-aziliz-a-la-lueur-des-bougies.jpg",
+      "side": 640,
+      "quality": 0.95,
+      "width": 480,
+      "height": 640,
+      "bytes": 135114,
+      "psnr": 38.37205364475729
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 800,
+      "quality": 0.75,
+      "width": 598,
+      "height": 800,
+      "bytes": 87366,
+      "psnr": 35.88837186312551
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 640,
+      "quality": 0.84,
+      "width": 479,
+      "height": 640,
+      "bytes": 77866,
+      "psnr": 35.42454165258384
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 480,
+      "quality": 0.85,
+      "width": 359,
+      "height": 480,
+      "bytes": 44240,
+      "psnr": 32.82028297294145
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 480,
+      "quality": 0.9,
+      "width": 359,
+      "height": 480,
+      "bytes": 55547,
+      "psnr": 33.351281823754675
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 480,
+      "quality": 0.93,
+      "width": 359,
+      "height": 480,
+      "bytes": 65660,
+      "psnr": 33.69824831796287
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 480,
+      "quality": 0.95,
+      "width": 359,
+      "height": 480,
+      "bytes": 77757,
+      "psnr": 33.97283400423531
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 560,
+      "quality": 0.85,
+      "width": 419,
+      "height": 560,
+      "bytes": 63126,
+      "psnr": 34.786879799302056
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 560,
+      "quality": 0.9,
+      "width": 419,
+      "height": 560,
+      "bytes": 79319,
+      "psnr": 35.48867354421918
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 560,
+      "quality": 0.93,
+      "width": 419,
+      "height": 560,
+      "bytes": 94253,
+      "psnr": 35.95247120089744
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 560,
+      "quality": 0.95,
+      "width": 419,
+      "height": 560,
+      "bytes": 111566,
+      "psnr": 36.30464156277296
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 640,
+      "quality": 0.85,
+      "width": 479,
+      "height": 640,
+      "bytes": 80394,
+      "psnr": 35.53862641218006
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 640,
+      "quality": 0.9,
+      "width": 479,
+      "height": 640,
+      "bytes": 101199,
+      "psnr": 36.13336893364152
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 640,
+      "quality": 0.93,
+      "width": 479,
+      "height": 640,
+      "bytes": 120228,
+      "psnr": 36.56387455937451
+    },
+    {
+      "name": "thomas-aziliz-au-jardin.jpg",
+      "side": 640,
+      "quality": 0.95,
+      "width": 479,
+      "height": 640,
+      "bytes": 142396,
+      "psnr": 36.90900419218834
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 800,
+      "quality": 0.75,
+      "width": 450,
+      "height": 800,
+      "bytes": 61592,
+      "psnr": 34.37669778091669
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 640,
+      "quality": 0.84,
+      "width": 360,
+      "height": 640,
+      "bytes": 55510,
+      "psnr": 33.37522587474599
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 480,
+      "quality": 0.85,
+      "width": 270,
+      "height": 480,
+      "bytes": 31702,
+      "psnr": 29.985053047722523
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 480,
+      "quality": 0.9,
+      "width": 270,
+      "height": 480,
+      "bytes": 39598,
+      "psnr": 30.400734838771832
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 480,
+      "quality": 0.93,
+      "width": 270,
+      "height": 480,
+      "bytes": 46875,
+      "psnr": 30.678886430040528
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 480,
+      "quality": 0.95,
+      "width": 270,
+      "height": 480,
+      "bytes": 55598,
+      "psnr": 30.859076743082884
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 560,
+      "quality": 0.85,
+      "width": 315,
+      "height": 560,
+      "bytes": 44809,
+      "psnr": 32.241206032685945
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 560,
+      "quality": 0.9,
+      "width": 315,
+      "height": 560,
+      "bytes": 56203,
+      "psnr": 32.84298160391019
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 560,
+      "quality": 0.93,
+      "width": 315,
+      "height": 560,
+      "bytes": 66472,
+      "psnr": 33.24884357258448
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 560,
+      "quality": 0.95,
+      "width": 315,
+      "height": 560,
+      "bytes": 78118,
+      "psnr": 33.488810672585394
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 640,
+      "quality": 0.85,
+      "width": 360,
+      "height": 640,
+      "bytes": 57196,
+      "psnr": 33.48563063899167
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 640,
+      "quality": 0.9,
+      "width": 360,
+      "height": 640,
+      "bytes": 71761,
+      "psnr": 34.171442155767565
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 640,
+      "quality": 0.93,
+      "width": 360,
+      "height": 640,
+      "bytes": 84752,
+      "psnr": 34.59296622949645
+    },
+    {
+      "name": "thomas-aziliz-en-bleu.jpg",
+      "side": 640,
+      "quality": 0.95,
+      "width": 360,
+      "height": 640,
+      "bytes": 99657,
+      "psnr": 34.89581880083597
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 800,
+      "quality": 0.75,
+      "width": 360,
+      "height": 800,
+      "bytes": 37896,
+      "psnr": 33.643818894382534
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 640,
+      "quality": 0.84,
+      "width": 288,
+      "height": 640,
+      "bytes": 34687,
+      "psnr": 32.476284409809516
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 480,
+      "quality": 0.85,
+      "width": 216,
+      "height": 480,
+      "bytes": 20024,
+      "psnr": 29.5378261439243
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 480,
+      "quality": 0.9,
+      "width": 216,
+      "height": 480,
+      "bytes": 25308,
+      "psnr": 29.711818607023055
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 480,
+      "quality": 0.93,
+      "width": 216,
+      "height": 480,
+      "bytes": 30179,
+      "psnr": 29.8180352891084
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 480,
+      "quality": 0.95,
+      "width": 216,
+      "height": 480,
+      "bytes": 36305,
+      "psnr": 29.891351305412954
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 560,
+      "quality": 0.85,
+      "width": 252,
+      "height": 560,
+      "bytes": 28284,
+      "psnr": 31.35445110928999
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 560,
+      "quality": 0.9,
+      "width": 252,
+      "height": 560,
+      "bytes": 36205,
+      "psnr": 31.602623092720705
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 560,
+      "quality": 0.93,
+      "width": 252,
+      "height": 560,
+      "bytes": 43749,
+      "psnr": 31.750502104392822
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 560,
+      "quality": 0.95,
+      "width": 252,
+      "height": 560,
+      "bytes": 53529,
+      "psnr": 31.84992427728719
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 640,
+      "quality": 0.85,
+      "width": 288,
+      "height": 640,
+      "bytes": 35882,
+      "psnr": 32.519252592185566
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 640,
+      "quality": 0.9,
+      "width": 288,
+      "height": 640,
+      "bytes": 46111,
+      "psnr": 32.821767592974105
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 640,
+      "quality": 0.93,
+      "width": 288,
+      "height": 640,
+      "bytes": 56221,
+      "psnr": 33.00108800243421
+    },
+    {
+      "name": "thomas-aziliz-instant-complice.jpg",
+      "side": 640,
+      "quality": 0.95,
+      "width": 288,
+      "height": 640,
+      "bytes": 69229,
+      "psnr": 33.12678524913404
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 800,
+      "quality": 0.75,
+      "width": 600,
+      "height": 800,
+      "bytes": 64168,
+      "psnr": 35.06815207237082
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 640,
+      "quality": 0.84,
+      "width": 480,
+      "height": 640,
+      "bytes": 58959,
+      "psnr": 34.75030118819019
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 480,
+      "quality": 0.85,
+      "width": 360,
+      "height": 480,
+      "bytes": 36686,
+      "psnr": 31.26730979315219
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 480,
+      "quality": 0.9,
+      "width": 360,
+      "height": 480,
+      "bytes": 45754,
+      "psnr": 31.795055540376357
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 480,
+      "quality": 0.93,
+      "width": 360,
+      "height": 480,
+      "bytes": 54361,
+      "psnr": 32.11460202250968
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 480,
+      "quality": 0.95,
+      "width": 360,
+      "height": 480,
+      "bytes": 64522,
+      "psnr": 32.322595008229015
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 560,
+      "quality": 0.85,
+      "width": 420,
+      "height": 560,
+      "bytes": 49373,
+      "psnr": 33.61431982209909
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 560,
+      "quality": 0.9,
+      "width": 420,
+      "height": 560,
+      "bytes": 61896,
+      "psnr": 34.32636106534906
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 560,
+      "quality": 0.93,
+      "width": 420,
+      "height": 560,
+      "bytes": 73646,
+      "psnr": 34.80557953882838
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 560,
+      "quality": 0.95,
+      "width": 420,
+      "height": 560,
+      "bytes": 87288,
+      "psnr": 35.11564204976285
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 640,
+      "quality": 0.85,
+      "width": 480,
+      "height": 640,
+      "bytes": 60714,
+      "psnr": 34.8881923918115
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 640,
+      "quality": 0.9,
+      "width": 480,
+      "height": 640,
+      "bytes": 75995,
+      "psnr": 35.61249252195082
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 640,
+      "quality": 0.93,
+      "width": 480,
+      "height": 640,
+      "bytes": 90362,
+      "psnr": 36.12837581582687
+    },
+    {
+      "name": "thomas-aziliz-lumieres-du-japon.jpg",
+      "side": 640,
+      "quality": 0.95,
+      "width": 480,
+      "height": 640,
+      "bytes": 107324,
+      "psnr": 36.465841821276406
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 800,
+      "quality": 0.75,
+      "width": 533,
+      "height": 800,
+      "bytes": 61317,
+      "psnr": 37.335985679278664
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 640,
+      "quality": 0.84,
+      "width": 427,
+      "height": 640,
+      "bytes": 56863,
+      "psnr": 36.31474938260559
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 480,
+      "quality": 0.85,
+      "width": 320,
+      "height": 480,
+      "bytes": 35482,
+      "psnr": 33.870245239655155
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 480,
+      "quality": 0.9,
+      "width": 320,
+      "height": 480,
+      "bytes": 43234,
+      "psnr": 34.73627832584364
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 480,
+      "quality": 0.93,
+      "width": 320,
+      "height": 480,
+      "bytes": 50523,
+      "psnr": 35.43260459302658
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 480,
+      "quality": 0.95,
+      "width": 320,
+      "height": 480,
+      "bytes": 59399,
+      "psnr": 36.01936727740951
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 560,
+      "quality": 0.85,
+      "width": 373,
+      "height": 560,
+      "bytes": 47545,
+      "psnr": 35.30169670870893
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 560,
+      "quality": 0.9,
+      "width": 373,
+      "height": 560,
+      "bytes": 58392,
+      "psnr": 36.18725107317789
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 560,
+      "quality": 0.93,
+      "width": 373,
+      "height": 560,
+      "bytes": 68661,
+      "psnr": 36.82370015275319
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 560,
+      "quality": 0.95,
+      "width": 373,
+      "height": 560,
+      "bytes": 81078,
+      "psnr": 37.32207740547512
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 640,
+      "quality": 0.85,
+      "width": 427,
+      "height": 640,
+      "bytes": 58519,
+      "psnr": 36.4588906736019
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 640,
+      "quality": 0.9,
+      "width": 427,
+      "height": 640,
+      "bytes": 72117,
+      "psnr": 37.40181475592277
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 640,
+      "quality": 0.93,
+      "width": 427,
+      "height": 640,
+      "bytes": 84737,
+      "psnr": 38.105837975197325
+    },
+    {
+      "name": "thomas-aziliz-sourires-a-deux.jpg",
+      "side": 640,
+      "quality": 0.95,
+      "width": 427,
+      "height": 640,
+      "bytes": 100585,
+      "psnr": 38.62963072961245
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 800,
+      "quality": 0.75,
+      "width": 533,
+      "height": 800,
+      "bytes": 63975,
+      "psnr": 36.93388543091337
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 640,
+      "quality": 0.84,
+      "width": 427,
+      "height": 640,
+      "bytes": 58544,
+      "psnr": 36.012810001568425
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 480,
+      "quality": 0.85,
+      "width": 320,
+      "height": 480,
+      "bytes": 35029,
+      "psnr": 33.34119743367209
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 480,
+      "quality": 0.9,
+      "width": 320,
+      "height": 480,
+      "bytes": 43191,
+      "psnr": 34.18814646704456
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 480,
+      "quality": 0.93,
+      "width": 320,
+      "height": 480,
+      "bytes": 50842,
+      "psnr": 34.84467509977747
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 480,
+      "quality": 0.95,
+      "width": 320,
+      "height": 480,
+      "bytes": 60189,
+      "psnr": 35.37329018926605
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 560,
+      "quality": 0.85,
+      "width": 373,
+      "height": 560,
+      "bytes": 48439,
+      "psnr": 34.94557918726654
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 560,
+      "quality": 0.9,
+      "width": 373,
+      "height": 560,
+      "bytes": 60116,
+      "psnr": 35.74360249105752
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 560,
+      "quality": 0.93,
+      "width": 373,
+      "height": 560,
+      "bytes": 71129,
+      "psnr": 36.34659970169427
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 560,
+      "quality": 0.95,
+      "width": 373,
+      "height": 560,
+      "bytes": 84222,
+      "psnr": 36.77041472690463
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 640,
+      "quality": 0.85,
+      "width": 427,
+      "height": 640,
+      "bytes": 60339,
+      "psnr": 36.15299374333935
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 640,
+      "quality": 0.9,
+      "width": 427,
+      "height": 640,
+      "bytes": 75030,
+      "psnr": 37.082167766922794
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 640,
+      "quality": 0.93,
+      "width": 427,
+      "height": 640,
+      "bytes": 88559,
+      "psnr": 37.74570930643683
+    },
+    {
+      "name": "thomas-aziliz-sous-les-lanternes.jpg",
+      "side": 640,
+      "quality": 0.95,
+      "width": 427,
+      "height": 640,
+      "bytes": 104990,
+      "psnr": 38.217499710110005
+    }
+  ],
+  "combinations": [
+    {
+      "side": 800,
+      "quality": 0.75,
+      "averageKB": 65.7,
+      "minKB": 37.9,
+      "maxKB": 87.4,
+      "psnr": 35.79
+    },
+    {
+      "side": 640,
+      "quality": 0.84,
+      "averageKB": 59.5,
+      "minKB": 34.7,
+      "maxKB": 77.9,
+      "psnr": 35.03
+    },
+    {
+      "side": 480,
+      "quality": 0.85,
+      "averageKB": 34.9,
+      "minKB": 20,
+      "maxKB": 44.2,
+      "psnr": 32.07
+    },
+    {
+      "side": 480,
+      "quality": 0.9,
+      "averageKB": 43.5,
+      "minKB": 25.3,
+      "maxKB": 55.5,
+      "psnr": 32.63
+    },
+    {
+      "side": 480,
+      "quality": 0.93,
+      "averageKB": 51.5,
+      "minKB": 30.2,
+      "maxKB": 65.7,
+      "psnr": 33.02
+    },
+    {
+      "side": 480,
+      "quality": 0.95,
+      "averageKB": 61.1,
+      "minKB": 36.3,
+      "maxKB": 77.8,
+      "psnr": 33.32
+    },
+    {
+      "side": 560,
+      "quality": 0.85,
+      "averageKB": 48.8,
+      "minKB": 28.3,
+      "maxKB": 63.1,
+      "psnr": 34
+    },
+    {
+      "side": 560,
+      "quality": 0.9,
+      "averageKB": 61.1,
+      "minKB": 36.2,
+      "maxKB": 79.3,
+      "psnr": 34.67
+    },
+    {
+      "side": 560,
+      "quality": 0.93,
+      "averageKB": 72.5,
+      "minKB": 43.7,
+      "maxKB": 94.3,
+      "psnr": 35.13
+    },
+    {
+      "side": 560,
+      "quality": 0.95,
+      "averageKB": 86,
+      "minKB": 53.5,
+      "maxKB": 111.6,
+      "psnr": 35.45
+    },
+    {
+      "side": 640,
+      "quality": 0.85,
+      "averageKB": 61.4,
+      "minKB": 35.9,
+      "maxKB": 80.4,
+      "psnr": 35.15
+    },
+    {
+      "side": 640,
+      "quality": 0.9,
+      "averageKB": 76.9,
+      "minKB": 46.1,
+      "maxKB": 101.2,
+      "psnr": 35.84
+    },
+    {
+      "side": 640,
+      "quality": 0.93,
+      "averageKB": 91.3,
+      "minKB": 56.2,
+      "maxKB": 120.2,
+      "psnr": 36.31
+    },
+    {
+      "side": 640,
+      "quality": 0.95,
+      "averageKB": 108.5,
+      "minKB": 69.2,
+      "maxKB": 142.4,
+      "psnr": 36.66
+    }
+  ]
+}

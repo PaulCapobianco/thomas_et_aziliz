@@ -1,5 +1,8 @@
 # Livraison et audit ciblé — 11 octobre 2026
 
+
+> **État courant — galerie/lightbox, 11 octobre 2026.** Branche `fix/consistent-thumbnails-lightbox`, commit applicatif `d862eb7`. Validation finale : 28 tests dédiés PASS + 160 non-régressions PASS, 2 ignorés ; build/check PASS. Grille uniforme 4:5 (3 colonnes mobiles), miniatures 640/0,84 mesurées sur les 7 originaux (59,5 Ko en moyenne), grands formats 3000/0,90 conservés. Cadres portrait 2:3 et paysage/carré 3:2 calculés dans la place restante entre l’en-tête et le bandeau, fond bloqué puis restauré, pagination automatique en lightbox et protection contre les réponses tardives. Le recadrage Chrome signalé au niveau du bandeau n’est pas reproduit sur le commit initial local : ne pas inventer de cause distante. Voir [rapport, mesures et captures](qa/GALERIE_LIGHTBOX.md) et la dernière section de CHECKLIST_TESTS pour les résultats actuels ; les résultats ci-dessous sont historiques. Aucun changement SQL/service distant, aucune publication ni push. La recette physique iPhone/Android et la fluidité WebKit restent à valider.
+
 > **Dernière intervention : finitions décoratives uniquement**, branche `feat/thomas-aziliz-decorative-finish`, base propre `4b23cc2`. Un bloc CSS, un SVG local de 1,4 Ko et son inclusion dans le build. HTML/JS applicatifs, libellés, photos, Supabase et Cloudflare inchangés. Recette : 160 PASS / 2 ignorés ; voir [avant/après et limites](qa/FINITIONS_GRAPHIQUES.md). Aucun déploiement.
 
 ## Reprise après la mission corrective graphique du 11 octobre 2026

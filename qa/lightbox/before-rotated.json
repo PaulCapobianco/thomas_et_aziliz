@@ -1,0 +1,554 @@
+[
+  {
+    "revision": "c1e9875",
+    "device": "iphone-se",
+    "orientation": "portrait",
+    "viewport": [
+      667,
+      375
+    ],
+    "image": {
+      "x": 264.421875,
+      "y": 94.390625,
+      "width": 138.15625,
+      "height": 207.234375,
+      "bottom": 301.625,
+      "right": 402.578125
+    },
+    "stage": {
+      "x": 16,
+      "y": 94.390625,
+      "width": 635,
+      "height": 207.234375,
+      "bottom": 301.625,
+      "right": 651
+    },
+    "actions": {
+      "x": 0,
+      "y": 301.625,
+      "width": 667,
+      "height": 73.375,
+      "bottom": 375,
+      "right": 667
+    },
+    "toolbar": {
+      "x": 16,
+      "y": 16,
+      "width": 635,
+      "height": 48,
+      "bottom": 64,
+      "right": 651
+    },
+    "dialogScroll": [
+      375,
+      375
+    ],
+    "fit": "contain"
+  },
+  {
+    "revision": "c1e9875",
+    "device": "iphone-se",
+    "orientation": "landscape",
+    "viewport": [
+      667,
+      375
+    ],
+    "image": {
+      "x": 178.078125,
+      "y": 94.390625,
+      "width": 310.84375,
+      "height": 207.234375,
+      "bottom": 301.625,
+      "right": 488.921875
+    },
+    "stage": {
+      "x": 16,
+      "y": 94.390625,
+      "width": 635,
+      "height": 207.234375,
+      "bottom": 301.625,
+      "right": 651
+    },
+    "actions": {
+      "x": 0,
+      "y": 301.625,
+      "width": 667,
+      "height": 73.375,
+      "bottom": 375,
+      "right": 667
+    },
+    "toolbar": {
+      "x": 16,
+      "y": 16,
+      "width": 635,
+      "height": 48,
+      "bottom": 64,
+      "right": 651
+    },
+    "dialogScroll": [
+      375,
+      375
+    ],
+    "fit": "contain"
+  },
+  {
+    "revision": "c1e9875",
+    "device": "iphone-se",
+    "orientation": "square",
+    "viewport": [
+      667,
+      375
+    ],
+    "image": {
+      "x": 229.875,
+      "y": 94.390625,
+      "width": 207.234375,
+      "height": 207.234375,
+      "bottom": 301.625,
+      "right": 437.109375
+    },
+    "stage": {
+      "x": 16,
+      "y": 94.390625,
+      "width": 635,
+      "height": 207.234375,
+      "bottom": 301.625,
+      "right": 651
+    },
+    "actions": {
+      "x": 0,
+      "y": 301.625,
+      "width": 667,
+      "height": 73.375,
+      "bottom": 375,
+      "right": 667
+    },
+    "toolbar": {
+      "x": 16,
+      "y": 16,
+      "width": 635,
+      "height": 48,
+      "bottom": 64,
+      "right": 651
+    },
+    "dialogScroll": [
+      375,
+      375
+    ],
+    "fit": "contain"
+  },
+  {
+    "revision": "c1e9875",
+    "device": "iphone-13",
+    "orientation": "portrait",
+    "viewport": [
+      664,
+      390
+    ],
+    "image": {
+      "x": 257.921875,
+      "y": 94.390625,
+      "width": 148.15625,
+      "height": 222.234375,
+      "bottom": 316.625,
+      "right": 406.078125
+    },
+    "stage": {
+      "x": 16,
+      "y": 94.390625,
+      "width": 632,
+      "height": 222.234375,
+      "bottom": 316.625,
+      "right": 648
+    },
+    "actions": {
+      "x": 0,
+      "y": 316.625,
+      "width": 664,
+      "height": 73.375,
+      "bottom": 390,
+      "right": 664
+    },
+    "toolbar": {
+      "x": 16,
+      "y": 16,
+      "width": 632,
+      "height": 48,
+      "bottom": 64,
+      "right": 648
+    },
+    "dialogScroll": [
+      390,
+      390
+    ],
+    "fit": "contain"
+  },
+  {
+    "revision": "c1e9875",
+    "device": "iphone-13",
+    "orientation": "landscape",
+    "viewport": [
+      664,
+      390
+    ],
+    "image": {
+      "x": 165.328125,
+      "y": 94.390625,
+      "width": 333.34375,
+      "height": 222.234375,
+      "bottom": 316.625,
+      "right": 498.671875
+    },
+    "stage": {
+      "x": 16,
+      "y": 94.390625,
+      "width": 632,
+      "height": 222.234375,
+      "bottom": 316.625,
+      "right": 648
+    },
+    "actions": {
+      "x": 0,
+      "y": 316.625,
+      "width": 664,
+      "height": 73.375,
+      "bottom": 390,
+      "right": 664
+    },
+    "toolbar": {
+      "x": 16,
+      "y": 16,
+      "width": 632,
+      "height": 48,
+      "bottom": 64,
+      "right": 648
+    },
+    "dialogScroll": [
+      390,
+      390
+    ],
+    "fit": "contain"
+  },
+  {
+    "revision": "c1e9875",
+    "device": "iphone-13",
+    "orientation": "square",
+    "viewport": [
+      664,
+      390
+    ],
+    "image": {
+      "x": 220.875,
+      "y": 94.390625,
+      "width": 222.234375,
+      "height": 222.234375,
+      "bottom": 316.625,
+      "right": 443.109375
+    },
+    "stage": {
+      "x": 16,
+      "y": 94.390625,
+      "width": 632,
+      "height": 222.234375,
+      "bottom": 316.625,
+      "right": 648
+    },
+    "actions": {
+      "x": 0,
+      "y": 316.625,
+      "width": 664,
+      "height": 73.375,
+      "bottom": 390,
+      "right": 664
+    },
+    "toolbar": {
+      "x": 16,
+      "y": 16,
+      "width": 632,
+      "height": 48,
+      "bottom": 64,
+      "right": 648
+    },
+    "dialogScroll": [
+      390,
+      390
+    ],
+    "fit": "contain"
+  },
+  {
+    "revision": "c1e9875",
+    "device": "pixel-7",
+    "orientation": "portrait",
+    "viewport": [
+      839,
+      412
+    ],
+    "image": {
+      "x": 338.28125,
+      "y": 94.390625,
+      "width": 162.421875,
+      "height": 243.640625,
+      "bottom": 338.03125,
+      "right": 500.703125
+    },
+    "stage": {
+      "x": 16,
+      "y": 94.390625,
+      "width": 807,
+      "height": 243.640625,
+      "bottom": 338.03125,
+      "right": 823
+    },
+    "actions": {
+      "x": 0,
+      "y": 338.03125,
+      "width": 839,
+      "height": 73.96875,
+      "bottom": 412,
+      "right": 839
+    },
+    "toolbar": {
+      "x": 16,
+      "y": 16,
+      "width": 807,
+      "height": 48,
+      "bottom": 64,
+      "right": 823
+    },
+    "dialogScroll": [
+      412,
+      412
+    ],
+    "fit": "contain"
+  },
+  {
+    "revision": "c1e9875",
+    "device": "pixel-7",
+    "orientation": "landscape",
+    "viewport": [
+      839,
+      412
+    ],
+    "image": {
+      "x": 236.765625,
+      "y": 94.390625,
+      "width": 365.453125,
+      "height": 243.640625,
+      "bottom": 338.03125,
+      "right": 602.21875
+    },
+    "stage": {
+      "x": 16,
+      "y": 94.390625,
+      "width": 807,
+      "height": 243.640625,
+      "bottom": 338.03125,
+      "right": 823
+    },
+    "actions": {
+      "x": 0,
+      "y": 338.03125,
+      "width": 839,
+      "height": 73.96875,
+      "bottom": 412,
+      "right": 839
+    },
+    "toolbar": {
+      "x": 16,
+      "y": 16,
+      "width": 807,
+      "height": 48,
+      "bottom": 64,
+      "right": 823
+    },
+    "dialogScroll": [
+      412,
+      412
+    ],
+    "fit": "contain"
+  },
+  {
+    "revision": "c1e9875",
+    "device": "pixel-7",
+    "orientation": "square",
+    "viewport": [
+      839,
+      412
+    ],
+    "image": {
+      "x": 297.671875,
+      "y": 94.390625,
+      "width": 243.640625,
+      "height": 243.640625,
+      "bottom": 338.03125,
+      "right": 541.3125
+    },
+    "stage": {
+      "x": 16,
+      "y": 94.390625,
+      "width": 807,
+      "height": 243.640625,
+      "bottom": 338.03125,
+      "right": 823
+    },
+    "actions": {
+      "x": 0,
+      "y": 338.03125,
+      "width": 839,
+      "height": 73.96875,
+      "bottom": 412,
+      "right": 839
+    },
+    "toolbar": {
+      "x": 16,
+      "y": 16,
+      "width": 807,
+      "height": 48,
+      "bottom": 64,
+      "right": 823
+    },
+    "dialogScroll": [
+      412,
+      412
+    ],
+    "fit": "contain"
+  },
+  {
+    "revision": "c1e9875",
+    "device": "desktop",
+    "orientation": "portrait",
+    "viewport": [
+      900,
+      1440
+    ],
+    "image": {
+      "x": 64.796875,
+      "y": 152.40625,
+      "width": 770.40625,
+      "height": 1155.609375,
+      "bottom": 1308.015625,
+      "right": 835.203125
+    },
+    "stage": {
+      "x": 16,
+      "y": 94.390625,
+      "width": 868,
+      "height": 1271.640625,
+      "bottom": 1366.03125,
+      "right": 884
+    },
+    "actions": {
+      "x": 0,
+      "y": 1366.03125,
+      "width": 900,
+      "height": 73.96875,
+      "bottom": 1440,
+      "right": 900
+    },
+    "toolbar": {
+      "x": 16,
+      "y": 16,
+      "width": 868,
+      "height": 48,
+      "bottom": 64,
+      "right": 884
+    },
+    "dialogScroll": [
+      1440,
+      1440
+    ],
+    "fit": "contain"
+  },
+  {
+    "revision": "c1e9875",
+    "device": "desktop",
+    "orientation": "landscape",
+    "viewport": [
+      900,
+      1440
+    ],
+    "image": {
+      "x": 64.796875,
+      "y": 473.40625,
+      "width": 770.390625,
+      "height": 513.59375,
+      "bottom": 987,
+      "right": 835.1875
+    },
+    "stage": {
+      "x": 16,
+      "y": 94.390625,
+      "width": 868,
+      "height": 1271.640625,
+      "bottom": 1366.03125,
+      "right": 884
+    },
+    "actions": {
+      "x": 0,
+      "y": 1366.03125,
+      "width": 900,
+      "height": 73.96875,
+      "bottom": 1440,
+      "right": 900
+    },
+    "toolbar": {
+      "x": 16,
+      "y": 16,
+      "width": 868,
+      "height": 48,
+      "bottom": 64,
+      "right": 884
+    },
+    "dialogScroll": [
+      1440,
+      1440
+    ],
+    "fit": "contain"
+  },
+  {
+    "revision": "c1e9875",
+    "device": "desktop",
+    "orientation": "square",
+    "viewport": [
+      900,
+      1440
+    ],
+    "image": {
+      "x": 64.796875,
+      "y": 345,
+      "width": 770.40625,
+      "height": 770.40625,
+      "bottom": 1115.40625,
+      "right": 835.203125
+    },
+    "stage": {
+      "x": 16,
+      "y": 94.390625,
+      "width": 868,
+      "height": 1271.640625,
+      "bottom": 1366.03125,
+      "right": 884
+    },
+    "actions": {
+      "x": 0,
+      "y": 1366.03125,
+      "width": 900,
+      "height": 73.96875,
+      "bottom": 1440,
+      "right": 900
+    },
+    "toolbar": {
+      "x": 16,
+      "y": 16,
+      "width": 868,
+      "height": 48,
+      "bottom": 64,
+      "right": 884
+    },
+    "dialogScroll": [
+      1440,
+      1440
+    ],
+    "fit": "contain"
+  }
+]
