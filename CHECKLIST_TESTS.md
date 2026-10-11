@@ -337,3 +337,28 @@ Nouveau texte (le seul) : « Merci ! Votre photo a bien été ajoutée à la gal
 | `npm run test` depuis la racine | **PASS 205**, 26 ignorés (opt-in), 0 échec |
 | `npm run test:real` (Storage, PostgREST, GoTrue réels) | PASS 21/21 + 54 contrôles HTTP |
 | Sélecteur de fichiers natif iOS/Android (rechoix de la même photo sur téléphone) | NON_TESTÉ |
+
+## Validation avant publication, file « En attente » (11 octobre 2026, branche `moderation-avant-publication`)
+
+Interface uniquement : **aucune migration, `register_photo` et les règles d'accès Supabase inchangés** (le serveur place toujours chaque nouvelle photo publique en attente, raison `paused`, quel que soit le verdict envoyé par le navigateur).
+1. Libellés admin : « Activer / Désactiver la validation avant publication », état « Validation avant publication activée : chaque nouvelle photo attend votre validation », raison « En attente de validation », confirmations reformulées.
+2. Invité, photo publique mise en attente (validation ou filtre) : « Merci ! Votre photo sera visible après validation. » / « Merci ! Vos N photos seront visibles après validation. » (bouton OK, disparaît après 10 s). Modèle de filtrage indisponible : ancien texte conservé ; autres messages inchangés.
+3. File « En attente » : case à cocher sur chaque carte (cible 48 px), barre fixe en bas « Valider (n) » / « Refuser (n) » (boutons 56 px), « Tout sélectionner », un appel par photo avec progression (« Traitement : 2 sur 5… »), rapport (réussites, échecs avec raison, les photos en échec restent cochées), confirmation avant « Refuser » (refuser = masquer, retrouvable dans « Masquées ») et avant de valider des photos signalées par le filtre.
+4. Actualisation automatique toutes les 30 s (pas pendant un traitement, une confirmation ou un aperçu) : sélection conservée, aucune reconstruction si rien n'a changé, miniatures non re-téléchargées (signatures conservées 45 min), compteur « En attente (n) » sur l'onglet.
+5. Tri : raison `nsfw` d'abord, puis les plus récentes (file lue en une fois, jusqu'à 200). 6. « Récentes » : bouton « Retirer » sur chaque carte, sélection multiple, barre « Retirer (n) » (sans confirmation : réversible via « Masquées »).
+
+| Contrôle (Chromium 1440 px, Pixel 7 360 px, iPhone 13 WebKit) | Résultat |
+|---|---|
+| Libellés/état/confirmations renommés, aucune trace de « Publications suspendues » | PASS ×3 |
+| Compteur d'onglet, ordre nsfw puis récent | PASS ×3 |
+| Cases, barre fixe en bas (collée au bas de l'écran), boutons ≥ 52 px et visibles, dernière carte accessible au-dessus de la barre, axe-core 0 violation, tout sélectionner / désélectionner | PASS ×3 |
+| Valider en lot : confirmation si photo signalée, annulation sans appel, progression visible, 1 requête par photo, rapport, file vidée | PASS ×3 |
+| Refuser : confirmation, masquées et non supprimées ; carte seule : confirmation | PASS ×3 |
+| Échecs d'un lot : message, photo restée cochée, nouvelle tentative réussie | PASS ×3 |
+| Actualisation 30 s : nouvelle photo nsfw en tête, compteur, cases conservées, mêmes nœuds DOM si rien de neuf | PASS ×3 |
+| « Récentes » : Retirer sur chaque carte, barre « Retirer (n) » seule, sans confirmation, onglets sans cases | PASS ×3 |
+| Messages invité (validation, filtre, modèle indisponible, échec jamais en succès) | PASS ×3 |
+| **Pile réelle** (Storage, PostgREST, GoTrue) : validation activée ⇒ 3 envois « clean » restent `pending_review`, invisibles et non signables ; lot Valider publie 2 ; Refuser cache 1 (non signable) ; validation coupée, photo publiée puis Retirer (non signable) | PASS ×3 |
+| `npm run test` depuis la racine | **PASS 244**, 29 ignorés (opt-in), 0 échec |
+| `npm run test:real` | **PASS 24/24** + 54 contrôles HTTP |
+| Vrai téléphone (iPhone/Android : appui, barre fixe avec la barre d'adresse, défilement), plus de 200 photos en file, projet Supabase hébergé | NON_TESTÉ |

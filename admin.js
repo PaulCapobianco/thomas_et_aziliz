@@ -19,10 +19,17 @@ let filter = "reported",
   paused = false,
   busy = false,
   previewRow,
-  generation = 0;
+  generation = 0,
+  batchRunning = false,
+  lastSignature = "";
+// Photos ticked for a batch action (pending queue and "Récentes"); kept by id across refreshes.
+const selected = new Set();
+const batchTab = () => filter === "pending" || filter === "recent";
+const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+const SIGNATURE_REUSE_MS = 45 * 60000;
 const reasons = {
   nsfw: "Contenu à vérifier",
-  paused: "Publications suspendues",
+  paused: "En attente de validation",
   model_unavailable: "Vérification automatique indisponible",
   reports: "Signalements",
   admin: "Masquée par un administrateur",
@@ -57,6 +64,11 @@ function loginErrorText(error) {
 function clearSessionUI() {
   generation++;
   rows = [];
+  selected.clear();
+  lastSignature = "";
+  batchRunning = false;
+  $("batch-bar").hidden = true;
+  document.body.classList.remove("has-batch");
   $("dashboard").hidden = true;
   $("logout").hidden = true;
   $("login").hidden = false;
@@ -102,6 +114,23 @@ function render() {
     preview.onclick = () => showPreview(row);
     const title =
       row.audience === "maries" ? "Mariés uniquement" : statuses[row.status];
+    if (batchTab()) {
+      const box = el("label", undefined, "select-box");
+      const input = el("input");
+      input.type = "checkbox";
+      input.dataset.id = row.id;
+      input.checked = selected.has(row.id);
+      input.setAttribute("aria-label", "Sélectionner cette photo");
+      input.onchange = () => {
+        if (input.checked) selected.add(row.id);
+        else selected.delete(row.id);
+        card.classList.toggle("is-selected", input.checked);
+        updateBatchBar();
+      };
+      box.append(input);
+      card.append(box);
+      card.classList.toggle("is-selected", input.checked);
+    }
     card.append(
       preview,
       el("h3", title),
@@ -123,8 +152,11 @@ function render() {
       );
     const actions = el("div", undefined, "actions");
     for (const [status, label] of [
-      ["hidden", "Masquer"],
-      ["published", row.status === "pending_review" ? "Publier" : "Restaurer"],
+      [
+        "hidden",
+        filter === "pending" ? "Refuser" : filter === "recent" ? "Retirer" : "Masquer",
+      ],
+      ["published", row.status === "pending_review" ? "Valider" : "Restaurer"],
       ["deleted", "Supprimer"],
     ]) {
       const button = el("button", label, status === "hidden" ? "primary" : "");
@@ -135,29 +167,125 @@ function render() {
     card.append(actions);
     $("admin-photos").append(card);
   }
+  updateBatchBar();
 }
-async function load(more = false) {
-  if (!sb || busy) return;
+function updateBatchBar(progress) {
+  const count = selected.size;
+  const show = count > 0 && batchTab() && !$("dashboard").hidden;
+  $("batch-bar").hidden = !show;
+  document.body.classList.toggle("has-batch", show);
+  $("batch-approve").hidden = $("batch-reject").hidden = filter !== "pending";
+  $("batch-remove").hidden = filter !== "recent";
+  $("batch-approve").textContent = `Valider (${count})`;
+  $("batch-reject").textContent = `Refuser (${count})`;
+  $("batch-remove").textContent = `Retirer (${count})`;
+  $("batch-summary").textContent = progress
+    ? `Traitement : ${progress.done} sur ${progress.total}…`
+    : `${plural(count, "photo sélectionnée", "photos sélectionnées")}`;
+  $("batch-progress").hidden = !progress;
+  if (progress) $("batch-progress").value = Math.round((progress.done / progress.total) * 100);
+  for (const id of ["batch-approve", "batch-reject", "batch-remove"])
+    $(id).disabled = batchRunning || busy;
+  const everything = rows.length > 0 && rows.every((row) => selected.has(row.id));
+  $("select-all").hidden = !batchTab() || !rows.length;
+  $("select-all").disabled = batchRunning || busy;
+  $("select-all").textContent = everything
+    ? "Tout désélectionner"
+    : `Tout sélectionner (${rows.length})`;
+}
+// One request per photo, in order, with visible progress and a clear report. Failed photos stay selected.
+async function runBatch(kind) {
+  const targets = rows.filter((row) => selected.has(row.id));
+  if (!targets.length || busy || batchRunning) return;
+  const status = kind === "approve" ? "published" : "hidden";
+  if (
+    kind === "reject" &&
+    !(await confirmAction(
+      `Refuser ${plural(targets.length, "photo", "photos")} ? ${targets.length > 1 ? "Elles ne seront pas publiées" : "Elle ne sera pas publiée"} (vous pourrez ${targets.length > 1 ? "les" : "la"} retrouver dans l’onglet Masquées).`,
+    ))
+  )
+    return;
+  if (kind === "approve") {
+    const flagged = targets.filter((row) => row.review_reason === "nsfw").length;
+    if (
+      flagged &&
+      !(await confirmAction(
+        `${plural(flagged, "photo signalée", "photos signalées")} par le filtre automatique ${flagged > 1 ? "sont" : "est"} dans la sélection. Les avez-vous examinées avant de les publier ?`,
+      ))
+    )
+      return;
+  }
+  batchRunning = true;
+  const request = generation;
+  let done = 0;
+  const failed = [];
+  updateBatchBar({ done, total: targets.length });
+  for (const row of targets) {
+    try {
+      const result = await rpc(sb, "admin_set_status", { p_id: row.id, p_status: status });
+      if (result.result === "not_found") throw Object.assign(new Error(), { userMessage: "photo introuvable" });
+      selected.delete(row.id);
+    } catch (error) {
+      failed.push(errorText(error).replace(/\.$/, ""));
+      if (error?.code === "42501") break; // session lost: stop, do not hammer
+    }
+    done++;
+    if (request !== generation) break;
+    updateBatchBar({ done, total: targets.length });
+  }
+  batchRunning = false;
+  const ok = done - failed.length;
+  const verb = kind === "approve" ? "validée" : kind === "reject" ? "refusée" : "retirée";
+  const verbs = verb + "s";
+  $("admin-message").textContent =
+    `${plural(ok, `photo ${verb}`, `photos ${verbs}`)}${kind === "approve" ? " : visible dans la galerie" : ""}.` +
+    (failed.length
+      ? ` ${plural(failed.length, "échec", "échecs")} : ${[...new Set(failed)].slice(0, 2).join(" ; ")}. ${failed.length > 1 ? "Ces photos restent sélectionnées" : "Cette photo reste sélectionnée"} : réessayez.`
+      : "");
+  await load();
+}
+// Reuse the signed thumbnail URL of a photo already on screen (valid one hour) so refreshes do not reload the grid.
+async function signRows(list) {
+  const known = new Map(rows.map((row) => [row.id, row]));
+  const reusable = (row) => {
+    const old = known.get(row.id);
+    return old?.thumbUrl && Date.now() - old.signedAt < SIGNATURE_REUSE_MS ? old : null;
+  };
+  const fresh = new Map(
+    (await signPhotos(sb, list.filter((row) => !reusable(row)))).map((row) => [row.id, { ...row, signedAt: Date.now() }]),
+  );
+  return list.flatMap((row) => {
+    const old = reusable(row);
+    return old ? [{ ...row, thumbUrl: old.thumbUrl, signedAt: old.signedAt }] : fresh.has(row.id) ? [fresh.get(row.id)] : [];
+  });
+}
+async function load(more = false, silent = false) {
+  if (!sb || busy || batchRunning) return;
   busy = true;
   const request = generation;
-  $("admin-refresh").disabled = $("admin-more").disabled = true;
+  if (!silent) $("admin-refresh").disabled = $("admin-more").disabled = true;
+  let changed = true;
   try {
     const state = await rpc(sb, "admin_status");
+    // The pending queue is read in one go (up to 200) so the priority sort covers all of it.
+    const limit =
+      filter === "pending" ? 200 : more ? 48 : Math.min(200, Math.max(48, rows.length));
     const list = await rpc(sb, "admin_list_photos", {
       p_filter: filter,
-      p_limit: 48,
+      p_limit: limit,
       p_offset: more ? offset : 0,
     });
-    const signed = await signPhotos(sb, list);
+    const signed = await signRows(list);
     if (request !== generation) return;
     offset = (more ? offset : 0) + list.length;
     paused = state.paused;
     $("publication-state").textContent = paused
-      ? "Nouvelles publications suspendues (la galerie reste visible)"
+      ? "Validation avant publication activée : chaque nouvelle photo attend votre validation (la galerie existante reste visible)"
       : "Galerie publique en ligne";
     $("pause").textContent = paused
-      ? "Reprendre les publications"
-      : "Suspendre les nouvelles publications";
+      ? "Désactiver la validation avant publication"
+      : "Activer la validation avant publication";
+    $("pending-count").textContent = ` (${state.pending})`;
     $("stats").replaceChildren();
     for (const [label, value] of [
       ["Publiées", state.published],
@@ -174,7 +302,21 @@ async function load(more = false) {
     rows = more
       ? [...new Map([...rows, ...signed].map((row) => [row.id, row])).values()]
       : signed;
-    $("admin-more").hidden = list.length < 48;
+    // Queue order: photos flagged by the automatic filter first, then the newest.
+    if (filter === "pending")
+      rows.sort(
+        (a, b) =>
+          (a.review_reason === "nsfw" ? 0 : 1) - (b.review_reason === "nsfw" ? 0 : 1) ||
+          String(b.created_at).localeCompare(String(a.created_at)),
+      );
+    // A refresh never loses the ticks of photos still listed; photos that left the list are forgotten.
+    for (const id of [...selected]) if (!rows.some((row) => row.id === id)) selected.delete(id);
+    const signature = rows
+      .map((row) => [row.id, row.status, row.review_reason, row.report_count].join())
+      .join("|");
+    changed = !silent || signature !== lastSignature || more;
+    lastSignature = signature;
+    $("admin-more").hidden = list.length < limit;
     $("release-actions").hidden = filter !== "pending";
     $("dashboard").hidden = false;
     $("login").hidden = true;
@@ -190,12 +332,20 @@ async function load(more = false) {
     } else $("admin-message").textContent = errorText(error);
   } finally {
     busy = false;
-    $("admin-refresh").disabled = $("admin-more").disabled = false;
-    render();
+    if (!silent) $("admin-refresh").disabled = $("admin-more").disabled = false;
+    if (changed) {
+      // Keep keyboard / touch focus on the same checkbox across the redraw.
+      const focused = document.activeElement?.dataset?.id;
+      render();
+      if (focused)
+        [...$("admin-photos").querySelectorAll("input[data-id]")]
+          .find((input) => input.dataset.id === focused)
+          ?.focus({ preventScroll: true });
+    } else updateBatchBar();
   }
 }
 async function mutate(operation, message = "Action enregistrée.") {
-  if (busy) return;
+  if (busy || batchRunning) return;
   busy = true;
   document.querySelectorAll("#dashboard button").forEach((button) => {
     button.disabled = true;
@@ -214,7 +364,7 @@ async function mutate(operation, message = "Action enregistrée.") {
   }
 }
 async function setStatus(row, status) {
-  if (busy) return;
+  if (busy || batchRunning) return;
   if (
     status === "deleted" &&
     !(await confirmAction(
@@ -227,6 +377,14 @@ async function setStatus(row, status) {
     row.review_reason === "nsfw" &&
     !(await confirmAction(
       "Vous avez examiné cette photo et souhaitez la publier ?",
+    ))
+  )
+    return;
+  if (
+    status === "hidden" &&
+    row.status === "pending_review" &&
+    !(await confirmAction(
+      "Refuser cette photo ? Elle ne sera pas publiée (vous pourrez la retrouver dans l’onglet Masquées).",
     ))
   )
     return;
@@ -293,6 +451,8 @@ document.querySelectorAll("[data-filter]").forEach((button) => {
   button.onclick = () => {
     if (busy) return;
     filter = button.dataset.filter;
+    selected.clear();
+    lastSignature = "";
     document
       .querySelectorAll("[data-filter]")
       .forEach((tab) =>
@@ -306,20 +466,43 @@ document.querySelectorAll("[data-release]").forEach((button) => {
     const reason = button.dataset.release;
     if (paused) {
       $("admin-message").textContent =
-        "Reprenez les publications avant de libérer un groupe de photos.";
+        "Désactivez la validation avant publication avant de libérer un groupe de photos.";
       return;
     }
     if (
       !(await confirmAction(
         reason === "model_unavailable"
           ? "Publier les photos sans premier filtrage automatique ? Examinez-les avant de confirmer. Les photos signalées par le filtre restent en attente."
-          : "Publier les photos mises en attente uniquement à cause de la pause ?",
+          : "Publier toutes les photos en attente de validation ? Examinez-les avant de confirmer.",
       ))
     )
       return;
     mutate(() => rpc(sb, "admin_release_pending", { p_reason: reason }));
   };
 });
+$("batch-approve").onclick = () => runBatch("approve");
+$("batch-reject").onclick = () => runBatch("reject");
+$("batch-remove").onclick = () => runBatch("remove");
+$("select-all").onclick = () => {
+  const everything = rows.every((row) => selected.has(row.id));
+  selected.clear();
+  if (!everything) rows.forEach((row) => selected.add(row.id));
+  render();
+};
+// The queue refreshes by itself every 30 s (ticks kept, nothing redrawn when nothing changed).
+setInterval(() => {
+  if (
+    !sb ||
+    $("dashboard").hidden ||
+    busy ||
+    batchRunning ||
+    document.hidden ||
+    $("confirm-dialog").open ||
+    $("admin-preview").open
+  )
+    return;
+  load(false, true);
+}, 30000);
 $("admin-refresh").onclick = () => load();
 $("admin-more").onclick = () => load(true);
 bindDialog($("admin-preview"), $("preview-close"));

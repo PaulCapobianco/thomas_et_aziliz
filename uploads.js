@@ -191,7 +191,7 @@ function networkError(error) {
       (!status || status >= 500 || status === 408))
   );
 }
-export async function uploadPhoto(sb, file, audience, seen, update = () => {}) {
+export async function uploadPhoto(sb, file, audience, seen, update = () => {}, info = {}) {
   let source, thumbCanvas, fullCanvas;
   try {
     update("Préparation…");
@@ -227,6 +227,7 @@ export async function uploadPhoto(sb, file, audience, seen, update = () => {}) {
           );
           verdictValue =
             audience === "public" ? await classify(thumbCanvas) : "skipped";
+          info.verdict = verdictValue;
           thumb = await jpegWithin(thumbCanvas, THUMB_QUALITY);
           full = await jpegWithin(fullCanvas, FULL_QUALITY);
           thumbCanvas.width =
@@ -344,9 +345,24 @@ function finalMessage(items, cancelled) {
     done.push(`${plural(priv, "photo envoyée", "photos envoyées")} aux mariés`);
   if (dup)
     done.push(`${plural(dup, "doublon ignoré", "doublons ignorés")} (déjà envoyé)`);
-  const pending = pend
-    ? `${plural(pend, "photo reçue", "photos reçues")} : ${pend > 1 ? "elles apparaîtront" : "elle apparaîtra"} dans la galerie après vérification par les organisateurs.`
-    : "";
+  // Kept for review because of the validation mode or the automatic filter: plain thank-you.
+  // Kept only because the filter model was unavailable on the phone: the previous wording.
+  const unavailable = items.filter(
+    (item) => item.result === "pending_review" && item.verdict === "unavailable",
+  ).length;
+  const queued = pend - unavailable;
+  const pending = [
+    queued
+      ? queued > 1
+        ? `Merci ! Vos ${queued} photos seront visibles après validation.`
+        : "Merci ! Votre photo sera visible après validation."
+      : "",
+    unavailable
+      ? `${plural(unavailable, "photo reçue", "photos reçues")} : ${unavailable > 1 ? "elles apparaîtront" : "elle apparaîtra"} dans la galerie après vérification par les organisateurs.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   if (failed.length) {
     const reasons = [...new Set(failed.map((item) => item.reason).filter(Boolean).map(trimStop))];
     const why = reasons.length
@@ -508,6 +524,7 @@ export function setupUploads(sb, onComplete) {
       if (cancelled) break;
       // A retry must honor the destination explicitly selected for this submission.
       item.audience = audience;
+      const info = {};
       try {
         item.result = await uploadPhoto(
           sb,
@@ -518,7 +535,9 @@ export function setupUploads(sb, onComplete) {
             $("progress-label").textContent =
               `${processed} sur ${batch.length} photos traitées · ${message}`;
           },
+          info,
         );
+        item.verdict = info.verdict;
         item.reason = "";
         item.message =
           item.result === "duplicate"

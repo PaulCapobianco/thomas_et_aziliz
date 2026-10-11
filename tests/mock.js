@@ -13,7 +13,7 @@ export async function installMock(page, options = {}) {
     const records = [],
       objects = new Map(),
       calls = [];
-    let paused = false,
+    let paused = Boolean(options.paused),
       logged = options.admin || false,
       failures = options.failures || 0;
     const pathFor = (id) => ({
@@ -36,7 +36,31 @@ export async function installMock(page, options = {}) {
         reports: [],
       });
     }
+    // Pending photos for the moderation queue: options.pending = ["nsfw", "paused", ...] (newest first by index).
+    let pendingSeq = 0;
+    const addPending = (reason = "paused", audience = "public") => {
+      const n = ++pendingSeq;
+      const id = `ffff${String(n).padStart(4, "0")}-0000-4000-8000-000000000000`;
+      records.unshift({
+        id,
+        ...pathFor(id),
+        published_at: null,
+        // Later ones are newer: the queue sort (newest first) is then visible in the tests.
+        created_at: new Date(Date.UTC(2026, 9, 31, 21, 0, 0) + n * 1000).toISOString(),
+        audience,
+        status: "pending_review",
+        review_reason: reason,
+        report_count: 0,
+        report_reasons: [],
+        reports: [],
+      });
+      return id;
+    };
+    (options.pending || []).forEach((reason) => addPending(reason));
     window.mock = {
+      addPending,
+      failStatusFor: new Set(),
+      statusDelay: 0,
       records,
       objects,
       calls,
@@ -194,12 +218,17 @@ export async function installMock(page, options = {}) {
                               ? r.status === "hidden"
                               : r.audience === "maries"),
                   )
+                  .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
                   .slice(p.p_offset, p.p_offset + p.p_limit),
               );
             if (name === "admin_set_paused") {
               paused = p.p_paused;
               return ok({ paused });
             }
+            if (name === "admin_set_status" && window.mock.statusDelay)
+              await new Promise((r) => setTimeout(r, window.mock.statusDelay));
+            if (name === "admin_set_status" && window.mock.failStatusFor.has(p.p_id))
+              return { data: null, error: { code: "500", message: "boom" } };
             if (name === "admin_set_status") {
               const r = records.find((r) => r.id === p.p_id);
               r.status = p.p_status;

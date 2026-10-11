@@ -105,3 +105,80 @@ test("browser: wrong password and unconfirmed e-mail give understandable message
   await login(page, email, REAL_ADMIN_PASSWORD);
   await expect(page.locator("#admin-message")).toContainText("n’est pas confirmée", { timeout: 15000 });
 });
+
+// ---- Validation before publication, with a real server (the client cannot bypass it) ------------------------
+async function guestSend(count, tag) {
+  const anon = client();
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const id = randomUUID();
+    const body = Buffer.concat([TINY_JPEG, Buffer.from(`${tag}:${i}:${Date.now()}:${Math.random()}`)]);
+    const paths = [`public/thumbs/${id}.jpg`, `public/full/${id}.jpg`];
+    for (const p of paths) expect((await anon.storage.from("photos").upload(p, body, { contentType: "image/jpeg" })).error).toBeNull();
+    // The client claims the photo is clean: only the server decides.
+    const reg = await anon.rpc("register_photo", { p_id: id, p_audience: "public", p_sha256: createHash("sha256").update(body).digest("hex"), p_uploader: randomUUID(), p_nsfw: "clean" });
+    out.push({ id, paths, result: reg.data?.result });
+  }
+  return out;
+}
+const guestCanSign = async (paths) => (await client().storage.from("photos").createSignedUrls(paths, 60)).data?.every((s) => s.signedUrl);
+const galleryIds = async () => new Set(((await client().rpc("gallery_page", { p_limit: 100 })).data ?? []).map((r) => r.id));
+
+test("validation before publication: server keeps photos pending, batch Valider publishes, batch Refuser hides, Retirer removes", async ({ page }) => {
+  test.setTimeout(150000);
+  const adminApi = client();
+  await adminApi.auth.signInWithPassword({ email: ADMIN, password: REAL_ADMIN_PASSWORD });
+  expect((await adminApi.rpc("admin_set_paused", { p_paused: true })).error).toBeNull();
+  try {
+    const pendingBefore = (await adminApi.rpc("admin_status")).data.pending;
+    const [a, b, c] = await guestSend(3, "queue");
+    for (const photo of [a, b, c]) expect(photo.result).toBe("pending_review"); // even with p_nsfw = 'clean'
+    const visible = await galleryIds();
+    for (const photo of [a, b, c]) {
+      expect(visible.has(photo.id)).toBeFalsy();
+      expect(await guestCanSign(photo.paths)).toBeFalsy();
+    }
+    await openAdmin(page);
+    await login(page, ADMIN, REAL_ADMIN_PASSWORD);
+    await expect(page.locator("#dashboard")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("#pause")).toHaveText("Désactiver la validation avant publication");
+    await page.getByRole("button", { name: /^En attente/ }).click();
+    await expect(page.locator(`input[data-id="${a.id}"]`)).toHaveCount(1, { timeout: 15000 });
+    await expect(page.locator("[data-filter=pending]")).toHaveText(`En attente (${pendingBefore + 3})`);
+    const thumbsLoaded = () => page.locator(".admin-card img").evaluateAll((imgs) => imgs.every((i) => i.complete && i.naturalWidth > 0));
+    await expect.poll(thumbsLoaded, { timeout: 15000 }).toBeTruthy();
+    // Validate two of them in one batch.
+    await page.locator(`input[data-id="${a.id}"]`).check();
+    await page.locator(`input[data-id="${b.id}"]`).check();
+    await page.locator("#batch-approve").click();
+    await expect(page.locator("#admin-message")).toContainText("2 photos validées", { timeout: 20000 });
+    const after = await galleryIds();
+    expect(after.has(a.id) && after.has(b.id) && !after.has(c.id)).toBeTruthy();
+    // Refuse the last one: confirmation, then hidden (still stored, never public).
+    await page.locator(`input[data-id="${c.id}"]`).check();
+    await page.locator("#batch-reject").click();
+    await page.locator("#confirm-yes").click();
+    await expect(page.locator("#admin-message")).toContainText("1 photo refusée", { timeout: 20000 });
+    const rejected = c;
+    expect((await galleryIds()).has(rejected.id)).toBeFalsy();
+    expect(await guestCanSign(rejected.paths)).toBeFalsy();
+    await page.getByRole("button", { name: "Masquées", exact: true }).click();
+    await expect(page.locator(".admin-card")).not.toHaveCount(0);
+    // Back to normal publication, then remove a published photo with the Récentes bar.
+    expect((await adminApi.rpc("admin_set_paused", { p_paused: false })).error).toBeNull();
+    const [d] = await guestSend(1, "remove");
+    expect(d.result).toBe("published");
+    expect((await galleryIds()).has(d.id)).toBeTruthy();
+    await page.getByRole("button", { name: "Récentes", exact: true }).click();
+    await page.locator("#admin-refresh").click();
+    const mine = page.locator(`input[data-id="${d.id}"]`);
+    await expect(mine).toHaveCount(1, { timeout: 15000 });
+    await mine.check();
+    await page.locator("#batch-remove").click();
+    await expect(page.locator("#admin-message")).toContainText("1 photo retirée", { timeout: 20000 });
+    expect((await galleryIds()).has(d.id)).toBeFalsy();
+    expect(await guestCanSign(d.paths)).toBeFalsy();
+  } finally {
+    await adminApi.rpc("admin_set_paused", { p_paused: false });
+  }
+});

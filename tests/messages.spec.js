@@ -270,3 +270,54 @@ test("photos sent from the share page appear in the gallery without reloading", 
   await page.getByRole("link", { name: "Accueil", exact: true }).click();
   await expect(page.locator("#gallery .photo-card")).toHaveCount(3);
 });
+
+// ---- Guest wording when the photo waits for validation ---------------------------------------------------
+test("validation mode: plain thank-you for one photo and for several, with OK, and the list is emptied", async ({ page }) => {
+  await installMock(page, { paused: true });
+  await page.goto("/#partager");
+  await sendOne(page);
+  await settled(page);
+  await expect(box(page)).toHaveAttribute("data-kind", "pending");
+  await expect(status(page)).toHaveText("Merci ! Votre photo sera visible après validation.");
+  await expect(page.locator("#message-close")).toHaveText("OK");
+  await expect(page.locator("#selection li")).toHaveCount(0);
+  await page.locator("#message-close").click();
+  await page.locator("#files").setInputFiles([fixture("photo_02.jpg"), fixture("photo_03.jpg")]);
+  await page.locator("#send").click();
+  await settled(page);
+  await expect(status(page)).toHaveText("Merci ! Vos 2 photos seront visibles après validation.");
+});
+
+test("a photo flagged by the automatic filter gets the same wording", async ({ page }) => {
+  await installMock(page, { model: "suspect" });
+  await page.goto("/#partager");
+  await sendOne(page);
+  await settled(page);
+  await expect(box(page)).toHaveAttribute("data-kind", "pending");
+  await expect(status(page)).toHaveText("Merci ! Votre photo sera visible après validation.");
+});
+
+test("model unavailable keeps its previous wording; a clean photo without validation keeps the gallery thank-you", async ({ page }) => {
+  await installMock(page, { model: "unavailable" });
+  await page.goto("/#partager");
+  await sendOne(page);
+  await settled(page);
+  await expect(status(page)).toContainText("après vérification par les organisateurs");
+  await expect(status(page)).not.toContainText("Merci ! Votre photo sera visible après validation.");
+  await page.locator("#message-close").click();
+  const other = await page.context().newPage();
+  await installMock(other);
+  await other.goto("/#partager");
+  await other.locator("#files").setInputFiles([fixture("photo_02.jpg")]);
+  await other.locator("#send").click();
+  await expect(other.locator("#upload-status")).toHaveText("Merci ! Votre photo a bien été ajoutée à la galerie.");
+});
+
+test("validation mode never turns a failure into a success message", async ({ page }) => {
+  await installMock(page, { paused: true, failures: 3 });
+  await page.goto("/#partager");
+  await sendOne(page);
+  await settled(page, 40000);
+  await expect(box(page)).toHaveAttribute("data-kind", "error");
+  await expect(status(page)).not.toContainText("Merci !");
+});

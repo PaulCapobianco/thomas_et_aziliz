@@ -262,7 +262,7 @@ test("report UI submits once and honors already-reported result", async ({
   await page.getByRole("button", { name: "Signaler", exact: true }).click();
   await expect(page.locator("#report-status")).toContainText("déjà signalé");
 });
-test("admin login, hide restore pause delete and logout", async ({ page }) => {
+test("admin login, remove restore validation mode delete and logout", async ({ page }) => {
   await installMock(page, { photos: 2 });
   await page.goto("/admin.html");
   await page.locator("#email").fill("admin@example.test");
@@ -272,7 +272,7 @@ test("admin login, hide restore pause delete and logout", async ({ page }) => {
   await page.getByRole("button", { name: "Récentes", exact: true }).click();
   await expect(page.locator(".admin-card")).toHaveCount(2);
   await page
-    .getByRole("button", { name: "Masquer", exact: true })
+    .getByRole("button", { name: "Retirer", exact: true })
     .first()
     .click();
   await expect(page.locator(".admin-card h3").first()).toHaveText("Masquée");
@@ -282,7 +282,7 @@ test("admin login, hide restore pause delete and logout", async ({ page }) => {
     .click();
   await expect(page.locator(".admin-card h3").first()).toHaveText("Publiée");
   await page.locator("#pause").click();
-  await expect(page.locator("#publication-state")).toContainText("suspendues");
+  await expect(page.locator("#publication-state")).toContainText("Validation avant publication activée");
   await page
     .getByRole("button", { name: "Supprimer", exact: true })
     .first()
