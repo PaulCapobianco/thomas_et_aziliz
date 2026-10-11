@@ -225,7 +225,7 @@
       <p>Les instants passent. Les souvenirs restent.</p>
       <span>THOMAS &amp; AZILIZ</span>
     </footer>
-    <dialog id="lightbox" class="lightbox" aria-label="Photo du mariage">
+    <dialog id="lightbox" class="lightbox" aria-label="Photo du mariage" aria-modal="true">
       <div class="lightbox-toolbar">
         <p id="photo-position"></p>
         <button id="close-lightbox" class="lightbox-close" autofocus>
@@ -234,13 +234,13 @@
       </div>
       <p id="lightbox-status" role="status"></p>
       <div class="lightbox-stage">
-        <button id="previous" aria-label="Photo précédente">←</button
-        ><img id="full-photo" alt="Souvenir partagé du mariage" hidden /><button
-          id="next"
-          aria-label="Photo suivante"
-        >
-          →
-        </button>
+        <button id="previous" aria-label="Photo précédente">←</button>
+        <div class="photo-viewport">
+          <div id="photo-frame" class="photo-frame" data-orientation="landscape">
+            <img id="full-photo" alt="Souvenir partagé du mariage" decoding="async" hidden />
+          </div>
+        </div>
+        <button id="next" aria-label="Photo suivante">→</button>
       </div>
       <div class="lightbox-actions">
         <button id="download" class="lightbox-download">

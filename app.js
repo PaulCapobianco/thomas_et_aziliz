@@ -49,6 +49,45 @@ let rows = [],
   activeIndex = 0,
   lightboxRequest = 0,
   returnFocusId;
+const galleryWaiters = [];
+let navigating = false;
+let savedScroll;
+let backgroundNodes = [];
+const frame = $("photo-frame");
+const viewport = document.querySelector(".photo-viewport");
+function sizePhotoFrame() {
+  const ratio = frame.dataset.orientation === "portrait" ? 2 / 3 : 3 / 2;
+  const width = Math.min(viewport.clientWidth, viewport.clientHeight * ratio);
+  frame.style.width = `${width}px`;
+  frame.style.height = `${width / ratio}px`;
+}
+function orientPhoto(image) {
+  if (!image.naturalWidth || !image.naturalHeight) return;
+  frame.dataset.orientation = image.naturalWidth < image.naturalHeight ? "portrait" : "landscape";
+  sizePhotoFrame();
+}
+new ResizeObserver(sizePhotoFrame).observe(viewport);
+function lockBackground() {
+  savedScroll = { x: window.scrollX, y: window.scrollY };
+  backgroundNodes = [...document.body.children].filter(
+    (node) => !node.matches("dialog, script") && !node.inert,
+  );
+  backgroundNodes.forEach((node) => { node.inert = true; });
+  document.documentElement.style.setProperty("--page-scroll-top", `${-savedScroll.y}px`);
+  document.documentElement.classList.add("photo-modal-open");
+}
+function unlockBackground() {
+  const root = document.documentElement;
+  const behavior = root.style.scrollBehavior;
+  root.style.scrollBehavior = "auto";
+  root.classList.remove("photo-modal-open");
+  root.style.removeProperty("--page-scroll-top");
+  backgroundNodes.forEach((node) => { node.inert = false; });
+  backgroundNodes = [];
+  if (savedScroll) window.scrollTo(savedScroll.x, savedScroll.y);
+  root.style.scrollBehavior = behavior;
+  savedScroll = null;
+}
 function route(focus = false) {
   const share = location.hash === "#partager";
   const activeRoute = share
@@ -194,12 +233,13 @@ async function loadGallery(more = false) {
   if (!sb || !allowed) return;
   if (busy) {
     // A refresh asked while another one runs (typically right after an upload) must not be lost.
-    refreshQueued = true;
+    if (!more) refreshQueued = true;
+    await new Promise((resolve) => galleryWaiters.push(resolve));
+    if (more) return loadGallery(true);
     return;
   }
   busy = true;
   $("refresh").disabled = $("more").disabled = true;
-  const currentId = rows[activeIndex]?.id;
   try {
     // Refresh the loaded window, not just page 1: removes hidden photos further down too.
     const target = more ? 48 : Math.max(48, Math.ceil(rows.length / 48) * 48);
@@ -215,6 +255,7 @@ async function loadGallery(more = false) {
       fetched.push(...(await signNewRows(lastPage)));
       before = lastPage.at(-1) || before;
     } while (!more && lastPage.length === 48 && fetched.length < target);
+    const currentId = rows[activeIndex]?.id;
     rows = [
       ...new Map(
         (more ? [...rows, ...fetched] : fetched).map((row) => [row.id, row]),
@@ -247,6 +288,7 @@ async function loadGallery(more = false) {
     if (!loaded && loadFailures <= 3) setTimeout(() => loadGallery(), 5000);
   } finally {
     busy = false;
+    galleryWaiters.splice(0).forEach((resolve) => resolve());
     $("refresh").disabled = $("more").disabled = false;
     if (refreshQueued) {
       refreshQueued = false;
@@ -268,9 +310,14 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden && Date.now() - lastRefresh > 30 * 60000) loadGallery();
 });
 function updatePosition() {
+  const focused = document.activeElement;
   $("photo-position").textContent = `${activeIndex + 1} / ${rows.length}`;
   $("previous").disabled = activeIndex === 0;
-  $("next").disabled = activeIndex === rows.length - 1;
+  $("next").disabled = navigating || (activeIndex === rows.length - 1 && $("more").hidden);
+  // Chromium drops focus from a newly disabled button, losing dialog keyboard events.
+  if ($("lightbox").open && focused?.disabled && $("lightbox").contains(focused)) {
+    $("close-lightbox").focus({ preventScroll: true });
+  }
 }
 async function openPhoto(index) {
   if (!rows[index]) return;
@@ -279,12 +326,18 @@ async function openPhoto(index) {
   const dialog = $("lightbox");
   if (!dialog.open) {
     returnFocusId = rows[index].id;
+    lockBackground();
     dialog.showModal();
   }
   // Show the already loaded thumbnail at once, then swap in the full-resolution file when it has been decoded.
-  $("full-photo").onload = $("full-photo").onerror = null;
+  $("full-photo").onerror = null;
+  $("full-photo").onload = () => {
+    if (request === lightboxRequest) orientPhoto($("full-photo"));
+  };
   $("full-photo").src = rows[index].thumbUrl;
   $("full-photo").hidden = false;
+  orientPhoto($("full-photo"));
+  sizePhotoFrame();
   $("lightbox-status").textContent = "Chargement en haute définition…";
   updatePosition();
   try {
@@ -293,6 +346,7 @@ async function openPhoto(index) {
     const loader = new Image();
     loader.onload = () => {
       if (request !== lightboxRequest) return;
+      orientPhoto(loader);
       $("full-photo").src = url;
       $("lightbox-status").textContent = "";
     };
@@ -317,18 +371,40 @@ $("lightbox").addEventListener("close", () => {
   lightboxRequest++;
   $("full-photo").removeAttribute("src");
   $("full-photo").hidden = true;
+  unlockBackground();
   const opener = [...$("gallery").children].find(
     (node) => node.dataset.photoId === returnFocusId,
   );
   (opener || $("refresh")).focus({ preventScroll: true });
 });
-$("previous").onclick = () => openPhoto(activeIndex - 1);
-$("next").onclick = () => openPhoto(activeIndex + 1);
+async function movePhoto(delta) {
+  if (rows[activeIndex + delta]) return openPhoto(activeIndex + delta);
+  if (delta < 0 || navigating || $("more").hidden) return;
+  const currentId = rows[activeIndex]?.id;
+  const request = lightboxRequest;
+  navigating = true;
+  $("lightbox-status").textContent = "Chargement des photos suivantes…";
+  updatePosition();
+  try {
+    await loadGallery(true);
+    if (!$("lightbox").open || request !== lightboxRequest) return;
+    const index = rows.findIndex((row) => row.id === currentId);
+    if (index >= 0 && rows[index + 1]) await openPhoto(index + 1);
+    else $("lightbox-status").textContent = $("more").hidden
+      ? "Vous avez vu toutes les photos."
+      : "Chargement interrompu. Réessayez avec la flèche suivante.";
+  } finally {
+    navigating = false;
+    updatePosition();
+  }
+}
+$("previous").onclick = () => movePhoto(-1);
+$("next").onclick = () => movePhoto(1);
 $("lightbox").addEventListener("keydown", (event) => {
   if ($("report-dialog").open) return;
   if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
     event.preventDefault();
-    openPhoto(activeIndex + (event.key === "ArrowLeft" ? -1 : 1));
+    movePhoto(event.key === "ArrowLeft" ? -1 : 1);
   }
 });
 let touchStart;
@@ -336,12 +412,15 @@ $("full-photo").addEventListener(
   "touchstart",
   (event) => {
     touchStart =
-      event.touches.length === 1
+      event.touches.length === 1 && (window.visualViewport?.scale ?? 1) <= 1
         ? { x: event.touches[0].clientX, y: event.touches[0].clientY }
         : null;
   },
   { passive: true },
 );
+$("full-photo").addEventListener("touchmove", (event) => {
+  if (event.touches.length !== 1) touchStart = null;
+}, { passive: true });
 $("full-photo").addEventListener(
   "touchend",
   (event) => {
@@ -349,7 +428,7 @@ $("full-photo").addEventListener(
     const dx = event.changedTouches[0].clientX - touchStart.x,
       dy = event.changedTouches[0].clientY - touchStart.y;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy))
-      openPhoto(activeIndex + (dx < 0 ? 1 : -1));
+      movePhoto(dx < 0 ? 1 : -1);
     touchStart = null;
   },
   { passive: true },

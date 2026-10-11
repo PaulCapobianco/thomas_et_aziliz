@@ -17,8 +17,8 @@ export const NSFW_CLASSIFY_TIMEOUT_MS = 8000;
 // Output sizes. The bucket refuses objects above 3 MiB (migration 0003), so the full image keeps a safety margin.
 export const FULL_MAX_SIDE = 3000;
 export const FULL_QUALITY = 0.9;
-export const THUMB_MAX_SIDE = 800;
-export const THUMB_QUALITY = 0.75;
+export const THUMB_MAX_SIDE = 640;
+export const THUMB_QUALITY = 0.84;
 const OBJECT_BUDGET_BYTES = 2_900_000;
 const MAX_FILE_BYTES = 30 * 1024 * 1024;
 const MAX_PIXELS = 60_000_000;

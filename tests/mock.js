@@ -55,7 +55,11 @@ export async function installMock(page, options = {}) {
       data: null,
       error: { code, message: "denied" },
     });
-    const url = "/fixtures/photo_01.jpg";
+    const url = (path = "") => {
+      const index = Number.parseInt(path.split("/").at(-1), 10) || 0;
+      const pathUrl = options.photoUrls?.[index % options.photoUrls.length] || "/fixtures/photo_01.jpg";
+      return options.uniqueUrls ? `${pathUrl}?mock-photo=${index}` : pathUrl;
+    };
     const callbacks = [];
     window.supabase = {
       createClient(_url, _key, settings) {
@@ -245,13 +249,13 @@ export async function installMock(page, options = {}) {
                   window.mock.badSignOnce = false;
                   return ok(paths.map((path) => ({ path, signedUrl: "/fixtures/absent-signature.jpg" })));
                 }
-                return ok(paths.map((path) => ({ path, signedUrl: url })));
+                return ok(paths.map((path) => ({ path, signedUrl: url(path) })));
               },
               createSignedUrl: async (path, ttl, opts) => {
                 calls.push(["sign", path, ttl, opts]);
                 return opts?.download
                   ? ok({ signedUrl: "/fixtures/photo_01.jpg?download=1" })
-                  : ok({ signedUrl: url });
+                  : ok({ signedUrl: url(path) });
               },
               remove: async (paths) => {
                 calls.push(["remove", paths]);
