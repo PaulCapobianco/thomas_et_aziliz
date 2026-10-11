@@ -1,0 +1,13 @@
+{
+  "name": "wedding-photo-album", "private": true, "type": "module",
+  "scripts": {
+    "dev": "python3 -m http.server 4173 --bind 127.0.0.1",
+    "vendor": "bash scripts/vendor.sh",
+    "build": "node scripts/build.mjs",
+    "check": "node --check app.js && node --check shared.js && node --check uploads.js && node --check admin.js",
+    "test": "playwright test",
+    "test:sql": "bash scripts/test-sql.sh"
+  },
+  "dependencies": {"@supabase/supabase-js": "2.117.3", "@tensorflow/tfjs": "4.22.0", "nsfwjs": "4.4.0"},
+  "devDependencies": {"@playwright/test": "1.58.2", "@axe-core/playwright": "4.11.1", "esbuild": "0.25.12", "@fontsource/cormorant-garamond": "5.2.8", "@fontsource/jost": "5.2.8"}
+}
