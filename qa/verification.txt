@@ -1,0 +1,131 @@
+Vérifications exécutées le 11 octobre 2026 — environnement local
+
+npm run test:sql
+T03 | PASS | envoi public vérifié => published | 
+T03b | PASS | la photo apparaît dans gallery_page (anon) | 
+T04 | PASS | même fichier exact, même destination => duplicate | 
+T04b | PASS | aucune 2e ligne créée | 
+T04c | PASS | même fichier en destination mariés => accepté | 
+T05 | PASS | photos similaires (empreintes différentes) toutes conservées | 
+T25 | PASS | check_duplicates ne renvoie que les empreintes présentes | 
+T25b | PASS | check_duplicates est propre à la destination | 
+T06 | PASS | gallery_page ne renvoie aucune photo privée | 
+T06b | PASS | SELECT direct sur photos : aucune ligne privée visible | 
+T06c | PASS | storage.objects : aucun objet privé lisible par anon | 
+T06d | PASS | utilisateur connecté NON admin : aucun objet privé lisible | 
+T07 | PASS | photo suspecte => pending_review/nsfw | 
+T07b | PASS | photo suspecte absente de la galerie | 
+T07c | PASS | fichiers de la photo suspecte illisibles par anon | 
+T07d | PASS | photo suspecte conservée (fichiers présents) | 
+T08 | PASS | modèle indisponible => pending_review/model_unavailable | 
+T08b | PASS | "skipped" sur une photo PUBLIQUE ne la publie jamais | 
+T08c | PASS | envoi privé sans modèle IA => accepté | 
+T09 | PASS | premier signalement => reported | 
+T09b | PASS | premier signalement : la photo reste visible | 
+T10 | PASS | même navigateur 2 fois => already_reported | 
+T10b | PASS | même navigateur : un seul vote, pas de retrait | 
+T11 | PASS | deuxième signalement distinct => photo masquée | 
+T11b | PASS | photo masquée absente de la galerie | 
+T11c | PASS | photo masquée non supprimée (ligne + 2 fichiers conservés) | 
+T11d | PASS | photo masquée : fichiers illisibles par anon (plus de nouvelle URL signée) | 
+T15 | PASS | admin restaure une photo masquée | 
+T15b | PASS | restauration : anciens signalements effacés | 
+T15c | PASS | après restauration, 1 nouveau signalement ne remasque pas | 
+T21 | PASS | signaler une photo privée => not_found | 
+T21b | PASS | signaler une photo en attente => not_found | 
+T13 | PASS | anon ne peut pas appeler admin_status | 
+T13b | PASS | utilisateur connecté non admin : admin_status refusé | 
+T13c | PASS | compte admin : admin_status OK | 
+T13d | PASS | non admin : admin_list_photos refusé | 
+T14 | PASS | admin met en pause | 
+T14b | PASS | la pause est persistée en base | 
+T14c | PASS | pause : nouvelle photo publique => pending_review/paused | 
+T14d | PASS | pause : une photo suspecte reste "nsfw" (la pause ne masque pas la suspicion) | 
+T14e | PASS | pause : l'envoi privé aux mariés continue | 
+T14f | PASS | pause : la galerie existante reste consultable | 
+T14g | PASS | reprise : admin_release_pending('paused') publie les photos mises en attente par la pause | 
+T14h | PASS | reprise : la photo suspecte reste en attente | 
+T14i | PASS | admin_release_pending('nsfw') est refusé | 
+T14j | PASS | admin masque une photo | 
+T14k | PASS | admin restaure une photo | 
+T14l | PASS | admin peut publier UNE photo suspecte après examen | 
+T16 | PASS | miniature manquante => erreur, rien de publié | 
+T16b | PASS | fichier trop lourd => refusé | 
+T16c | PASS | aucun fichier envoyé => refusé | 
+T26 | PASS | empreinte invalide => refusé | 
+T26b | PASS | destination invalide => refusé | 
+T24 | PASS | réessai avec le même id : même résultat, une seule ligne | 
+T24b | PASS | autre navigateur ne peut pas "rejouer" un id existant | 
+T23 | PASS | suppression admin => status deleted | 
+T23b | PASS | une photo supprimée ne peut plus être restaurée | 
+T23c | PASS | une photo supprimée libère son empreinte (renvoi possible) | 
+T23d | PASS | renvoyer une photo masquée => duplicate (elle ne ressuscite pas) | 
+T17 | PASS | pagination keyset 48 : 130 photos, aucun doublon malgré les dates identiques et une arrivée en cours de lecture | 
+T17b | PASS | gallery_page plafonne la taille de page à 100 | 
+T19-anon-a | PASS | anon : INSERT direct dans photos refusé | 
+T19-anon-b | PASS | anon : UPDATE direct de photos refusé | 
+T19-anon-c | PASS | anon : DELETE direct sur photos refusé | 
+T19-anon-d | PASS | anon : colonne original_sha256 illisible | 
+T19-anon-e | PASS | anon : colonne uploader_id illisible | 
+T19-anon-f | PASS | anon : colonne review_reason illisible | 
+T19-anon-g | PASS | anon : photo_reports illisible | 
+T19-anon-h | PASS | anon : INSERT direct de signalements refusé (pas de faux votes) | 
+T19-anon-i | PASS | anon : app_settings illisible | 
+T19-anon-j | PASS | anon : app_settings non modifiable | 
+T19-anon-k | PASS | anon : impossible de s'ajouter dans admin_users | 
+T19-anon-l | PASS | anon : admin_users illisible | 
+T19-anon-m | PASS | anon : admin_set_status refusé | 
+T19-anon-n | PASS | anon : admin_set_paused refusé | 
+T19-anon-o | PASS | anon : admin_release_pending refusé | 
+T19-anon-p | PASS | anon : admin_orphans refusé | 
+T19-authenticated-a | PASS | authenticated : INSERT direct dans photos refusé | 
+T19-authenticated-b | PASS | authenticated : UPDATE direct de photos refusé | 
+T19-authenticated-c | PASS | authenticated : DELETE direct sur photos refusé | 
+T19-authenticated-d | PASS | authenticated : colonne original_sha256 illisible | 
+T19-authenticated-e | PASS | authenticated : colonne uploader_id illisible | 
+T19-authenticated-f | PASS | authenticated : colonne review_reason illisible | 
+T19-authenticated-g | PASS | authenticated : photo_reports illisible | 
+T19-authenticated-h | PASS | authenticated : INSERT direct de signalements refusé (pas de faux votes) | 
+T19-authenticated-i | PASS | authenticated : app_settings illisible | 
+T19-authenticated-j | PASS | authenticated : app_settings non modifiable | 
+T19-authenticated-k | PASS | authenticated : impossible de s'ajouter dans admin_users | 
+T19-authenticated-l | PASS | authenticated : admin_users illisible | 
+T19-authenticated-m | PASS | authenticated : admin_set_status refusé | 
+T19-authenticated-n | PASS | authenticated : admin_set_paused refusé | 
+T19-authenticated-o | PASS | authenticated : admin_release_pending refusé | 
+T19-authenticated-p | PASS | authenticated : admin_orphans refusé | 
+T19-anon-s1 | PASS | anon : dépôt Storage au bon chemin autorisé | 
+T19-anon-s1b | PASS | INFO anon : dépôt Storage avec RETURNING * (voir README, vérification n°1) | 
+T19-anon-s2 | PASS | anon : dépôt Storage hors format de chemin refusé | 
+T19-anon-s3 | PASS | anon : dépôt Storage dans un dossier inconnu refusé | 
+T19-anon-s4 | PASS | anon : dépôt dans un autre bucket refusé | 
+T19-anon-s5 | PASS | anon : suppression Storage : 0 ligne supprimable | 
+T19-anon-s6 | PASS | anon : écrasement Storage : 0 ligne modifiable | 
+T19-authenticated-s1 | PASS | authenticated : dépôt Storage au bon chemin autorisé | 
+T19-authenticated-s1b | PASS | INFO authenticated : dépôt Storage avec RETURNING * (voir README, vérification n°1) | 
+T19-authenticated-s2 | PASS | authenticated : dépôt Storage hors format de chemin refusé | 
+T19-authenticated-s3 | PASS | authenticated : dépôt Storage dans un dossier inconnu refusé | 
+T19-authenticated-s4 | PASS | authenticated : dépôt dans un autre bucket refusé | 
+T19-authenticated-s5 | PASS | authenticated : suppression Storage : 0 ligne supprimable | 
+T19-authenticated-s6 | PASS | authenticated : écrasement Storage : 0 ligne modifiable | 
+T13e | PASS | admin : lecture des objets privés possible | 
+T13f | PASS | admin : suppression Storage possible | 
+T22 | PASS | plus de 20 signalements en 10 min par le même navigateur => rate_limited | 
+T28 | PASS | plafond de 500 envois / 24 h par navigateur => rate_limited | 
+T27 | PASS | admin_orphans liste les fichiers sans ligne photos (> 30 min) | 
+T27b | PASS | admin_orphans ne liste pas les fichiers rattachés à une photo | 
+T29 | PASS | bucket "photos" privé, JPEG, 3 Mo | 
+T29b | PASS | RLS active sur photos, photo_reports, app_settings, admin_users | 
+T29c | PASS | aucune policy INSERT/UPDATE/DELETE sur les tables publiques | 
+T29d | PASS | aucune policy UPDATE sur storage.objects | 
+T12 | PASS | 20 photos x 2 votes distincts simultanés => toutes masquées (2 votes) ; 20 photos x double-clic => 1 vote, visibles
+
+npm test -- --reporter=line
+54 passed (34.5s)
+
+npm test -- --grep 'polling|lightbox|modal|real locally' --reporter=line
+12 passed (7.9s)
+
+npm audit --omit=dev : FAIL (4 entrées modérées, même chaîne transitive, aucun high/critical).
+npm run vendor : PASS, argparse/sprintf-js exclus du bundle navigateur.
+Supabase distant / vrais téléphones / déploiement : NON TESTÉ.
