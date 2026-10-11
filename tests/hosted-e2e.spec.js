@@ -1,6 +1,7 @@
 // End-to-end send against the HOSTED Supabase project configured in config.js (real Storage, RPC, NSFWJS model).
 // Writes one 2-file photo per project run into the real bucket. Opt-in only: HOSTED_E2E=1 npx playwright test tests/hosted-e2e.spec.js --workers=1
 import { test, expect } from "@playwright/test";
+import { chooseDestination } from "./mock.js";
 import { createClient } from "@supabase/supabase-js";
 import { readFile } from "node:fs/promises";
 import { SUPABASE_URL, SUPABASE_KEY } from "../config.js";
@@ -21,6 +22,7 @@ test("real send from the unmodified site to the hosted project", async ({ page }
   const bytes = Buffer.concat([await readFile("fixtures/photo_03.jpg"), Buffer.from(`e2e:${info.project.name}:${Date.now()}`)]);
   await (await chooser).setFiles([{ name: "e2e.jpg", mimeType: "image/jpeg", buffer: bytes }]);
   await expect(page.locator("#upload-status")).toContainText("1 photo(s) prête(s)");
+  await chooseDestination(page);
   await page.locator("#send").click();
   await expect(page.locator("#upload-message")).toHaveAttribute("data-kind", /success|pending|error/, { timeout: 90000 });
   const status = await page.locator("#upload-status").textContent();

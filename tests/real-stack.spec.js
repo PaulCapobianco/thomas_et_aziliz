@@ -2,6 +2,7 @@
 // Skipped unless REAL_URL/REAL_ANON are set. Use scripts/real-stack.sh for a disposable local stack.
 // CSP is bypassed ONLY here (the local stack is http://127.0.0.1); CSP is verified by flows.spec.js.
 import { test, expect } from "@playwright/test";
+import { chooseDestination } from "./mock.js";
 
 const { REAL_URL, REAL_ANON } = process.env;
 test.skip(!REAL_URL || !REAL_ANON, "NON TESTÉ: real stack not configured");
@@ -42,6 +43,7 @@ test("real upload: public photos appear, exact copy ignored, private stays out, 
       await file("a-copie.jpg", "photo_01.jpg"),
       await file("b.jpg", "photo_02.jpg"),
     ]);
+  await chooseDestination(a);
   await expect(a.locator("#send")).toBeEnabled();
   await a.locator("#send").click();
   await expect(a.locator("#upload-message")).toHaveAttribute("data-kind", /success|pending|error/, { timeout: 90000 });
@@ -52,10 +54,10 @@ test("real upload: public photos appear, exact copy ignored, private stays out, 
   expect(status).toMatch(/1 doublon ignoré/);
 
   // Private upload must never reach the public gallery.
-  await a.locator("[name=audience][value=maries]").check();
   await a
     .locator("#files")
     .setInputFiles([await file("prive.jpg", "photo_03.jpg", Buffer.from("priv" + Date.now()))]);
+  await a.locator("[name=audience][value=maries]").check();
   await a.locator("#send").click();
   await expect(a.locator("#upload-status")).toContainText("envoyée aux mariés", { timeout: 60000 });
 
@@ -114,6 +116,7 @@ test("regression: after publishing a 3rd photo in the same page nothing disappea
   await open(page, "#partager");
   const sendNow = async (files) => {
     await page.locator("#files").setInputFiles(files);
+    await chooseDestination(page);
     await page.locator("#send").click();
     await expect(page.locator("#upload-message")).toHaveAttribute("data-kind", /success|pending/, { timeout: 90000 });
   };

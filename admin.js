@@ -176,15 +176,17 @@ function updateBatchBar(progress) {
   document.body.classList.toggle("has-batch", show);
   $("batch-approve").hidden = $("batch-reject").hidden = filter !== "pending";
   $("batch-remove").hidden = filter !== "recent";
+  $("batch-delete").hidden = !batchTab();
   $("batch-approve").textContent = `Valider (${count})`;
   $("batch-reject").textContent = `Refuser (${count})`;
   $("batch-remove").textContent = `Retirer (${count})`;
+  $("batch-delete").textContent = `Supprimer (${count})`;
   $("batch-summary").textContent = progress
     ? `Traitement : ${progress.done} sur ${progress.total}…`
     : `${plural(count, "photo sélectionnée", "photos sélectionnées")}`;
   $("batch-progress").hidden = !progress;
   if (progress) $("batch-progress").value = Math.round((progress.done / progress.total) * 100);
-  for (const id of ["batch-approve", "batch-reject", "batch-remove"])
+  for (const id of ["batch-approve", "batch-reject", "batch-remove", "batch-delete"])
     $(id).disabled = batchRunning || busy;
   const everything = rows.length > 0 && rows.every((row) => selected.has(row.id));
   $("select-all").hidden = !batchTab() || !rows.length;
@@ -198,6 +200,13 @@ async function runBatch(kind) {
   const targets = rows.filter((row) => selected.has(row.id));
   if (!targets.length || busy || batchRunning) return;
   const status = kind === "approve" ? "published" : "hidden";
+  if (
+    kind === "delete" &&
+    !(await confirmAction(
+      `Supprimer définitivement ${plural(targets.length, "photo", "photos")} ? Les deux fichiers ${targets.length > 1 ? "de chaque photo seront effacés" : "de la photo seront effacés"} du stockage. Cette action est définitive et irréversible.`,
+    ))
+  )
+    return;
   if (
     kind === "reject" &&
     !(await confirmAction(
@@ -219,11 +228,17 @@ async function runBatch(kind) {
   const request = generation;
   let done = 0;
   const failed = [];
+  let storageFailed = 0;
   updateBatchBar({ done, total: targets.length });
   for (const row of targets) {
     try {
-      const result = await rpc(sb, "admin_set_status", { p_id: row.id, p_status: status });
-      if (result.result === "not_found") throw Object.assign(new Error(), { userMessage: "photo introuvable" });
+      if (kind === "delete") {
+        // The same function as the card button: one request per photo, then its two files.
+        if (!(await deletePhoto(row)).storageCleaned) storageFailed++;
+      } else {
+        const result = await rpc(sb, "admin_set_status", { p_id: row.id, p_status: status });
+        if (result.result === "not_found") throw Object.assign(new Error(), { userMessage: "photo introuvable" });
+      }
       selected.delete(row.id);
     } catch (error) {
       failed.push(errorText(error).replace(/\.$/, ""));
@@ -235,13 +250,23 @@ async function runBatch(kind) {
   }
   batchRunning = false;
   const ok = done - failed.length;
-  const verb = kind === "approve" ? "validée" : kind === "reject" ? "refusée" : "retirée";
+  const verb = { approve: "validée", reject: "refusée", remove: "retirée", delete: "supprimée" }[kind];
   const verbs = verb + "s";
-  $("admin-message").textContent =
-    `${plural(ok, `photo ${verb}`, `photos ${verbs}`)}${kind === "approve" ? " : visible dans la galerie" : ""}.` +
-    (failed.length
-      ? ` ${plural(failed.length, "échec", "échecs")} : ${[...new Set(failed)].slice(0, 2).join(" ; ")}. ${failed.length > 1 ? "Ces photos restent sélectionnées" : "Cette photo reste sélectionnée"} : réessayez.`
-      : "");
+  const fullyDone = ok - storageFailed;
+  const parts = [];
+  if (kind !== "delete" || fullyDone)
+    parts.push(
+      `${plural(kind === "delete" ? fullyDone : ok, `photo ${verb}`, `photos ${verbs}`)}${kind === "approve" ? " : visible dans la galerie" : ""}${kind === "delete" ? " définitivement" : ""}.`,
+    );
+  if (storageFailed)
+    parts.push(
+      `${plural(storageFailed, "photo supprimée de l’album", "photos supprimées de l’album")} mais dont les fichiers n’ont pas pu être effacés du stockage ; prévenez l’organisateur pour terminer le nettoyage.`,
+    );
+  if (failed.length)
+    parts.push(
+      `${plural(failed.length, "échec", "échecs")} : ${[...new Set(failed)].slice(0, 2).join(" ; ")}. ${failed.length > 1 ? "Ces photos restent sélectionnées" : "Cette photo reste sélectionnée"} : réessayez.`,
+    );
+  $("admin-message").textContent = parts.join(" ");
   await load();
 }
 // Reuse the signed thumbnail URL of a photo already on screen (valid one hour) so refreshes do not reload the grid.
@@ -363,6 +388,21 @@ async function mutate(operation, message = "Action enregistrée.") {
     await load();
   }
 }
+// Individual deletion, shared by the card button and the batch: row first, then the two Storage files.
+// Storage answers 200 with only the objects it really deleted: an empty or short list is a failure too.
+async function deletePhoto(row) {
+  const result = await rpc(sb, "admin_set_status", { p_id: row.id, p_status: "deleted" });
+  if (result.result === "not_found")
+    throw Object.assign(new Error(), { userMessage: "Cette photo n’est plus disponible." });
+  let storageCleaned = true;
+  try {
+    const removed = unwrap(await storage(sb).remove([row.full_path, row.thumb_path]));
+    if (removed?.length !== 2) storageCleaned = false;
+  } catch {
+    storageCleaned = false;
+  }
+  return { storageCleaned };
+}
 async function setStatus(row, status) {
   if (busy || batchRunning) return;
   if (
@@ -390,6 +430,10 @@ async function setStatus(row, status) {
     return;
   let removalFailed = false;
   await mutate(async () => {
+    if (status === "deleted") {
+      removalFailed = !(await deletePhoto(row)).storageCleaned;
+      return;
+    }
     const result = await rpc(sb, "admin_set_status", {
       p_id: row.id,
       p_status: status,
@@ -398,17 +442,6 @@ async function setStatus(row, status) {
       throw Object.assign(new Error(), {
         userMessage: "Cette photo n’est plus disponible.",
       });
-    if (status === "deleted") {
-      try {
-        // Storage answers 200 with only the objects it really deleted: an empty or short list is a failure too.
-        const removed = unwrap(
-          await storage(sb).remove([row.full_path, row.thumb_path]),
-        );
-        if (removed?.length !== 2) removalFailed = true;
-      } catch {
-        removalFailed = true;
-      }
-    }
   });
   if (removalFailed)
     $("admin-message").textContent =
@@ -483,6 +516,7 @@ document.querySelectorAll("[data-release]").forEach((button) => {
 $("batch-approve").onclick = () => runBatch("approve");
 $("batch-reject").onclick = () => runBatch("reject");
 $("batch-remove").onclick = () => runBatch("remove");
+$("batch-delete").onclick = () => runBatch("delete");
 $("select-all").onclick = () => {
   const everything = rows.every((row) => selected.has(row.id));
   selected.clear();

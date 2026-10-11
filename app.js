@@ -13,7 +13,6 @@ import { setupUploads } from "./uploads.js";
 const sb = createClient();
 if (NAMES) {
   $("names").textContent = NAMES;
-  $("private-names").textContent = NAMES;
 }
 $("date").textContent = DATE_TXT;
 if (LOCATION) {

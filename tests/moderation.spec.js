@@ -207,3 +207,136 @@ test("'Récentes': a Retirer button on every card, multiple selection and the sa
   await page.getByRole("button", { name: "Signalées", exact: true }).click();
   await expect(page.locator(".select-box")).toHaveCount(0);
 });
+
+// ---- Batch delete ---------------------------------------------------------------------------------------
+const statusCalls = (page, status) => page.evaluate((s) => mock.calls.filter((c) => c[0] === "admin_set_status" && c[1].p_status === s).length, status);
+const removeCalls = (page) => page.evaluate(() => mock.calls.filter((c) => c[0] === "remove"));
+
+test("'Supprimer (n)' sits in its own danger row in the pending queue and in Récentes, never elsewhere", async ({ page }) => {
+  await openQueue(page, { pending: ["paused", "paused", "paused"], photos: 2 });
+  await expect(page.locator("#batch-delete")).toBeHidden();
+  await tick(page, 0);
+  await tick(page, 1);
+  await expect(page.locator("#batch-delete")).toBeVisible();
+  await expect(page.locator("#batch-delete")).toHaveText("Supprimer (2)");
+  const r = (selector) => page.locator(selector).evaluate((n) => { const b = n.getBoundingClientRect(); return { y: b.y, bottom: b.bottom, h: b.height, w: b.width }; });
+  const approve = await r("#batch-approve");
+  const reject = await r("#batch-reject");
+  const del = await r("#batch-delete");
+  expect(del.h).toBeGreaterThanOrEqual(48);
+  expect(del.y - Math.max(approve.bottom, reject.bottom)).toBeGreaterThanOrEqual(8); // clearly apart: no mis-tap
+  expect(del.w).toBeGreaterThan(approve.w); // its own full-width row
+  await expect(page.locator("#batch-delete")).toBeInViewport({ ratio: 1 });
+  expect(await page.locator("#batch-delete").evaluate((n) => getComputedStyle(n).color)).toBe("rgb(157, 57, 46)"); // --danger
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  // The other actions are untouched.
+  await expect(page.locator("#batch-approve")).toHaveText("Valider (2)");
+  await expect(page.locator("#batch-reject")).toHaveText("Refuser (2)");
+  // Récentes: Retirer + Supprimer.
+  await page.getByRole("button", { name: "Récentes", exact: true }).click();
+  await expect(bar(page)).toBeHidden();
+  await tick(page, 0);
+  await expect(page.locator("#batch-remove")).toHaveText("Retirer (1)");
+  await expect(page.locator("#batch-delete")).toHaveText("Supprimer (1)");
+  // No selection (and so no bar) on the other tabs.
+  await page.getByRole("button", { name: "Signalées", exact: true }).click();
+  await expect(page.locator("#batch-delete")).toBeHidden();
+});
+
+test("batch delete: confirmation with the count and 'définitif'; cancelling does nothing and keeps the selection", async ({ page }) => {
+  await openQueue(page, { pending: ["paused", "paused", "paused"] });
+  await tick(page, 0);
+  await tick(page, 1);
+  await page.locator("#batch-delete").click();
+  await expect(page.locator("#confirm-dialog")).toBeVisible();
+  await expect(page.locator("#confirm-message")).toContainText("Supprimer définitivement 2 photos ?");
+  await expect(page.locator("#confirm-message")).toContainText("Les deux fichiers de chaque photo seront effacés du stockage");
+  await expect(page.locator("#confirm-message")).toContainText("définitive et irréversible");
+  await page.locator("#confirm-no").click();
+  expect(await statusCalls(page, "deleted")).toBe(0);
+  expect(await removeCalls(page)).toHaveLength(0);
+  await expect(cards(page)).toHaveCount(3);
+  await expect(page.locator("#batch-delete")).toHaveText("Supprimer (2)"); // selection kept
+});
+
+test("batch delete: one request per photo (row then both files), progress, clear report", async ({ page }) => {
+  await openQueue(page, { pending: ["paused", "paused", "paused"] });
+  await page.evaluate(() => (mock.statusDelay = 300));
+  await page.locator("#select-all").click();
+  await page.locator("#batch-delete").click();
+  await expect(page.locator("#confirm-message")).toContainText("Supprimer définitivement 3 photos ?");
+  await page.locator("#confirm-yes").click();
+  await expect(page.locator("#batch-progress")).toBeVisible();
+  await expect(page.locator("#batch-summary")).toContainText(/Traitement : \d sur 3…/);
+  await expect(page.locator("#admin-message")).toContainText("3 photos supprimées définitivement.", { timeout: 15000 });
+  expect(await statusCalls(page, "deleted")).toBe(3);
+  const removed = await removeCalls(page);
+  expect(removed).toHaveLength(3);
+  expect(removed.every((c) => c[1].length === 2 && c[1].some((p) => p.includes("/full/")) && c[1].some((p) => p.includes("/thumbs/")))).toBeTruthy();
+  await expect(cards(page)).toHaveCount(0);
+  await expect(bar(page)).toBeHidden();
+});
+
+test("batch delete: a failed row stays selected for a new try", async ({ page }) => {
+  await openQueue(page, { pending: ["paused", "paused", "paused"] });
+  const failing = await page.evaluate(() => {
+    const id = mock.records.find((r) => r.id.startsWith("ffff0002")).id;
+    mock.failStatusFor.add(id);
+    return id;
+  });
+  await page.locator("#select-all").click();
+  await page.locator("#batch-delete").click();
+  await page.locator("#confirm-yes").click();
+  await expect(page.locator("#admin-message")).toContainText("2 photos supprimées définitivement.", { timeout: 10000 });
+  await expect(page.locator("#admin-message")).toContainText("1 échec :");
+  await expect(page.locator("#admin-message")).toContainText("Cette photo reste sélectionnée : réessayez.");
+  expect(await removeCalls(page)).toHaveLength(2); // the failed row's files were NOT touched
+  await expect(cards(page)).toHaveCount(1);
+  await expect(page.locator("#batch-delete")).toHaveText("Supprimer (1)");
+  await page.evaluate((id) => mock.failStatusFor.delete(id), failing);
+  await page.locator("#batch-delete").click();
+  await page.locator("#confirm-yes").click();
+  await expect(page.locator("#admin-message")).toContainText("1 photo supprimée définitivement.", { timeout: 10000 });
+  await expect(cards(page)).toHaveCount(0);
+});
+
+test("batch delete: row deleted but Storage files kept is counted apart, with the existing wording", async ({ page }) => {
+  await openQueue(page, { pending: ["paused", "paused", "paused"] });
+  await page.evaluate(() => mock.removeShortFor.add(mock.records.find((r) => r.id.startsWith("ffff0002")).id));
+  await page.locator("#select-all").click();
+  await page.locator("#batch-delete").click();
+  await page.locator("#confirm-yes").click();
+  const message = page.locator("#admin-message");
+  await expect(message).toContainText("2 photos supprimées définitivement.", { timeout: 10000 });
+  await expect(message).toContainText("1 photo supprimée de l’album mais dont les fichiers n’ont pas pu être effacés du stockage ; prévenez l’organisateur pour terminer le nettoyage.");
+  await expect(message).not.toContainText("échec");
+  expect(await statusCalls(page, "deleted")).toBe(3);
+});
+
+test("the 30 s refresh stays suspended while the delete confirmation is open", async ({ page }) => {
+  await page.clock.install();
+  await openQueue(page, { pending: ["paused", "paused"] });
+  await tick(page, 0);
+  await page.locator("#batch-delete").click();
+  await expect(page.locator("#confirm-dialog")).toBeVisible();
+  const lists = () => page.evaluate(() => mock.calls.filter((c) => c[0] === "admin_list_photos").length);
+  const before = await lists();
+  await page.clock.fastForward(95000);
+  await page.waitForTimeout(300);
+  expect(await lists()).toBe(before);
+  await page.locator("#confirm-no").click();
+  await page.clock.fastForward(30500);
+  await expect.poll(lists).toBeGreaterThan(before);
+});
+
+test("the single-card Supprimer button still works through the shared deletion function", async ({ page }) => {
+  await openQueue(page, { pending: ["paused", "paused"] });
+  await cards(page).first().getByRole("button", { name: "Supprimer", exact: true }).click();
+  await page.locator("#confirm-yes").click();
+  await expect(cards(page)).toHaveCount(1);
+  expect(await removeCalls(page)).toHaveLength(1);
+  await page.evaluate(() => mock.removeShortFor.add(mock.records.find((r) => r.status === "pending_review").id));
+  await cards(page).first().getByRole("button", { name: "Supprimer", exact: true }).click();
+  await page.locator("#confirm-yes").click();
+  await expect(page.locator("#admin-message")).toContainText("Photo retirée. Les fichiers n’ont pas pu être effacés du stockage");
+});

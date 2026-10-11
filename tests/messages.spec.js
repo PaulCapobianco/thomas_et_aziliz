@@ -1,7 +1,7 @@
 // Upload status messages: one block, one message at a time (success 5 s, pending 10 s with OK, errors stay).
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { installMock } from "./mock.js";
+import { installMock, chooseDestination } from "./mock.js";
 
 const fixture = (name) => `fixtures/${name}`;
 const box = (page) => page.locator("#upload-message");
@@ -10,6 +10,7 @@ const settled = (page, timeout = 30000) =>
   expect(box(page)).toHaveAttribute("data-kind", /success|pending|error/, { timeout });
 async function sendOne(page, name = "photo_01.jpg") {
   await page.locator("#files").setInputFiles([fixture(name)]);
+  await chooseDestination(page);
   await expect(page.locator("#send")).toBeEnabled();
   await page.locator("#send").click();
 }
@@ -65,6 +66,7 @@ test("failure never disappears by itself; reason, count, retry and close; succes
   await installMock(page, { failures: 3 });
   await page.goto("/#partager");
   await page.locator("#files").setInputFiles([fixture("photo_03.jpg"), fixture("photo_02.jpg")]);
+  await chooseDestination(page);
   await page.locator("#send").click();
   await settled(page, 40000);
   await expect(box(page)).toHaveAttribute("data-kind", "error");
@@ -101,6 +103,7 @@ test("mixed send (success + network failure + duplicate + unreadable file) gives
   // The unreadable file is reported at selection, as an error that stays.
   await expect(box(page)).toHaveAttribute("data-kind", "error");
   await expect(status(page)).toContainText("1 fichier n’a pas pu être utilisé");
+  await chooseDestination(page);
   await page.locator("#send").click();
   await settled(page, 40000);
   await expect(page.locator("#upload-message")).toHaveCount(1);
@@ -124,6 +127,7 @@ test("a new send replaces the previous message; a later success never erases an 
   // Another send while the error is shown: the progress block replaces it, then ONE final message, still an error.
   await page.locator("#files").setInputFiles([fixture("photo_02.jpg")]);
   await expect(box(page)).toHaveAttribute("data-kind", "error"); // information does not replace an error
+  await chooseDestination(page);
   await page.locator("#send").click();
   await settled(page, 40000);
   await expect(page.locator("#upload-message")).toHaveCount(1);
@@ -183,6 +187,7 @@ test("everything sent: list emptied and hidden, file field reset, plain thank-yo
   await expect(selected(page)).toHaveCount(1);
   await expect(page.locator("#selection")).toBeVisible();
   await expect(page.locator("#selection-title")).toHaveText("Vos photos sélectionnées (1)");
+  await chooseDestination(page);
   await page.locator("#send").click();
   await settled(page);
   await expect(status(page)).toHaveText("Merci ! Votre photo a bien été ajoutée à la galerie.");
@@ -193,6 +198,7 @@ test("everything sent: list emptied and hidden, file field reset, plain thank-yo
   await expect(page.locator("#send")).toBeDisabled();
   // Several photos: plural.
   await page.locator("#files").setInputFiles([fixture("photo_02.jpg"), fixture("photo_03.jpg")]);
+  await chooseDestination(page);
   await page.locator("#send").click();
   await settled(page);
   await expect(status(page)).toHaveText("Merci ! Vos 2 photos ont bien été ajoutées à la galerie.");
@@ -218,6 +224,7 @@ test("partial failure: only the failed photo stays, with its error and a way to 
   await page.goto("/#partager");
   await page.locator("#files").setInputFiles([fixture("photo_03.jpg"), fixture("photo_02.jpg")]);
   await expect(selected(page)).toHaveCount(2);
+  await chooseDestination(page);
   await page.locator("#send").click();
   await settled(page, 40000);
   await expect(box(page)).toHaveAttribute("data-kind", "error");
@@ -241,6 +248,7 @@ test("the same file can be chosen twice in a row (the field is reset after sendi
   await page.goto("/#partager");
   await page.locator("#files").setInputFiles([fixture("photo_01.jpg")]);
   await expect(selected(page)).toHaveCount(1);
+  await chooseDestination(page);
   await page.locator("#send").click();
   await settled(page);
   expect(await fileValue(page)).toBe("");
@@ -248,6 +256,7 @@ test("the same file can be chosen twice in a row (the field is reset after sendi
   // Same file again: accepted as a new selection (the guest is told it is a duplicate once sent).
   await page.locator("#files").setInputFiles([fixture("photo_01.jpg")]);
   await expect(selected(page)).toHaveCount(1);
+  await chooseDestination(page);
   await expect(page.locator("#send")).toBeEnabled();
   await page.locator("#send").click();
   await settled(page);
@@ -283,6 +292,7 @@ test("validation mode: plain thank-you for one photo and for several, with OK, a
   await expect(page.locator("#selection li")).toHaveCount(0);
   await page.locator("#message-close").click();
   await page.locator("#files").setInputFiles([fixture("photo_02.jpg"), fixture("photo_03.jpg")]);
+  await chooseDestination(page);
   await page.locator("#send").click();
   await settled(page);
   await expect(status(page)).toHaveText("Merci ! Vos 2 photos seront visibles après validation.");
@@ -309,6 +319,7 @@ test("model unavailable keeps its previous wording; a clean photo without valida
   await installMock(other);
   await other.goto("/#partager");
   await other.locator("#files").setInputFiles([fixture("photo_02.jpg")]);
+  await chooseDestination(other);
   await other.locator("#send").click();
   await expect(other.locator("#upload-status")).toHaveText("Merci ! Votre photo a bien été ajoutée à la galerie.");
 });

@@ -283,6 +283,7 @@ export async function uploadPhoto(sb, file, audience, seen, update = () => {}, i
 const SUCCESS_MS = 5000,
   PENDING_MS = 10000,
   FADE_MS = 400;
+const chosenAudience = () => document.querySelector("[name=audience]:checked")?.value || "";
 const trimStop = (text) => String(text).replace(/[.\s]+$/, "");
 const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
 function createMessage(onChange = () => {}) {
@@ -449,14 +450,20 @@ export function setupUploads(sb, onComplete) {
       );
       $("selection").append(li);
     });
-    const audience = document.querySelector("[name=audience]:checked").value;
+    const choice = chosenAudience();
     const waiting = items.filter((item) => !item.result).length;
-    $("send-destination").textContent = waiting
-      ? `Destination : ${audience === "maries" ? "envoi privé, uniquement aux mariés" : "galerie commune, visible par tous les invités"}.`
-      : "";
-    $("send").disabled = busy || !sb || !waiting;
-    $("send").textContent =
-      `Envoyer ${items.filter((item) => !item.result).length} photo(s)`;
+    const failures = items.filter((item) => item.result === "error");
+    // Retrying only makes sense for photos that failed while sending (not for files that could not be read).
+    const retryable = failures.filter((item) => !item.unreadable).length;
+    const barVisible = busy || waiting > 0 || retryable > 0;
+    $("send-bar").hidden = !barVisible;
+    document.body.classList.toggle("has-send-bar", barVisible);
+    $("send-choice").hidden = busy;
+    const count = waiting || retryable;
+    const where = choice === "maries" ? "les mariés" : "la galerie commune";
+    $("send-help").hidden = Boolean(choice);
+    $("send").disabled = busy || !sb || !count || !choice;
+    $("send").textContent = `${waiting || !retryable ? "Envoyer" : "Réessayer"} ${plural(count, "photo", "photos")}${choice ? ` vers ${where}` : ""}`;
     $("retry").hidden =
       !items.some((item) => item.result === "error") ||
       !$("message-retry").hidden;
@@ -481,6 +488,7 @@ export function setupUploads(sb, onComplete) {
         item.url = URL.createObjectURL(await jpeg(canvas, 0.6));
       } catch (error) {
         item.result = "error";
+        item.unreadable = true;
         item.reason = errorText(error);
         item.message = `Échec : ${item.reason}`;
       } finally {
@@ -500,13 +508,14 @@ export function setupUploads(sb, onComplete) {
         { retry: true, close: "Fermer" },
       );
     } else if (ready)
-      message.show("info", `${ready} photo(s) prête(s). Vérifiez la destination, puis appuyez sur « Envoyer ».`);
+      message.show("info", `${ready} photo(s) prête(s). Choisissez où les envoyer, puis appuyez sur « Envoyer ».`);
     else message.show("info", "Aucune photo utilisable dans cette sélection.");
     render();
   };
   async function run(retry = false) {
     if (busy || !sb) return;
-    const audience = document.querySelector("[name=audience]:checked").value;
+    const audience = chosenAudience();
+    if (!audience) return; // The send button is inactive without a destination; this also guards Enter / retry paths.
     const batch = items.filter((item) =>
       retry ? item.result === "error" : !item.result,
     );
@@ -573,6 +582,8 @@ export function setupUploads(sb, onComplete) {
       .forEach(revoke);
     items = items.filter((item) => !item.result || item.result === "error");
     $("files").value = "";
+    // Nothing left to do: forget the destination so the next send starts with a deliberate choice.
+    if (!items.length) document.querySelectorAll("[name=audience]").forEach((radio) => (radio.checked = false));
     // The progress block gives way to the final message: never both on screen.
     $("progress-panel").hidden = true;
     message.show(final.kind, final.text, final.options);
@@ -580,9 +591,10 @@ export function setupUploads(sb, onComplete) {
     $("upload-message").scrollIntoView({ block: "nearest" });
     onComplete();
   }
+  // One send path. The bar button sends the waiting photos, or retries the failed ones when nothing else waits.
   $("upload-form").onsubmit = (event) => {
     event.preventDefault();
-    run();
+    run(!items.some((item) => !item.result));
   };
   $("retry").onclick = () => run(true);
   $("message-retry").onclick = () => run(true);

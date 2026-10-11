@@ -30,12 +30,16 @@ for (const width of [390, 768, 1440]) {
     };
     await capture("home");
     await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
-    await expect(page.locator("[value=public]")).toBeChecked();
-    await page.getByRole("radio", { name: /Envoyer uniquement aux mariés/ }).check();
+    // No destination is preselected, and the choice only appears (in the fixed bar) once photos are selected.
+    await expect(page.locator("[name=audience]:checked")).toHaveCount(0);
+    await expect(page.locator("#send-bar")).toBeHidden();
+    await page.locator("#files").setInputFiles(["fixtures/photo_01.jpg"]);
+    await expect(page.locator("#send-bar")).toBeVisible();
+    await expect(page.locator("[name=audience]:checked")).toHaveCount(0);
+    await page.getByRole("radio", { name: /Uniquement aux mariés/ }).check();
     await expect(page.locator("[value=maries]")).toBeChecked();
-    const destination = await page.locator(".destinations").boundingBox();
-    const picker = await page.locator(".file-picker").boundingBox();
-    expect(destination.y + destination.height).toBeLessThan(picker.y);
+    const bar = await page.locator("#send-bar").boundingBox();
+    expect(Math.round(bar.y + bar.height)).toBe(900);
     await capture("share-private");
     await page.getByRole("link", { name: "Galerie", exact: true }).click();
     await expect(page.locator("#gallery-view")).toBeVisible();

@@ -1319,3 +1319,110 @@ body.has-batch .site-footer {
     grid-template-columns: repeat(2, minmax(10rem, 1fr));
   }
 }
+
+/* ---- Share page: fixed send bar (destination choice, send button, progress) ---- */
+.send-bar {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 20;
+  display: grid;
+  gap: 0.6rem;
+  max-height: 72dvh;
+  overflow-y: auto;
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 2px solid var(--accent);
+  box-shadow: 0 -8px 24px #4d493b24;
+}
+.send-bar[hidden],
+.send-choice[hidden],
+.send-help[hidden] {
+  display: none;
+}
+.send-choice {
+  display: grid;
+  gap: 0.6rem;
+}
+.destination-choice legend {
+  padding: 0;
+  margin-bottom: 0.4rem;
+  font: 400 0.78rem/1.5 var(--font-ui);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.send-bar .destinations {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.send-bar .destination {
+  min-height: 56px;
+  padding: 0.7rem 0.8rem;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+.send-bar .destination input {
+  right: 0.6rem;
+  top: 0.7rem;
+  width: 22px;
+  height: 22px;
+}
+.send-bar .destination strong {
+  font: 500 1rem/1.2 var(--font-ui);
+  margin-bottom: 0.25rem;
+  padding-right: 1.8rem;
+}
+.send-bar .destination small {
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+.destination:has(input:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.send-help {
+  margin: 0;
+  font-weight: 500;
+}
+.send-bar #send {
+  width: 100%;
+  min-height: 56px;
+  flex: none;
+}
+.send-bar .progress-panel {
+  position: static;
+  border: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+.send-bar .progress-panel button {
+  min-height: 52px;
+}
+body.has-send-bar .site-footer {
+  padding-bottom: calc(17rem + env(safe-area-inset-bottom));
+}
+
+/* Batch delete: its own row, clearly apart from the other actions, in the danger colour. */
+.batch-danger {
+  margin-top: 0.4rem;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--border);
+}
+.batch-danger button[hidden] {
+  display: none;
+}
+.batch-danger .danger {
+  width: 100%;
+  min-height: 52px;
+  font-weight: 500;
+  color: var(--danger);
+  border: 2px solid var(--danger);
+  background: transparent;
+}
+.batch-danger .danger:not(:disabled):hover {
+  background: #9d392e12;
+}
+.batch-danger .danger:focus-visible {
+  outline: 3px solid var(--danger);
+  outline-offset: 2px;
+}

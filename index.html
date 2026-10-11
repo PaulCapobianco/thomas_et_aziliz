@@ -118,39 +118,9 @@
         <form id="upload-form">
           <fieldset id="upload-controls">
             <legend class="sr-only">
-              Destination et sélection de vos photos
+              Sélection de vos photos
             </legend>
-            <p id="step-destination" class="step">1. À qui sont destinées vos photos ?</p>
-            <div class="destinations">
-              <label class="destination"
-                ><input
-                  type="radio"
-                  name="audience"
-                  value="public"
-                  checked
-                /><span class="destination-icon" aria-hidden="true">♧</span
-                ><span
-                  ><strong>Partager avec tous les invités</strong
-                  ><small
-                    >Vos photos seront publiées dans la galerie commune, visible par tous les invités.</small
-                  ></span
-                ></label
-              >
-              <label class="destination"
-                ><input type="radio" name="audience" value="maries" /><span
-                  class="destination-icon"
-                  aria-hidden="true"
-                  >◇</span
-                ><span
-                  ><strong>Envoyer uniquement aux mariés</strong
-                  ><small
-                    >Vos photos seront conservées dans l’album privé de
-                    <span id="private-names">Thomas &amp; Aziliz</span>, sans être visibles par les autres invités.</small
-                  ></span
-                ></label
-              >
-            </div>
-            <p class="step selection-step">2. Choisissez vos photos</p>
+            <p class="step selection-step">Choisissez vos photos</p>
             <label class="file-picker" for="files"
               ><span aria-hidden="true">↥</span> Ajouter mes photos<input
                 id="files"
@@ -178,11 +148,8 @@
             </div>
             <ul id="selection" class="selection"></ul>
           </fieldset>
-          <p id="send-destination" class="send-destination" aria-live="polite"></p>
           <div class="upload-actions">
-            <button id="send" class="button primary" type="submit" disabled>
-              Envoyer mes photos <span aria-hidden="true">↗</span></button
-            ><button id="retry" type="button" hidden>
+            <button id="retry" type="button" hidden>
               Réessayer les échecs
             </button>
           </div>
@@ -191,18 +158,6 @@
             originaux en haute résolution. Les métadonnées, dont la position
             GPS, sont retirées.
           </p>
-          <div id="progress-panel" class="progress-panel" hidden>
-            <div>
-              <p id="progress-label">Préparation…</p>
-              <progress
-                id="progress"
-                max="100"
-                value="0"
-                aria-labelledby="progress-label"
-              ></progress>
-            </div>
-            <button id="cancel-upload" type="button">Annuler</button>
-          </div>
           <div id="upload-message" class="upload-message">
             <p id="upload-status" role="status" aria-live="polite"></p>
             <div class="message-actions">
@@ -210,6 +165,43 @@
                 Réessayer les échecs
               </button>
               <button id="message-close" type="button" hidden>Fermer</button>
+            </div>
+          </div>
+          <div id="send-bar" class="send-bar" hidden>
+            <div id="send-choice" class="send-choice">
+              <fieldset id="destination-choice" class="destination-choice">
+                <legend>Où envoyer vos photos ?</legend>
+                <div class="destinations">
+                  <label class="destination"
+                    ><input type="radio" name="audience" value="public" /><span
+                      ><strong>Galerie commune</strong
+                      ><small>Visible par tous les invités après validation par les mariés.</small></span
+                    ></label
+                  >
+                  <label class="destination"
+                    ><input type="radio" name="audience" value="maries" /><span
+                      ><strong>Uniquement aux mariés</strong
+                      ><small>Les autres invités ne verront pas cette photo.</small></span
+                    ></label
+                  >
+                </div>
+              </fieldset>
+              <p id="send-help" class="send-help" role="status">Choisissez où envoyer vos photos</p>
+              <button id="send" class="button primary" type="submit" disabled>
+                Envoyer
+              </button>
+            </div>
+            <div id="progress-panel" class="progress-panel" hidden>
+              <div>
+                <p id="progress-label">Préparation…</p>
+                <progress
+                  id="progress"
+                  max="100"
+                  value="0"
+                  aria-labelledby="progress-label"
+                ></progress>
+              </div>
+              <button id="cancel-upload" type="button">Annuler</button>
             </div>
           </div>
         </form>

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { installMock } from "./mock.js";
+import { installMock, chooseDestination } from "./mock.js";
 const emptyConfig = (page) =>
   page.route("**/config.js", (route) =>
     route.fulfill({
@@ -16,8 +16,9 @@ const settled = (page, timeout = 30000) =>
     /success|pending|error/,
     { timeout },
   );
-async function upload(page, names) {
+async function upload(page, names, audience = "public") {
   await page.locator("#files").setInputFiles(names.map(fixture));
+  await page.locator(`[name=audience][value=${audience}]`).check();
   await expect(page.locator("#send")).toBeEnabled();
   await page.locator("#send").click();
   await settled(page, 30000);
@@ -121,8 +122,7 @@ test("private upload skips NSFW and is absent from guest gallery", async ({
 }) => {
   await installMock(page, { model: "unavailable" });
   await page.goto("/#partager");
-  await page.locator("[value=maries]").check();
-  await upload(page, ["portrait_exif6.jpg"]);
+  await upload(page, ["portrait_exif6.jpg"], "maries");
   await expect(page.locator("#upload-status")).toContainText(
     "1 photo envoyée aux mariés",
   );
@@ -175,6 +175,7 @@ test("failure after 3 attempts is retryable, cancellation stops after current ph
   await page
     .locator("#files")
     .setInputFiles([fixture("photo_02.jpg"), fixture("photo_03.jpg")]);
+  await chooseDestination(page);
   await expect(page.locator("#send")).toBeEnabled();
   await page.locator("#send").click();
   await page.locator("#cancel-upload").click();
@@ -525,19 +526,25 @@ test.describe("add-photos action", () => {
     await expect(page.locator("#upload-status")).toContainText(
       "2 photo(s) prête(s)",
     );
-    await expect(page.locator("#send-destination")).toContainText(
-      "galerie commune",
-    );
-    await expect(page.locator("#send")).toHaveText(/Envoyer 2 photo\(s\)/);
+    // Nothing is preselected: the bar asks for a destination and the send button stays inactive.
+    await expect(page.locator("#send-bar")).toBeVisible();
+    await expect(page.locator("[name=audience]:checked")).toHaveCount(0);
+    await expect(page.locator("#send-help")).toHaveText("Choisissez où envoyer vos photos");
+    await expect(page.locator("#send")).toBeDisabled();
+    await expect(page.locator("#send")).toHaveText("Envoyer 2 photos");
     await page.locator("[name=audience][value=maries]").check();
-    await expect(page.locator("#send-destination")).toContainText("mariés");
+    await expect(page.locator("#send")).toBeEnabled();
+    await expect(page.locator("#send")).toHaveText("Envoyer 2 photos vers les mariés");
     await page.locator("[name=audience][value=public]").check();
+    await expect(page.locator("#send")).toHaveText("Envoyer 2 photos vers la galerie commune");
+    await expect(page.locator("#send-help")).toBeHidden();
     await page.evaluate(() => {
       window.__progressSeen = false;
       new MutationObserver(() => {
         if (!document.getElementById("progress-panel").hidden) window.__progressSeen = true;
       }).observe(document.getElementById("progress-panel"), { attributes: true });
     });
+    await chooseDestination(page);
     await page.locator("#send").click();
     await settled(page);
     expect(await page.evaluate(() => window.__progressSeen)).toBeTruthy();
@@ -554,6 +561,7 @@ test.describe("add-photos action", () => {
     await installMock(page, { failures: 99 });
     await page.goto("/#partager");
     await page.locator("#files").setInputFiles([fixture("photo_01.jpg")]);
+    await chooseDestination(page);
     await expect(page.locator("#send")).toBeEnabled();
     await page.locator("#send").click();
     await settled(page);
@@ -611,8 +619,8 @@ test.describe("gallery never loses photos around a publication", () => {
     // Navigate inside the page (no reload): the mock keeps its state only while the document lives.
     if (page.url() === "about:blank") await page.goto("/#partager");
     else await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
-    await page.locator(`[name=audience][value=${audience}]`).check();
     await page.locator("#files").setInputFiles(files.map(fixture));
+    await page.locator(`[name=audience][value=${audience}]`).check();
     await page.locator("#send").click();
     await settled(page, 40000);
   };
@@ -717,6 +725,7 @@ test("gallery with a freshly published photo renders correctly at 390 and 1440 p
   await expect(page.locator("#gallery .photo-card")).toHaveCount(2);
   await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
   await page.locator("#files").setInputFiles([fixture("photo_03.jpg")]);
+  await chooseDestination(page);
   await page.locator("#send").click();
   await settled(page, 40000);
   await page.getByRole("link", { name: "Accueil", exact: true }).click();
