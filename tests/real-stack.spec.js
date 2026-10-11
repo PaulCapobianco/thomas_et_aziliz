@@ -132,10 +132,10 @@ test("regression: after publishing a 3rd photo in the same page nothing disappea
   await expect.poll(loaded, { timeout: 20000 }).toBeTruthy();
   await cards.first().click();
   await expect(page.locator("#lightbox-status")).toHaveText("", { timeout: 20000 });
-  // The newest photo (4032 px source) is served in full resolution: 2560 px, not the 640 px thumbnail.
+  // The newest photo (4032 px source) is served in full resolution: 3000 px, not the 800 px thumbnail.
   await expect
     .poll(() => page.locator("#full-photo").evaluate((i) => Math.max(i.naturalWidth, i.naturalHeight)), { timeout: 20000 })
-    .toBe(2560);
+    .toBe(3000);
   expect(errors).toEqual([]);
   await ctx.close();
 });

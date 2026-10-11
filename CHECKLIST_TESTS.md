@@ -208,3 +208,41 @@ Republier : `npm run deploy` (vérifie la syntaxe, construit, refuse de publier 
 | Modèle NSFWJS chargé et exécuté sous la CSP de production (WebKit 0,7 s, Chromium 1,8 s) | PASS |
 | Envoi réel de photo, connexion admin avec vos identifiants, téléphones physiques, QR imprimé | NON_TESTÉ (nécessitent votre accord / votre téléphone ; aucune photo de test créée) |
 | Galerie en ligne | vide : aucune photo publiée dans le projet Supabase |
+
+## Qualité des photos, 2ᵉ palier : full 3000 px q0,90 + miniatures 800 px (11 octobre 2026)
+
+Constantes de `uploads.js` : `FULL_MAX_SIDE = 3000`, `FULL_QUALITY = 0.90`, `THUMB_MAX_SIDE = 800`, `THUMB_QUALITY = 0.75` (méthode inchangée : paliers ≤ 2×, jamais d'agrandissement, repli de qualité si le fichier dépasse 2,9 Mo).
+
+**Risque vis-à-vis de la limite de 3 Mo du bucket (3 145 728 octets) — mesuré dans Chromium** avec des photos synthétiques bruitées 4032×3024 (basse lumière), `scripts/measure-quality.mjs` :
+
+| Photo de test | Full à q0,90 **sans** repli | Fichier réellement produit | Miniature 800 px |
+|---|---|---|---|
+| Texture fine | 2 298 Ko | 2 298 Ko | 79 Ko |
+| Basse lumière ISO 3200 (bruit courant) | 2 061 Ko | 2 061 Ko | 16 Ko |
+| Basse lumière ISO 12800 (très bruitée) | **3 000 Ko** (limite 3 072) | 2 435 Ko (repli) | 34 Ko |
+| Bruit gaussien extrême | 3 805 Ko (**dépasse**) | 2 541 Ko (repli) | 62 Ko |
+| Bruit pur (pire cas) | 4 526 Ko (**dépasse**) | 2 594 Ko (repli) | 70 Ko |
+
+Conclusion : sans le repli de qualité, une photo très bruitée dépasserait la limite ; **avec** le repli, tous les cas, même le pire, restent ≤ 2 594 Ko (marge ≥ 15 % sous 2 832 Ko, le budget interne). Une photo plus extrême que le bruit pur n'existe pas : au pire un fichier serait refusé côté navigateur avec le message « Photo trop lourde après compression », sans erreur Storage.
+**Relever la limite à 5 Mo n'est donc pas nécessaire, aucune migration proposée.** À savoir si vous la voulez quand même : il faudrait modifier **deux** endroits, le bucket (0003, `file_size_limit`) **et** la constante `v_max_object_bytes` de `register_photo` (0002) ; relever seulement le bucket laisserait la base refuser les gros fichiers. Je ne l'ai pas préparé pour éviter un changement de schéma inutile.
+
+**Poids moyen — mesuré** (navigateur, 9 vraies photos de votre dossier : 4 grandes + 5 déjà réduites ≈ 1200-1500 px, donc jamais agrandies) : full **643 Ko** (max 878), miniature **99 Ko** (max 137), soit **≈ 743 Ko par photo** (Pillow, `scripts/estimate_storage.py` : 704 + 101 = 805 Ko ; l'écart vient du moteur JPEG). Les chiffres de stockage ci-dessous sont **mesurés sur cet échantillon, petit et peu bruité** ; au-delà c'est une extrapolation :
+
+| Photos | Stockage (743 Ko/photo) | Si photos bruitées ≈ 2 Mo en full |
+|---|---|---|
+| 1 300 | ≈ 0,97 Go | ≈ 2,8 Go |
+| 3 000 | ≈ 2,2 Go | ≈ 6,3 Go |
+| 5 000 | ≈ 3,7 Go | ≈ 10,5 Go |
+| 10 000 | ≈ 7,4 Go | ≈ 21 Go |
+
+(`estimate_storage.py` : trafic de la soirée ≈ 7 Go avec 6 chargements de galerie par invité, à doubler les jours suivants : surveiller le quota de trafic.) L'offre gratuite (1 Go) est insuffisante ; Pro (100 Go) très large.
+
+| Contrôle | Résultat |
+|---|---|
+| `npm run check` | PASS |
+| `npm test` | **PASS 111**, 24 ignorés (opt-in) au dernier passage ; dimensions de sortie vérifiées à 800/3000 px |
+| `npm run test:real` (Storage/PostgREST/GoTrue réels) | **PASS 21/21** + 54 contrôles HTTP ; lightbox à 3000 px ; moyenne des full de la pile : 1,3 Mo (fixtures synthétiques bruitées 4032 px, max 1,77 Mo < 3 Mo) |
+| Netteté ressentie sur téléphone, temps de traitement mobile (≈ 250-520 ms sur ordinateur à 3000 px, à multiplier par 3-5), iPhone « Taille réelle » | NON_TESTÉ |
+
+Note : deux passages intermédiaires ont montré des échecs ponctuels (4 tests de `design.spec.js` pendant qu'un autre processus modifiait la maquette du site ; 4 tests de la pile réelle lancés pendant une autre exécution) ; relancés seuls, tout passe.
+**À faire : `npm run build` puis `npm run deploy` pour mettre ces réglages en ligne.** Les photos déjà envoyées gardent leur résolution d'origine.

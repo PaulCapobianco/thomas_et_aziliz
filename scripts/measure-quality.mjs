@@ -34,6 +34,9 @@ for (const file of files) {
     const t1 = performance.now();
     set.newFull = await current(m.FULL_MAX_SIDE, m.FULL_QUALITY);
     set.newThumb = await current(m.THUMB_MAX_SIDE, m.THUMB_QUALITY);
+    // Size at the target quality WITHOUT the safety fallback: shows how close a photo gets to the bucket limit.
+    const rawCanvas = m.canvasFor(source, m.FULL_MAX_SIDE);
+    set.rawFull = { b: await m.jpeg(rawCanvas, m.FULL_QUALITY), w: rawCanvas.width, h: rawCanvas.height };
     const t2 = performance.now();
     const enc = async (b) => { const r = new FileReader(); return new Promise((ok) => { r.onload = () => ok(r.result.split(",")[1]); r.readAsDataURL(b); }); };
     const res = { source: [source.width, source.height], legacyMs: Math.round(t1 - t0), newMs: Math.round(t2 - t1) };
@@ -41,7 +44,7 @@ for (const file of files) {
     return res;
   }, { data: bytes.toString("base64"), name: basename(file) });
   const row = { file: basename(file), sourceBytes: bytes.length, source: result.source, legacyMs: result.legacyMs, newMs: result.newMs };
-  for (const k of ["legacyFull", "legacyThumb", "newFull", "newThumb"]) {
+  for (const k of ["legacyFull", "legacyThumb", "newFull", "newThumb", "rawFull"]) {
     await writeFile(`${out}/${basename(file).replace(/\.\w+$/, "").replace(/\W+/g, "_")}.${k}.jpg`, Buffer.from(result[k].data, "base64"));
     row[k] = { w: result[k].w, h: result[k].h, bytes: result[k].bytes };
   }
@@ -49,7 +52,8 @@ for (const file of files) {
 }
 await browser.close();
 await writeFile(`${out}/summary.json`, JSON.stringify(summary, null, 1));
-console.log(JSON.stringify(summary.map(({ file, source, sourceBytes, legacyFull, newFull, legacyThumb, newThumb, legacyMs, newMs }) => ({
+console.log(JSON.stringify(summary.map(({ file, source, sourceBytes, legacyFull, newFull, legacyThumb, newThumb, rawFull, legacyMs, newMs }) => ({
+  rawFullAtTargetQualityKB: Math.round(rawFull.bytes / 1024),
   file, source: source.join("x"), sourceKB: Math.round(sourceBytes / 1024),
   legacyFullKB: Math.round(legacyFull.bytes / 1024), newFull: `${newFull.w}x${newFull.h} ${Math.round(newFull.bytes / 1024)}KB`,
   legacyThumbKB: Math.round(legacyThumb.bytes / 1024), newThumb: `${newThumb.w}x${newThumb.h} ${Math.round(newThumb.bytes / 1024)}KB`, legacyMs, newMs,

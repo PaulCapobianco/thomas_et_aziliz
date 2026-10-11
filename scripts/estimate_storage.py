@@ -4,7 +4,7 @@
 Usage : python3 scripts/estimate_storage.py <dossier_de_photos> [--guests 130] [--views 6] [--lightbox 25]
 Dépendances : Pillow.
 
-Reproduit la compression de l'application (uploads.js) : full = 2560 px max, JPEG q0.85 ; thumb = 640 px max, JPEG q0.75.
+Reproduit la compression de l'application (uploads.js) : full = 3000 px max, JPEG q0.90 ; thumb = 800 px max, JPEG q0.75.
 Pillow n'est pas le moteur du navigateur : l'écart de poids est de quelques %, mesurez avec scripts/measure-quality.mjs pour les chiffres du navigateur.
 IMPORTANT : donnez-lui 20 à 50 VRAIES photos de téléphone (pas les photos synthétiques de make_test_images.py,
 dont le poids ne reflète pas la réalité).
@@ -25,8 +25,8 @@ from PIL import Image, ImageOps
 
 ap = argparse.ArgumentParser()
 ap.add_argument("folder", nargs="?", help="dossier de vraies photos (facultatif si --assume-full-kb est donné)")
-ap.add_argument("--assume-full-kb", type=float, help="sans photos : poids moyen supposé d'un full 2560 px (typiquement 350 à 900)")
-ap.add_argument("--assume-thumb-kb", type=float, default=40, help="poids moyen supposé d'une miniature 640 px (défaut 40)")
+ap.add_argument("--assume-full-kb", type=float, help="sans photos : poids moyen supposé d'un full 2560 px (typiquement 500 à 1400)")
+ap.add_argument("--assume-thumb-kb", type=float, default=70, help="poids moyen supposé d'une miniature 800 px (défaut 70)")
 ap.add_argument("--guests", type=int, default=130)
 ap.add_argument("--views", type=int, default=6)
 ap.add_argument("--lightbox", type=int, default=25)
@@ -58,8 +58,8 @@ else:
     for p in files:
         try:
             img = ImageOps.exif_transpose(Image.open(p))
-            fulls.append(encode(img, 2560, 85))
-            thumbs.append(encode(img, 640, 75))
+            fulls.append(encode(img, 3000, 90))
+            thumbs.append(encode(img, 800, 75))
         except Exception:
             skipped += 1
     if not fulls:
