@@ -1,0 +1,26 @@
+Finitions graphiques — 2026-10-11
+Baseline: 4b23cc2 (clean Git worktree)
+Branch: feat/thomas-aziliz-decorative-finish
+
+PASS initial Chromium design suite: 6 passed (5.9s)
+PASS decorated Chromium design preview: 6 passed (6.6s)
+PASS npm run check
+PASS npm run build
+PASS git diff --check
+PASS original-photo SHA-256 verification: 7/7
+PASS 9 before/after screenshot pairs: identical dimensions
+PASS application HTML/JS, configuration, Cloudflare and dependencies unchanged
+PASS SVG copied byte-for-byte into dist; QA assets excluded
+
+Final command:
+npx playwright test tests/flows.spec.js tests/design.spec.js tests/lightbox.spec.js tests/messages.spec.js --config=/tmp/wedding-design-playwright.mjs --reporter=line
+Temporary config: standard repo config with isolated server/baseURL 4175 and outputDir /tmp/wedding-design-results.
+
+Final output:
+2 skipped
+160 passed (2.9m)
+
+Skipped: dedicated keyboard focus-ring scenario in the two isMobile projects.
+It passes on Chromium desktop. Supabase is mocked; local NSFW model is real.
+NON TESTÉ: remote services, physical phones, screen-reader audit, field performance.
+No deployment.

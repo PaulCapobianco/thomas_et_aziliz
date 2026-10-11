@@ -31,7 +31,7 @@ for (const file of [
   "404.html",
 ])
   await copyFile(file, `dist/${file}`);
-for (const file of ["design_tokens.css", "favicon.svg", "botanical.svg"])
+for (const file of ["design_tokens.css", "favicon.svg", "botanical.svg", "botanical-sprig.svg"])
   await copyFile(`assets/${file}`, `dist/assets/${file}`);
 for (const dir of ["vendor", "fonts", "assets/couple"])
   await cp(dir, `dist/${dir}`, { recursive: true });

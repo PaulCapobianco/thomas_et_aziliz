@@ -1,5 +1,7 @@
 # Livraison et audit ciblé — 11 octobre 2026
 
+> **Dernière intervention : finitions décoratives uniquement**, branche `feat/thomas-aziliz-decorative-finish`, base propre `4b23cc2`. Un bloc CSS, un SVG local de 1,4 Ko et son inclusion dans le build. HTML/JS applicatifs, libellés, photos, Supabase et Cloudflare inchangés. Recette : 160 PASS / 2 ignorés ; voir [avant/après et limites](qa/FINITIONS_GRAPHIQUES.md). Aucun déploiement.
+
 ## Reprise après la mission corrective graphique du 11 octobre 2026
 
 La direction actuelle est **ivoire, champagne et sauge** ; elle remplace les anciens choix sombres. Thomas & Aziliz et les sept photos originales sont intégrés sans retouche. La bande Polaroid est décorative et indépendante de `#gallery`. Destination avant sélection sur le formulaire ; administration harmonisée. Auth, RPC/RLS, logique d’envoi, compression et modération n’ont pas été modifiés par cette refonte.

@@ -28,3 +28,7 @@ Ces sept photos de présentation sont des ressources statiques publiques du site
 Aucune nouvelle dépendance, aucun service tiers ajouté, aucune migration et aucun déploiement dans cette mission. Les données de test restent dans les mocks ; elles ne sont pas copiées dans `dist/`. Le site de mariage reste volontairement non indexable (métadonnées, robots et en-têtes existants).
 
 Résultats et captures : [revue de la refonte](../qa/DESIGN_REVIEW.md).
+
+## Finitions décoratives du 11 octobre 2026
+
+Le bloc final de `app.css` enrichit les surfaces existantes sans toucher aux mises en page. Un seul petit SVG `botanical-sprig.svg` est réutilisé dans les transitions, le formulaire et le footer public. Les cartes/statistiques reçoivent des ombres et filets discrets ; les survols et appuis respectent les animations réduites. [Comparaison avant/après et recette](../qa/FINITIONS_GRAPHIQUES.md).

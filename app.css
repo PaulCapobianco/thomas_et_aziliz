@@ -1026,3 +1026,160 @@ input[type="password"] {
     font-size: .72rem;
   }
 }
+
+/* Decorative finishes: paint only, preserving the established layout and controls. */
+:root {
+  --champagne-line: #c7b899;
+  --paper-shadow: 0 4px 15px #6252380b, 0 1px 3px #6252380a;
+  --botanical-sprig: url("assets/botanical-sprig.svg");
+}
+.site-header {
+  background: linear-gradient(180deg, #fffdf6ad, #f5f0e652);
+  box-shadow: 0 1px 0 #fffdf7;
+}
+.hero {
+  background:
+    radial-gradient(ellipse at 0 12%, #e6dcc27a, transparent 48%),
+    radial-gradient(ellipse at 100% 85%, #dce3cf66, transparent 50%),
+    linear-gradient(125deg, #faf7ef70, #f2ebdd40);
+  box-shadow: inset 0 -1px #e0d6c2;
+}
+.hero-content, .hero-portrait {
+  /* Ornaments remain behind the content and never cover a photo or an action. */
+  z-index: 1;
+}
+.hero-portrait {
+  border-color: var(--champagne-line);
+  box-shadow: 0 18px 40px #65533118, 0 3px 8px #6553310b;
+}
+.hero-portrait figcaption {
+  background: linear-gradient(180deg, transparent, #f2e8d737);
+}
+.couple-memories {
+  position: relative;
+  background: linear-gradient(115deg, #eee6d785, #f7f2e899 45%, #e6eadb73);
+  border-color: #d9cfbb;
+  box-shadow: inset 0 1px #fffcf4, inset 0 -1px #fffcf4;
+}
+.couple-memories::after, .site-footer::before {
+  content: "";
+  position: absolute;
+  left: calc(50% - 45px);
+  width: 90px;
+  height: 32px;
+  background: var(--botanical-sprig) center / contain no-repeat;
+  pointer-events: none;
+}
+.couple-memories::after {
+  bottom: -17px;
+}
+.memories-heading span {
+  background: linear-gradient(90deg, transparent, #b7a581);
+}
+.memories-heading span:last-child {
+  transform: rotate(180deg);
+}
+.polaroid {
+  box-shadow: 0 6px 14px #524b381c, 0 1px 2px #524b3814;
+}
+.section-heading h2, .share-section h1, .admin-top h1 {
+  position: relative;
+}
+.section-heading h2::after, .share-section h1::after, .admin-top h1::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -.5rem;
+  width: 64px;
+  height: 1px;
+  background: linear-gradient(90deg, #b9a57c, #d9cbb030);
+  pointer-events: none;
+}
+.share-section {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 95% 30%, #e6e9dc52, transparent 42%),
+    radial-gradient(ellipse at 5% 70%, #ede2cb3b, transparent 45%);
+}
+.share-section::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: .65rem;
+  width: 90px;
+  height: 32px;
+  background: var(--botanical-sprig) center / contain no-repeat;
+  pointer-events: none;
+  opacity: .85;
+}
+.destination {
+  background: linear-gradient(140deg, #fffdf8, #f8f3e9);
+  border-color: #d1c6b2;
+  box-shadow: var(--paper-shadow);
+}
+.destination:has(input:checked) {
+  background: linear-gradient(125deg, #edf0e3, #e3e8d7);
+  box-shadow: inset 0 0 0 1px #72826225, var(--paper-shadow);
+}
+.advice {
+  background: linear-gradient(110deg, #edf0e4, #f3eddf);
+  box-shadow: 0 2px 5px #62523806;
+}
+.empty, .notice, .login {
+  background: linear-gradient(130deg, #f0ecdf, #fffcf7);
+  box-shadow: var(--paper-shadow);
+}
+.admin-card {
+  border-color: #d4cbb9;
+  border-top-color: #a6b195;
+  box-shadow: var(--paper-shadow);
+}
+.stats {
+  border-color: #d3c6ad;
+}
+.stats > div {
+  background: #f0eddf;
+  box-shadow: 0 0 0 .4rem #f0eddf;
+  outline: 1px solid #dbd4c3;
+  outline-offset: .4rem;
+  border-radius: 2px;
+}
+.stats strong {
+  color: #435139;
+}
+.tabs button[aria-pressed="true"] {
+  box-shadow: inset 0 -2px #72826245;
+}
+.site-footer {
+  position: relative;
+  border-color: #d3c6ad;
+  background: linear-gradient(115deg, #ede5d46b, #f3f0e866 45%, #e2e8d76b);
+}
+.site-footer::before {
+  top: -16px;
+}
+body:has(.admin-section) .site-footer::before {
+  display: none;
+}
+.primary {
+  background-image: linear-gradient(180deg, #ffffff0b, transparent);
+  box-shadow: 0 2px 5px #43513915;
+}
+button:not(.photo-card, .admin-preview):not(:disabled):active,
+.button:active, .file-picker:active {
+  box-shadow: inset 0 1px 4px #39462e24;
+}
+@media (hover: hover) and (pointer: fine) {
+  .destination:hover {
+    border-color: #879476;
+    box-shadow: 0 5px 16px #62523812;
+  }
+  .button:hover, button:not(.photo-card, .admin-preview):not(:disabled):hover {
+    box-shadow: 0 3px 9px #4351391a;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .destination, .button, button:not(.photo-card, .admin-preview), .file-picker {
+    transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+}
