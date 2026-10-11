@@ -1526,3 +1526,117 @@ body.has-send-bar .site-footer {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ---- Report dialog: bottom sheet on phones, centred card on larger screens ---- */
+.report-dialog {
+  width: min(34rem, 100%);
+  max-height: 92dvh;
+  overflow-y: auto;
+  padding: 1.2rem 1.2rem calc(1.2rem + env(safe-area-inset-bottom));
+  border: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+  background: var(--surface);
+  margin: auto auto 0;
+}
+.report-dialog h2 {
+  font-size: clamp(1.5rem, 5vw, 1.9rem);
+  margin-bottom: 1rem;
+}
+.report-reasons {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0 0 1rem;
+}
+.report-reason {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: 52px;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.report-reason input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--accent);
+}
+.report-reason:has(input:checked) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.report-reason:has(input:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.report-comment textarea {
+  width: 100%;
+  min-height: 5.5rem;
+  padding: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font: inherit;
+  background: #fff;
+  color: var(--text);
+  resize: vertical;
+}
+.report-comment label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+}
+.report-comment .hint {
+  margin: 0.2rem 0 0;
+  text-align: right;
+}
+.report-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+}
+.report-actions button {
+  min-height: 52px;
+}
+@media (min-width: 640px) {
+  .report-dialog {
+    margin: auto;
+    border-radius: 8px;
+  }
+  .report-actions {
+    grid-template-columns: 1fr auto;
+  }
+}
+
+/* ---- Admin: reports shown on a card ---- */
+.report-list {
+  margin: 0.5rem 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+.report-list li {
+  padding: 0.5rem 0.7rem;
+  border-left: 3px solid var(--danger);
+  background: #f8efe9;
+  font-size: 0.85rem;
+}
+.report-list p {
+  margin: 0.25rem 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.report-list small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+}
+.admin-card .actions:has(> :nth-child(3)) button {
+  min-height: 48px;
+}
+#batch-keep,
+#batch-restore {
+  min-height: 56px;
+}

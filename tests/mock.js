@@ -57,8 +57,36 @@ export async function installMock(page, options = {}) {
       return id;
     };
     (options.pending || []).forEach((reason) => addPending(reason));
+    // Reported photos for the admin: options.reported = [{ reports: [{ reason, comment }], status? }]
+    let reportedSeq = 0;
+    const addReported = ({ reports = [{ reason: "sexual", comment: null }], status = "hidden" } = {}) => {
+      const n = ++reportedSeq;
+      const id = `eeee${String(n).padStart(4, "0")}-0000-4000-8000-000000000000`;
+      records.unshift({
+        id,
+        ...pathFor(id),
+        published_at: new Date(Date.UTC(2026, 9, 31, 20, 0, 0) - n * 1000).toISOString(),
+        created_at: new Date(Date.UTC(2026, 9, 31, 20, 0, 0) - n * 1000).toISOString(),
+        audience: "public",
+        status,
+        review_reason: status === "hidden" ? "reports" : null,
+        report_count: 0,
+        report_reasons: [],
+        reports: reports.map((x, i) => ({
+          at: new Date(Date.UTC(2026, 9, 31, 22, 0, 0) + (n * 10 + i) * 1000).toISOString(),
+          reason: x.reason,
+          comment: x.comment ?? null,
+          reporter: `seed-${n}-${i}`,
+          resolved: false,
+          resolution: null,
+        })),
+      });
+      return id;
+    };
+    (options.reported || []).forEach((spec) => addReported(spec));
     window.mock = {
       addPending,
+      addReported,
       failStatusFor: new Set(),
       removeShortFor: new Set(), // ids whose Storage files "cannot be deleted" (Storage answers 200 with a short list)
       statusDelay: 0,
@@ -66,6 +94,7 @@ export async function installMock(page, options = {}) {
       objects,
       calls,
       galleryDown: Boolean(options.galleryDown),
+      rateLimitReports: Boolean(options.rateLimitReports),
       galleryDelay: 0,
       badSignOnce: Boolean(options.badSignOnce),
       get paused() {
@@ -179,23 +208,38 @@ export async function installMock(page, options = {}) {
               return ok({ result: status });
             }
             if (name === "report_photo") {
+              const reasons = ["sexual", "violence", "privacy", "inappropriate", "other"];
+              const bad = (message) => ({ data: null, error: { code: "22023", message } });
+              if (!p.p_reason || !reasons.includes(p.p_reason)) return bad("invalid_reason");
+              const comment = String(p.p_comment ?? "").trim();
+              if (comment.length > 500) return bad("comment_too_long");
+              if (p.p_reason === "other" && comment.length < 3) return bad("comment_required");
               const r = records.find(
-                (r) => r.id === p.p_photo_id && r.status === "published",
+                (r) =>
+                  r.id === p.p_photo_id &&
+                  r.audience === "public" &&
+                  (r.status === "published" || (r.status === "hidden" && r.review_reason === "reports")),
               );
               if (!r) return ok({ result: "not_found" });
-              if (r.reports.includes(p.p_reporter))
+              const mine = r.reports.filter((x) => x.reporter === p.p_reporter);
+              if (mine.some((x) => !x.resolved) || mine.length >= 3)
                 return ok({ result: "already_reported" });
-              r.reports.push(p.p_reporter);
-              r.report_count = r.reports.length;
-              if (r.report_count >= 2) r.status = "hidden";
-              return ok({ result: "reported" });
+              if (window.mock.rateLimitReports) return ok({ result: "rate_limited" });
+              // The FIRST valid report hides the photo (server side).
+              r.reports.unshift({ at: new Date().toISOString(), reason: p.p_reason, comment: comment || null, reporter: p.p_reporter, resolved: false, resolution: null });
+              const hidden = r.status === "published";
+              if (hidden) {
+                r.status = "hidden";
+                r.review_reason = "reports";
+              }
+              return ok({ result: "reported", hidden });
             }
             if (name === "admin_status")
               return ok({
                 paused,
                 published: records.filter((r) => r.status === "published")
                   .length,
-                reported: 0,
+                reported: records.filter((r) => r.status !== "deleted" && r.reports.some((x) => !x.resolved)).length,
                 pending: records.filter((r) => r.status === "pending_review")
                   .length,
                 hidden: 0,
@@ -203,7 +247,8 @@ export async function installMock(page, options = {}) {
                 storage_bytes: 123400,
                 storage_objects: objects.size,
               });
-            if (name === "admin_list_photos")
+            if (name === "admin_list_photos") {
+              const open = (r) => r.reports.filter((x) => !x.resolved);
               return ok(
                 records
                   .filter(
@@ -212,16 +257,30 @@ export async function installMock(page, options = {}) {
                       (p.p_filter === "recent"
                         ? r.audience === "public"
                         : p.p_filter === "reported"
-                          ? r.report_count > 0
+                          ? open(r).length > 0
                           : p.p_filter === "pending"
                             ? r.status === "pending_review"
                             : p.p_filter === "hidden"
                               ? r.status === "hidden"
                               : r.audience === "maries"),
                   )
-                  .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
-                  .slice(p.p_offset, p.p_offset + p.p_limit),
+                  .sort((a, b) =>
+                    p.p_filter === "reported"
+                      ? String(open(b)[0]?.at).localeCompare(String(open(a)[0]?.at))
+                      : String(b.created_at).localeCompare(String(a.created_at)),
+                  )
+                  .slice(p.p_offset, p.p_offset + p.p_limit)
+                  .map((r) => ({
+                    ...r,
+                    report_count: r.reports.length,
+                    open_reports: open(r).length,
+                    report_reasons: [...new Set(open(r).map((x) => x.reason))],
+                    last_report_at: r.reports[0]?.at ?? null,
+                    reports: r.reports.slice(0, 20).map(({ reporter, ...x }) => x),
+                    last_decision: r.decision ?? null,
+                  })),
               );
+            }
             if (name === "admin_set_paused") {
               paused = p.p_paused;
               return ok({ paused });
@@ -231,12 +290,16 @@ export async function installMock(page, options = {}) {
             if (name === "admin_set_status" && window.mock.failStatusFor.has(p.p_id))
               return { data: null, error: { code: "500", message: "boom" } };
             if (name === "admin_set_status") {
-              const r = records.find((r) => r.id === p.p_id);
+              const r = records.find((r) => r.id === p.p_id && r.status !== "deleted");
+              if (!r) return ok({ result: "not_found" });
+              const open = r.reports.filter((x) => !x.resolved).length;
               r.status = p.p_status;
-              if (p.p_status === "published") {
-                r.report_count = 0;
-                r.reports = [];
-              }
+              r.review_reason = p.p_status === "published" ? null : p.p_status === "hidden" ? "admin" : r.review_reason;
+              // Reports are kept (a trace) and marked resolved; they never hide anything again.
+              r.reports.forEach((x) => {
+                if (!x.resolved) Object.assign(x, { resolved: true, resolution: { published: "restored", hidden: "kept_hidden", deleted: "deleted" }[p.p_status] });
+              });
+              r.decision = { action: p.p_status === "published" ? (open ? "restored" : "published") : p.p_status === "hidden" ? (open ? "kept_hidden" : "hidden") : "deleted", at: new Date().toISOString() };
               return ok({ result: p.p_status });
             }
             if (name === "admin_release_pending") {

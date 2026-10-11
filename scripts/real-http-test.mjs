@@ -53,6 +53,7 @@ async function send(audience, nsfw, { seed = randomUUID(), client = anon, who = 
 }
 const paths = (id, aud) => [`${aud}/full/${id}.jpg`, `${aud}/thumbs/${id}.jpg`];
 const fetchStatus = async (url) => (await fetch(url)).status;
+const galleryHas = async (id) => ((await anon.rpc("gallery_page", { p_limit: 100 })).data ?? []).some((r) => r.id === id);
 
 // ---- 1. Guest upload over real HTTP and publication -------------------------------------------
 const pub = await send("public", "clean");
@@ -148,22 +149,40 @@ check("Storage policy refuses a non-UUID path", !!badPath.error);
 const otherDir = await bucket(anon).upload(`maries/other/${randomUUID()}.jpg`, BASE_JPEG, { contentType: "image/jpeg" });
 check("Storage policy refuses an unknown folder", !!otherDir.error);
 
-// ---- 4. Reports: two distinct browsers hide a photo ------------------------------------------
+// ---- 4. Reports: ONE valid report hides the photo (server side) ------------------------------
 const rp = await send("public", "clean");
 const url1 = (await bucket(anon).createSignedUrl(paths(rp.id, "public")[1], 3600)).data?.signedUrl;
-const r1 = await anon.rpc("report_photo", { p_photo_id: rp.id, p_reporter: randomUUID(), p_reason: "other" });
+const noReason = await anon.rpc("report_photo", { p_photo_id: rp.id, p_reporter: randomUUID(), p_reason: null });
+const badReason = await anon.rpc("report_photo", { p_photo_id: rp.id, p_reporter: randomUUID(), p_reason: "embarrassing" });
+const otherNoText = await anon.rpc("report_photo", { p_photo_id: rp.id, p_reporter: randomUUID(), p_reason: "other" });
+const tooLong = await anon.rpc("report_photo", { p_photo_id: rp.id, p_reporter: randomUUID(), p_reason: "sexual", p_comment: "x".repeat(501) });
+check("missing / unknown reason, 'other' without text and an over-long comment are refused (22023)",
+  [noReason, badReason, otherNoText, tooLong].every((r) => r.error?.code === "22023") && (await galleryHas(rp.id)),
+  [noReason, badReason, otherNoText, tooLong].map((r) => r.error?.message).join(","));
 const same = randomUUID();
-const r2 = await anon.rpc("report_photo", { p_photo_id: rp.id, p_reporter: same, p_reason: "other" });
-const r2b = await anon.rpc("report_photo", { p_photo_id: rp.id, p_reporter: same, p_reason: "other" });
-check("first reports => reported; same browser twice => already_reported",
-  r1.data?.result === "reported" && r2.data?.result === "reported" && r2b.data?.result === "not_found",
-  [r1.data?.result, r2.data?.result, r2b.data?.result].join(","));
+const r1 = await anon.rpc("report_photo", { p_photo_id: rp.id, p_reporter: same, p_reason: "sexual", p_comment: "objet déplacé" });
+check("first valid report => reported and hidden at once (no waiting for a second report)",
+  r1.data?.result === "reported" && r1.data?.hidden === true && !(await galleryHas(rp.id)), JSON.stringify(r1.data ?? r1.error));
+const r1b = await anon.rpc("report_photo", { p_photo_id: rp.id, p_reporter: same, p_reason: "sexual" });
+check("same browser again => already_reported", r1b.data?.result === "already_reported", JSON.stringify(r1b.data ?? r1b.error));
+const r2 = await anon.rpc("report_photo", { p_photo_id: rp.id, p_reporter: randomUUID(), p_reason: "violence" });
+check("another browser on the already hidden photo => recorded (2 reports kept)", r2.data?.result === "reported" && r2.data?.hidden === false);
 const afterHide = await bucket(anon).createSignedUrls(paths(rp.id, "public"), 60);
-check("after 2 distinct reports the photo is hidden and no longer signable", afterHide.data?.every((s) => !s.signedUrl) ?? true);
+check("hidden photo: no new signed URL (thumb or full), file kept for the admin", afterHide.data?.every((s) => !s.signedUrl) ?? true);
+const adminView = (await admin.rpc("admin_list_photos", { p_filter: "reported", p_limit: 50 })).data?.find((r) => r.id === rp.id);
+check("admin sees it with total, open reports, reasons and comment",
+  adminView?.status === "hidden" && adminView.report_count === 2 && adminView.open_reports === 2 &&
+  adminView.reports.some((x) => x.reason === "sexual" && x.comment === "objet déplacé") && adminView.reports.some((x) => x.reason === "violence"),
+  JSON.stringify({ s: adminView?.status, n: adminView?.report_count }));
 if (url1) {
   const old = await fetchStatus(url1);
-  console.log(`INFO signed URL delivered BEFORE hiding still answers HTTP ${old} (documented limit: valid until expiry)`);
+  console.log(`INFO signed URL delivered BEFORE hiding still answers HTTP ${old} (documented limit: valid until expiry, at most 1 h)`);
 }
+const restored = await admin.rpc("admin_set_status", { p_id: rp.id, p_status: "published" });
+check("admin restores: visible again, reports kept as resolved (trace), not hidden again by old reports",
+  restored.data?.result === "published" && (await galleryHas(rp.id)) && (await bucket(anon).createSignedUrls(paths(rp.id, "public"), 60)).data?.every((s) => s.signedUrl) &&
+  (await admin.rpc("admin_list_photos", { p_filter: "recent", p_limit: 200 })).data.find((r) => r.id === rp.id).open_reports === 0);
+check("a new valid report after restoration hides it again", (await anon.rpc("report_photo", { p_photo_id: rp.id, p_reporter: randomUUID(), p_reason: "privacy", p_comment: "droit à l'image" })).data?.hidden === true && !(await galleryHas(rp.id)));
 
 // ---- 5. Concurrency: simultaneous uploads of the same file, and simultaneous reports -----------
 const seed = randomUUID();
@@ -173,9 +192,24 @@ check("12 simultaneous uploads of the same file => exactly 1 published, 11 dupli
   results.filter((r) => r === "published").length === 1 && results.filter((r) => r === "duplicate").length === 11,
   results.join(","));
 const raceTarget = await send("public", "clean");
-const raceReports = await Promise.all(Array.from({ length: 6 }, () => anon.rpc("report_photo", { p_photo_id: raceTarget.id, p_reporter: randomUUID(), p_reason: "other" })));
+const raceReports = await Promise.all(Array.from({ length: 4 }, () => anon.rpc("report_photo", { p_photo_id: raceTarget.id, p_reporter: randomUUID(), p_reason: "sexual" })));
 const gone = await anon.rpc("gallery_page", { p_limit: 100 });
-check("6 simultaneous reports hide the photo", !gone.data?.some((r) => r.id === raceTarget.id), raceReports.map((r) => r.data?.result).join(","));
+const raceRow = (await admin.rpc("admin_list_photos", { p_filter: "reported", p_limit: 200 })).data.find((r) => r.id === raceTarget.id);
+check("4 simultaneous reports: hidden once, all 4 recorded, nothing inconsistent",
+  !gone.data?.some((r) => r.id === raceTarget.id) && raceReports.every((r) => r.data?.result === "reported") && raceRow?.status === "hidden" && raceRow?.report_count === 4 && raceRow?.open_reports === 4,
+  raceReports.map((r) => r.data?.result).join(","));
+const dupReporter = randomUUID();
+const dupTarget = await send("public", "clean");
+const dup = await Promise.all([1, 2, 3].map(() => anon.rpc("report_photo", { p_photo_id: dupTarget.id, p_reporter: dupReporter, p_reason: "violence" })));
+const dupRow = (await admin.rpc("admin_list_photos", { p_filter: "reported", p_limit: 200 })).data.find((r) => r.id === dupTarget.id);
+check("the same browser double-clicking records ONE report", dup.filter((r) => r.data?.result === "reported").length === 1 && dupRow?.report_count === 1, dup.map((r) => r.data?.result).join(","));
+// Flood guard: with a single report enough to hide, a script cannot empty the gallery in one go.
+const floodPhotos = [];
+for (let i = 0; i < 14; i++) floodPhotos.push(await send("public", "clean"));
+const flood = [];
+for (const photo of floodPhotos) flood.push(await anon.rpc("report_photo", { p_photo_id: photo.id, p_reporter: randomUUID(), p_reason: "inappropriate" }));
+check("flood guard: reports beyond 12 distinct photos in 10 minutes are refused (rate_limited)", flood.some((r) => r.data?.result === "rate_limited"), flood.map((r) => r.data?.result).join(","));
+for (const photo of floodPhotos) await admin.rpc("admin_set_status", { p_id: photo.id, p_status: "published" }); // clean up the visible state for the next steps
 
 // ---- 6. Another browser cannot hijack an existing registration ----------------------------------
 const hijack = await anon.rpc("register_photo", { p_id: pub.id, p_audience: "public", p_sha256: pub.hash, p_uploader: randomUUID(), p_nsfw: "clean" });

@@ -261,23 +261,60 @@
         </button>
       </div>
     </dialog>
-    <dialog id="report-dialog" aria-labelledby="report-title">
-      <h2 id="report-title">Signaler cette photo ?</h2>
-      <p>Merci de nous aider à garder cet album agréable pour tous.</p>
-      <form id="report-form">
-        <label for="report-reason">Motif du signalement</label
-        ><select id="report-reason">
-          <option value="embarrassing">Photo gênante</option>
-          <option value="child">Photo d’un enfant</option>
-          <option value="other">Autre</option>
-        </select>
+    <dialog id="report-dialog" class="report-dialog" aria-labelledby="report-title">
+      <form id="report-form" novalidate>
+        <h2 id="report-title">Pourquoi signalez-vous cette photo ?</h2>
+        <fieldset class="report-reasons">
+          <legend class="sr-only">Motif du signalement</legend>
+          <label class="report-reason"
+            ><input type="radio" name="report-reason" value="sexual" /><span
+              >Contenu sexuel, nudité ou sextoy</span
+            ></label
+          >
+          <label class="report-reason"
+            ><input type="radio" name="report-reason" value="violence" /><span
+              >Violence ou contenu choquant</span
+            ></label
+          >
+          <label class="report-reason"
+            ><input type="radio" name="report-reason" value="privacy" /><span
+              >Atteinte à la vie privée / droit à l’image</span
+            ></label
+          >
+          <label class="report-reason"
+            ><input type="radio" name="report-reason" value="inappropriate" /><span
+              >Photo inappropriée ou hors sujet</span
+            ></label
+          >
+          <label class="report-reason"
+            ><input type="radio" name="report-reason" value="other" /><span
+              >Autre raison</span
+            ></label
+          >
+        </fieldset>
+        <div class="report-comment">
+          <label for="report-comment" id="report-comment-label"
+            >Commentaire (facultatif)</label
+          >
+          <textarea
+            id="report-comment"
+            rows="3"
+            maxlength="500"
+            aria-describedby="report-comment-count"
+          ></textarea>
+          <p id="report-comment-count" class="hint">0 / 500</p>
+        </div>
         <p class="hint">
-          Une photo est automatiquement masquée après deux signalements
-          distincts.
+          Dès votre signalement, la photo est retirée temporairement de la
+          galerie le temps que les administrateurs l’examinent. Votre
+          signalement reste confidentiel : le motif n’est pas visible des
+          autres invités.
         </p>
-        <div class="actions">
-          <button class="primary" type="submit">Signaler</button
-          ><button type="button" id="report-cancel">Annuler</button>
+        <div class="actions report-actions">
+          <button class="primary" type="submit" id="report-submit" disabled>
+            Envoyer le signalement
+          </button>
+          <button type="button" id="report-cancel">Annuler</button>
         </div>
         <p id="report-status" role="status"></p>
       </form>

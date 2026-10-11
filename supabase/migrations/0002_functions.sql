@@ -212,6 +212,8 @@ $$;
 -- ---------------------------------------------------------------------
 -- ADMIN (toutes vérifient is_admin() côté base : cacher un bouton ne suffit pas)
 -- ---------------------------------------------------------------------
+-- (0004 change le type de retour de cette fonction : on la retire d'abord pour qu'un rejeu complet 0001 -> 0004 reste possible.)
+drop function if exists public.admin_list_photos(text, int, int);
 create or replace function public.admin_list_photos(
   p_filter text default 'recent', p_limit int default 50, p_offset int default 0
 ) returns table (

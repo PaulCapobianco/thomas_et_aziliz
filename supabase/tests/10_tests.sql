@@ -127,43 +127,88 @@ begin
   perform t.expect('T08c', 'envoi privé sans modèle IA => accepté', t.status_of(ok_) = 'published');
 end $$;
 
--- ---------------------------------------------------------------- T09 / T10 / T11 / T15 / T21 : signalements
+-- ---------------------------------------------------------------- T09 / T10 / T11 / T15 / T21 : signalements (1 seul signalement masque)
 do $$
 declare p uuid; q uuid; r text; ra uuid := '11111111-1111-1111-1111-111111111111'; rb uuid := '22222222-2222-2222-2222-222222222222';
+        adm uuid := 'aaaaaaaa-0000-0000-0000-000000000001'; n int;
 begin
   p := t.guest_register('public', 'a-signaler', 'clean');
+  -- Validation des entrées côté serveur
+  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, null)->>'result'$q$, p, ra));
+  perform t.expect('T09a', 'signalement sans motif => refusé (22023)', r like 'ERR:22023%', r);
   r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'embarrassing')->>'result'$q$, p, ra));
-  perform t.expect('T09', 'premier signalement => reported', r = 'OK:reported', r);
-  perform t.expect('T09b', 'premier signalement : la photo reste visible', t.status_of(p) = 'published', t.status_of(p));
+  perform t.expect('T09a2', 'ancien motif / motif inconnu => refusé (22023)', r like 'ERR:22023%', r);
+  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'other')->>'result'$q$, p, ra));
+  perform t.expect('T09b0', '« other » sans description => refusé (comment_required)', r like 'ERR:22023%comment_required%', r);
+  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'other', '  ab ')->>'result'$q$, p, ra));
+  perform t.expect('T09b1', '« other » avec description trop courte => refusé', r like 'ERR:22023%comment_required%', r);
+  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'sexual', %L)->>'result'$q$, p, ra, repeat('x', 501)));
+  perform t.expect('T09b2', 'commentaire > 500 caractères => refusé', r like 'ERR:22023%comment_too_long%', r);
+  perform t.expect('T09b3', 'les refus n''ont ni masqué ni enregistré',
+    t.status_of(p) = 'published' and (select count(*) from public.photo_reports where photo_id = p) = 0, t.status_of(p));
 
-  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L)->>'result'$q$, p, ra));
-  perform t.expect('T10', 'même navigateur 2 fois => already_reported', r = 'OK:already_reported', r);
-  perform t.expect('T10b', 'même navigateur : un seul vote, pas de retrait',
-    t.status_of(p) = 'published' and (select count(*) from public.photo_reports where photo_id = p) = 1);
-
-  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'other')->>'result'$q$, p, rb));
-  perform t.expect('T11', 'deuxième signalement distinct => photo masquée', t.status_of(p) = 'hidden/reports', t.status_of(p));
+  -- 1er signalement valide : masquage immédiat, atomique
+  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'sexual', 'objet inapproprié')->>'result'$q$, p, ra));
+  perform t.expect('T09', 'premier signalement valide => reported', r = 'OK:reported', r);
+  perform t.expect('T09c', 'photo masquée immédiatement (hidden / reports)', t.status_of(p) = 'hidden/reports', t.status_of(p));
+  perform t.expect('T09d', 'motif et commentaire enregistrés',
+    (select reason || '|' || comment from public.photo_reports where photo_id = p) = 'sexual|objet inapproprié');
   r := t.as_role('anon', null, format($q$select count(*) from public.gallery_page(100) where id = %L$q$, p));
   perform t.expect('T11b', 'photo masquée absente de la galerie', r = 'OK:0', r);
   perform t.expect('T11c', 'photo masquée non supprimée (ligne + 2 fichiers conservés)',
     (select count(*) from public.photos where id = p) = 1 and (select count(*) from storage.objects where name like 'public/%/' || p::text || '.jpg') = 2);
   r := t.as_role('anon', null, format($q$select count(*) from storage.objects where name like %L$q$, 'public/%/' || p::text || '.jpg'));
   perform t.expect('T11d', 'photo masquée : fichiers illisibles par anon (plus de nouvelle URL signée)', r = 'OK:0', r);
+  r := t.as_role('anon', null, format($q$select count(*) from public.photos where id = %L$q$, p));
+  perform t.expect('T11e', 'photo masquée absente de la lecture directe de la table', r = 'OK:0', r);
 
-  -- T15 : restauration admin => pas de remasquage immédiat
-  r := t.as_role('authenticated', 'aaaaaaaa-0000-0000-0000-000000000001', format($q$select public.admin_set_status(%L, 'published')->>'result'$q$, p));
-  perform t.expect('T15', 'admin restaure une photo masquée', r = 'OK:published' and t.status_of(p) = 'published', r);
-  perform t.expect('T15b', 'restauration : anciens signalements effacés', (select count(*) from public.photo_reports where photo_id = p) = 0);
-  perform t.as_role('anon', null, format($q$select public.report_photo(%L, %L)->>'result'$q$, p, ra));
-  perform t.expect('T15c', 'après restauration, 1 nouveau signalement ne remasque pas', t.status_of(p) = 'published', t.status_of(p));
+  -- Doublon, puis second navigateur (la photo reste masquée, le signalement est enregistré)
+  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'sexual')->>'result'$q$, p, ra));
+  perform t.expect('T10', 'même navigateur, signalement encore ouvert => already_reported', r = 'OK:already_reported', r);
+  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'violence')->>'result'$q$, p, rb));
+  perform t.expect('T10b', 'second navigateur sur une photo déjà masquée => reported (2 signalements conservés)',
+    r = 'OK:reported' and t.status_of(p) = 'hidden/reports' and (select count(*) from public.photo_reports where photo_id = p) = 2, r);
+
+  -- L'administration voit le motif, le commentaire, le total
+  r := t.as_role('authenticated', adm, format($q$select (x.report_count || '/' || x.open_reports || '/' || x.status || '/' ||
+      (select string_agg(e ->> 'reason', ',' order by e ->> 'reason') from jsonb_array_elements(x.reports) e) || '/' || (x.reports -> 0 ->> 'comment' is not null or x.reports -> 1 ->> 'comment' is not null)::text)
+      from public.admin_list_photos('reported', 50, 0) x where x.id = %L$q$, p));
+  perform t.expect('T11f', 'admin_list_photos(reported) : total, ouverts, statut, motifs, commentaire', r = 'OK:2/2/hidden/sexual,violence/true', r);
+  r := t.as_role('authenticated', adm, $q$select (public.admin_status() ->> 'reported')$q$);
+  perform t.expect('T11g', 'admin_status().reported compte les photos à examiner', r = 'OK:1', r);
+
+  -- T15 : restauration admin => signalements conservés mais résolus, pas de remasquage
+  r := t.as_role('authenticated', adm, format($q$select public.admin_set_status(%L, 'published')->>'result'$q$, p));
+  perform t.expect('T15', 'admin restaure la photo signalée', r = 'OK:published' and t.status_of(p) = 'published', r);
+  perform t.expect('T15b', 'restauration : signalements CONSERVÉS et résolus (trace)',
+    (select count(*) from public.photo_reports where photo_id = p and resolution = 'restored' and resolved_at is not null) = 2);
+  perform t.expect('T15d', 'décision tracée dans photo_moderation', (select action from public.photo_moderation where photo_id = p) = 'restored');
+  perform t.expect('T15e', 'photo restaurée de nouveau dans la galerie', (select count(*) from public.gallery_page(100) where id = p) = 1);
+  r := t.as_role('authenticated', adm, format($q$select count(*) from public.admin_list_photos('reported', 50, 0) x where x.id = %L$q$, p));
+  perform t.expect('T15f', 'photo restaurée : plus dans les éléments à examiner', r = 'OK:0', r);
+  -- un ancien signalement ne remasque rien (aucun mécanisme de comptage) ; un NOUVEAU signalement valide remasque
+  perform t.expect('T15c', 'après restauration, rien ne remasque tout seul', t.status_of(p) = 'published');
+  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'privacy', 'on me voit de face')->>'result'$q$, p, ra));
+  perform t.expect('T15g', 'nouveau signalement valide après restauration => masquée à nouveau',
+    r = 'OK:reported' and t.status_of(p) = 'hidden/reports', r || ' ' || t.status_of(p));
+  select count(*) into n from public.photo_reports where photo_id = p and reporter_id = ra;
+  perform t.expect('T15h', 'même navigateur : au plus 3 signalements par photo (anciens inclus)', n = 2, n::text);
+  -- maintenir masquée / supprimer : comportement existant
+  r := t.as_role('authenticated', adm, format($q$select public.admin_set_status(%L, 'hidden')->>'result'$q$, p));
+  perform t.expect('T15i', 'admin maintient masquée : hidden/admin, signalements résolus kept_hidden',
+    r = 'OK:hidden' and t.status_of(p) = 'hidden/admin' and (select count(*) from public.photo_reports where photo_id = p and resolution = 'kept_hidden') = 1, t.status_of(p));
+  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'violence')->>'result'$q$, p, gen_random_uuid()));
+  perform t.expect('T15j', 'photo masquée par un admin : signalement ignoré (not_found)', r = 'OK:not_found', r);
 
   -- T21 : on ne signale pas une photo privée ni en attente
   q := (select id from public.photos where audience = 'maries' limit 1);
-  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L)->>'result'$q$, q, ra));
+  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'sexual')->>'result'$q$, q, ra));
   perform t.expect('T21', 'signaler une photo privée => not_found', r = 'OK:not_found', r);
   q := (select id from public.photos where status = 'pending_review' limit 1);
-  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L)->>'result'$q$, q, ra));
+  r := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'sexual')->>'result'$q$, q, ra));
   perform t.expect('T21b', 'signaler une photo en attente => not_found', r = 'OK:not_found', r);
+  r := t.as_role('authenticated', 'bbbbbbbb-0000-0000-0000-000000000002', format($q$select public.admin_set_status(%L, 'published')->>'result'$q$, p));
+  perform t.expect('T21c', 'un invité (compte non admin) ne peut pas restaurer', r like 'ERR:42501%', r);
 end $$;
 
 -- ---------------------------------------------------------------- T13 / T14 : droits admin, pause, relâche
@@ -369,13 +414,22 @@ do $$
 declare i int; v_id uuid; r text; rr uuid := '99999999-9999-9999-9999-999999999999'; last_res text; up uuid := '00000000-0000-0000-0000-0000000000d4';
 begin
   delete from public.photos;
-  for i in 1..22 loop
+  for i in 1..16 loop
     v_id := t.guest_register('public', 'rl-' || i, 'clean');
   end loop;
-  for v_id in select id from public.photos order by id limit 21 loop
-    last_res := t.as_role('anon', null, format($q$select public.report_photo(%L, %L)->>'result'$q$, v_id, rr));
+  -- 5 signalements / 10 min / navigateur : le 6e est refusé
+  for v_id in select id from public.photos order by id limit 6 loop
+    last_res := t.as_role('anon', null, format($q$select public.report_photo(%L, %L, 'sexual')->>'result'$q$, v_id, rr));
   end loop;
-  perform t.expect('T22', 'plus de 20 signalements en 10 min par le même navigateur => rate_limited', last_res = 'OK:rate_limited', last_res);
+  perform t.expect('T22', 'plus de 5 signalements en 10 min par le même navigateur => rate_limited', last_res = 'OK:rate_limited', last_res);
+  -- frein global : 12 photos différentes signalées en 10 min au plus, quel que soit le navigateur
+  for v_id in select id from public.photos where status = 'published' order by id limit 7 loop
+    last_res := t.as_role('anon', null, format($q$select public.report_photo(%L, gen_random_uuid(), 'violence')->>'result'$q$, v_id));
+  end loop;
+  last_res := t.as_role('anon', null, format($q$select public.report_photo(%L, gen_random_uuid(), 'violence')->>'result'$q$, (select id from public.photos where status = 'published' limit 1)));
+  perform t.expect('T22b', 'plus de 12 photos signalées en 10 min au total => rate_limited (frein aux scripts)',
+    last_res = 'OK:rate_limited' or last_res = 'OK:not_found', last_res);
+  perform t.expect('T22c', 'le frein global limite le nombre de masquages (<= 12)', (select count(*) from public.photos where status = 'hidden' and review_reason = 'reports') <= 12);
 
   for i in 1..500 loop
     v_id := gen_random_uuid();

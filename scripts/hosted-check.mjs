@@ -119,18 +119,20 @@ check("3a", "p_nsfw suspect => pending_review", X.reg.data?.result === "pending_
 check("3b", "absente de gallery_page", !(await inGallery(X.id)).found);
 check("3c", "signature refusée", refused(await bucket.createSignedUrls(paths(X.id, "public"), 60)));
 
-// ---- 4. Signalements -------------------------------------------------------------------------
+// ---- 4. Signalements (nécessite la migration 0004 : UN signalement motivé masque la photo) ----
 const R = await send("public", "clean", "signalements");
-const rep = (photo, reporter) => sb.rpc("report_photo", { p_photo_id: photo, p_reporter: reporter, p_reason: "other" });
+const rep = (photo, reporter, reason = "sexual", comment = null) => sb.rpc("report_photo", { p_photo_id: photo, p_reporter: reporter, p_reason: reason, p_comment: comment });
 const v1 = randomUUID(), v2 = randomUUID();
-const r1 = await rep(R.id, v1);
-check("4a", "1 vote ne masque pas", r1.data?.result === "reported" && (await inGallery(R.id)).found, JSON.stringify(r1.data ?? msg(r1.error)));
+const r0 = await rep(R.id, v1, null);
+check("4a0", "signalement sans motif refusé", r0.error?.code === "22023" && (await inGallery(R.id)).found, JSON.stringify(r0.error ?? r0.data));
+const r0b = await rep(R.id, v1, "other");
+check("4a1", "« Autre » sans description refusé", r0b.error?.code === "22023" && (await inGallery(R.id)).found, JSON.stringify(r0b.error ?? r0b.data));
+const r1 = await rep(R.id, v1, "sexual", "test");
+check("4a", "1er signalement valide => masquée immédiatement", r1.data?.result === "reported" && !(await inGallery(R.id)).found && refused(await bucket.createSignedUrls(paths(R.id, "public"), 60)), JSON.stringify(r1.data ?? msg(r1.error)));
 const r1b = await rep(R.id, v1);
 check("4b", "même reporter_id deux fois => already_reported", r1b.data?.result === "already_reported", JSON.stringify(r1b.data ?? msg(r1b.error)));
-const r2 = await rep(R.id, v2);
-check("4c", "2e vote d'un reporter_id différent => reported puis masquée",
-  r2.data?.result === "reported" && !(await inGallery(R.id)).found && refused(await bucket.createSignedUrls(paths(R.id, "public"), 60)),
-  JSON.stringify(r2.data ?? msg(r2.error)));
+const r2 = await rep(R.id, v2, "violence");
+check("4c", "autre reporter_id sur la photo déjà masquée => enregistré", r2.data?.result === "reported", JSON.stringify(r2.data ?? msg(r2.error)));
 const rp = await rep(M.id, randomUUID());
 check("4d", "signaler une photo privée => not_found", rp.data?.result === "not_found", JSON.stringify(rp.data ?? msg(rp.error)));
 const ri = await rep(randomUUID(), randomUUID());

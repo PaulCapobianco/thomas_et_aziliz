@@ -24,19 +24,37 @@ let filter = "reported",
   lastSignature = "";
 // Photos ticked for a batch action (pending queue and "Récentes"); kept by id across refreshes.
 const selected = new Set();
-const batchTab = () => filter === "pending" || filter === "recent";
+const batchTab = () => filter === "pending" || filter === "recent" || filter === "reported";
 const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
 const SIGNATURE_REUSE_MS = 45 * 60000;
 const reasons = {
   nsfw: "Contenu à vérifier",
   paused: "En attente de validation",
   model_unavailable: "Vérification automatique indisponible",
-  reports: "Signalements",
+  reports: "Masquée à la suite d’un signalement",
   admin: "Masquée par un administrateur",
-  embarrassing: "Photo gênante",
-  child: "Photo d’un enfant",
-  other: "Autre",
+  sexual: "Contenu sexuel, nudité ou sextoy",
+  violence: "Violence ou contenu choquant",
+  privacy: "Atteinte à la vie privée / droit à l’image",
+  inappropriate: "Photo inappropriée ou hors sujet",
+  other: "Autre raison",
+  // Reasons of the previous version of the form (kept readable for old reports).
+  embarrassing: "Photo gênante (ancien motif)",
+  child: "Photo d’un enfant (ancien motif)",
 };
+const resolutions = {
+  restored: "restaurée",
+  kept_hidden: "maintenue masquée",
+  deleted: "supprimée",
+};
+const decisions = {
+  restored: "Restaurée",
+  kept_hidden: "Maintenue masquée",
+  deleted: "Supprimée",
+  published: "Publiée",
+  hidden: "Masquée",
+};
+const dateTime = (value) => new Date(value).toLocaleString("fr-FR");
 const statuses = {
   published: "Publiée",
   pending_review: "En attente de validation",
@@ -131,36 +149,63 @@ function render() {
       card.append(box);
       card.classList.toggle("is-selected", input.checked);
     }
+    const total = row.report_count ?? 0;
+    const open = row.open_reports ?? 0;
     card.append(
       preview,
       el("h3", title),
       el(
         "p",
-        `${row.report_count} signalement(s) · ${new Date(row.created_at).toLocaleString("fr-FR")}`,
+        total
+          ? `${plural(total, "signalement", "signalements")} au total · ${open} à examiner${row.last_report_at ? ` · dernier le ${dateTime(row.last_report_at)}` : ""}`
+          : `Envoyée le ${dateTime(row.created_at)}`,
       ),
     );
     if (row.review_reason)
       card.append(el("p", reasons[row.review_reason] || "À examiner"));
-    if (row.report_reasons?.length)
+    if (row.reports?.length) {
+      // Reason and comment of each report (text only: nothing typed by a guest is ever injected as HTML).
+      const list = el("ul", undefined, "report-list");
+      for (const report of row.reports.slice(0, 5)) {
+        const item = el("li");
+        item.append(
+          el("strong", `${dateTime(report.at)} — ${reasons[report.reason] || "Autre raison"}`),
+        );
+        if (report.comment) item.append(el("p", `« ${report.comment} »`, "report-comment-text"));
+        if (report.resolved)
+          item.append(el("small", `Traité : ${resolutions[report.resolution] || "traité"}`));
+        list.append(item);
+      }
+      if (row.reports.length > 5)
+        list.append(el("li", `… et ${row.reports.length - 5} autre(s) signalement(s)`));
+      card.append(list);
+    }
+    if (row.last_decision)
       card.append(
         el(
           "p",
-          row.report_reasons
-            .map((reason) => reasons[reason] || "Autre")
-            .join(" · "),
+          `Dernière décision : ${decisions[row.last_decision.action] || row.last_decision.action} le ${dateTime(row.last_decision.at)}`,
         ),
       );
     const actions = el("div", undefined, "actions");
     for (const [status, label] of [
       [
         "hidden",
-        filter === "pending" ? "Refuser" : filter === "recent" ? "Retirer" : "Masquer",
+        filter === "pending"
+          ? "Refuser"
+          : filter === "recent"
+            ? "Retirer"
+            : filter === "reported"
+              ? "Maintenir masquée"
+              : "Masquer",
       ],
       ["published", row.status === "pending_review" ? "Valider" : "Restaurer"],
       ["deleted", "Supprimer"],
     ]) {
       const button = el("button", label, status === "hidden" ? "primary" : "");
-      button.disabled = busy || row.status === status;
+      // On a reported photo, "Maintenir masquée" / "Restaurer" also close its open reports, whatever its status.
+      const resolvable = filter === "reported" && open > 0 && status !== "deleted";
+      button.disabled = busy || (row.status === status && !resolvable);
       button.onclick = () => setStatus(row, status);
       actions.append(button);
     }
@@ -175,10 +220,13 @@ function updateBatchBar(progress) {
   $("batch-bar").hidden = !show;
   document.body.classList.toggle("has-batch", show);
   $("batch-approve").hidden = $("batch-reject").hidden = filter !== "pending";
+  $("batch-restore").hidden = $("batch-keep").hidden = filter !== "reported";
   $("batch-remove").hidden = filter !== "recent";
   $("batch-delete").hidden = !batchTab();
   $("batch-approve").textContent = `Valider (${count})`;
   $("batch-reject").textContent = `Refuser (${count})`;
+  $("batch-restore").textContent = `Restaurer (${count})`;
+  $("batch-keep").textContent = `Maintenir masquée (${count})`;
   $("batch-remove").textContent = `Retirer (${count})`;
   $("batch-delete").textContent = `Supprimer (${count})`;
   $("batch-summary").textContent = progress
@@ -186,7 +234,7 @@ function updateBatchBar(progress) {
     : `${plural(count, "photo sélectionnée", "photos sélectionnées")}`;
   $("batch-progress").hidden = !progress;
   if (progress) $("batch-progress").value = Math.round((progress.done / progress.total) * 100);
-  for (const id of ["batch-approve", "batch-reject", "batch-remove", "batch-delete"])
+  for (const id of ["batch-approve", "batch-reject", "batch-remove", "batch-delete", "batch-restore", "batch-keep"])
     $(id).disabled = batchRunning || busy;
   const everything = rows.length > 0 && rows.every((row) => selected.has(row.id));
   $("select-all").hidden = !batchTab() || !rows.length;
@@ -199,7 +247,14 @@ function updateBatchBar(progress) {
 async function runBatch(kind) {
   const targets = rows.filter((row) => selected.has(row.id));
   if (!targets.length || busy || batchRunning) return;
-  const status = kind === "approve" ? "published" : "hidden";
+  const status = kind === "approve" || kind === "restore" ? "published" : "hidden";
+  if (
+    kind === "restore" &&
+    !(await confirmAction(
+      `Rendre à nouveau visibles ${plural(targets.length, "photo signalée", "photos signalées")} dans la galerie ?`,
+    ))
+  )
+    return;
   if (
     kind === "delete" &&
     !(await confirmAction(
@@ -250,13 +305,19 @@ async function runBatch(kind) {
   }
   batchRunning = false;
   const ok = done - failed.length;
-  const verb = { approve: "validée", reject: "refusée", remove: "retirée", delete: "supprimée" }[kind];
-  const verbs = verb + "s";
+  const words = {
+    approve: ["validée", "validées"],
+    reject: ["refusée", "refusées"],
+    remove: ["retirée", "retirées"],
+    delete: ["supprimée", "supprimées"],
+    restore: ["restaurée", "restaurées"],
+    keep: ["maintenue masquée", "maintenues masquées"],
+  }[kind];
   const fullyDone = ok - storageFailed;
   const parts = [];
   if (kind !== "delete" || fullyDone)
     parts.push(
-      `${plural(kind === "delete" ? fullyDone : ok, `photo ${verb}`, `photos ${verbs}`)}${kind === "approve" ? " : visible dans la galerie" : ""}${kind === "delete" ? " définitivement" : ""}.`,
+      `${plural(kind === "delete" ? fullyDone : ok, `photo ${words[0]}`, `photos ${words[1]}`)}${kind === "approve" ? " : visible dans la galerie" : ""}${kind === "delete" ? " définitivement" : ""}.`,
     );
   if (storageFailed)
     parts.push(
@@ -311,6 +372,7 @@ async function load(more = false, silent = false) {
       ? "Désactiver la validation avant publication"
       : "Activer la validation avant publication";
     $("pending-count").textContent = ` (${state.pending})`;
+    $("reported-count").textContent = ` (${state.reported})`;
     $("stats").replaceChildren();
     for (const [label, value] of [
       ["Publiées", state.published],
@@ -516,6 +578,8 @@ document.querySelectorAll("[data-release]").forEach((button) => {
 $("batch-approve").onclick = () => runBatch("approve");
 $("batch-reject").onclick = () => runBatch("reject");
 $("batch-remove").onclick = () => runBatch("remove");
+$("batch-restore").onclick = () => runBatch("restore");
+$("batch-keep").onclick = () => runBatch("keep");
 $("batch-delete").onclick = () => runBatch("delete");
 $("select-all").onclick = () => {
   const everything = rows.every((row) => selected.has(row.id));

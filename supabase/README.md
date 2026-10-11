@@ -122,6 +122,6 @@ Le reste (RPC, galerie, signalements, admin) ne change pas. Code **non testé** 
 - Garanti (testé en local) : un invité ne lit ni les photos privées, ni les photos en attente, ni les photos masquées, ni
   `original_sha256`, `uploader_id`, signalements, réglages ; il ne peut ni changer un statut, ni voter directement, ni se déclarer admin.
 - Non garanti : une URL signée déjà délivrée reste valable 1 h après un masquage ; un navigateur peut l'avoir en cache.
-- Non garanti : « deux signalements » = deux identifiants de navigateur, pas deux personnes.
+- Non garanti : un signalement = un identifiant de navigateur, pas une personne. Migration 0004 : un seul signalement motivé masque la photo (frein : 12 photos signalées / 10 min au total).
 - Non garanti : un client modifié peut déposer des fichiers (JPEG ≤ 3 Mo, chemins valides) jusqu'à saturer le quota ;
   surveiller `admin_status().storage_bytes` et le quota Supabase.

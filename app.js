@@ -269,7 +269,7 @@ async function loadGallery(more = false) {
     loaded = true;
     loadFailures = 0;
     forceSign = false;
-    $("gallery-status").textContent = "";
+    $("gallery-status").textContent = galleryNotice; // a report confirmation stays until it expires
     renderGallery();
     if ($("lightbox").open) {
       const index = rows.findIndex((row) => row.id === currentId);
@@ -451,39 +451,83 @@ $("download").onclick = async () => {
     $("download").disabled = false;
   }
 };
+// ---- Report: a reason is mandatory, "Autre" needs a description; the server hides the photo at the FIRST valid report ----
+const REPORT_NOTICE =
+  "Merci pour votre signalement. Cette photo a été retirée temporairement de la galerie et sera examinée par les administrateurs.";
+let galleryNotice = "";
+let noticeTimer;
+function sayInGallery(text) {
+  galleryNotice = text;
+  $("gallery-status").textContent = text;
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => {
+    if ($("gallery-status").textContent === galleryNotice) $("gallery-status").textContent = "";
+    galleryNotice = "";
+  }, 20000);
+}
+const reportReason = () => document.querySelector("[name=report-reason]:checked")?.value || "";
+function syncReportForm() {
+  const reason = reportReason();
+  const comment = $("report-comment").value.trim();
+  const other = reason === "other";
+  $("report-comment-label").textContent = other
+    ? "Décrivez la raison (obligatoire)"
+    : "Commentaire (facultatif)";
+  $("report-comment").required = other;
+  $("report-comment").setAttribute("aria-required", String(other));
+  $("report-comment-count").textContent = `${$("report-comment").value.length} / 500`;
+  $("report-submit").disabled = !reason || (other && comment.length < 3);
+}
+document.querySelectorAll("[name=report-reason]").forEach((radio) => radio.addEventListener("change", syncReportForm));
+$("report-comment").addEventListener("input", syncReportForm);
 $("report-open").onclick = () => {
+  $("report-form").reset();
   $("report-status").textContent = "";
+  syncReportForm();
   $("report-dialog").showModal();
 };
 $("report-form").onsubmit = async (event) => {
   event.preventDefault();
-  const button = event.submitter;
-  button.disabled = true;
+  if ($("report-submit").disabled) return;
+  $("report-submit").disabled = true;
+  const photo = rows[activeIndex];
   try {
     const { result } = await rpc(sb, "report_photo", {
-      p_photo_id: rows[activeIndex].id,
+      p_photo_id: photo.id,
       p_reporter: browserId(),
-      p_reason: $("report-reason").value,
+      p_reason: reportReason(),
+      p_comment: $("report-comment").value.trim() || null,
     });
     const messages = {
-      reported: "Merci, votre signalement a été envoyé.",
-      already_reported: "Vous avez déjà signalé cette photo.",
+      reported: REPORT_NOTICE,
+      already_reported: "Vous avez déjà signalé cette photo : elle est en cours d’examen.",
       not_found: "Cette photo n’est plus disponible.",
-      rate_limited:
-        "Trop de signalements en peu de temps, réessayez dans quelques minutes.",
+      rate_limited: "Trop de signalements en peu de temps, réessayez dans quelques minutes.",
     };
-    $("report-status").textContent =
-      messages[result] || "Une erreur est survenue, réessayez.";
-    if (["reported", "not_found"].includes(result)) {
+    const message = messages[result] || "Une erreur est survenue, réessayez.";
+    if (["reported", "already_reported", "not_found"].includes(result)) {
       $("report-dialog").close();
       $("lightbox").close();
-      await loadGallery();
-      $("gallery-status").textContent = messages[result];
+      if (result !== "already_reported") {
+        // The hidden photo leaves the grid at once (no waiting for the next refresh); the list is then re-read.
+        rows = rows.filter((row) => row.id !== photo.id);
+        renderGallery();
+      }
+      sayInGallery(message);
+      loadGallery();
+    } else {
+      $("report-status").textContent = message;
     }
-  } catch {
-    $("report-status").textContent = "Une erreur est survenue, réessayez.";
+  } catch (error) {
+    const known = {
+      comment_required: "Décrivez la raison de votre signalement.",
+      invalid_reason: "Choisissez un motif de signalement.",
+      comment_too_long: "Le commentaire est trop long (500 caractères au maximum).",
+    };
+    $("report-status").textContent =
+      known[error?.message] || "Une erreur est survenue, réessayez.";
   } finally {
-    button.disabled = false;
+    syncReportForm();
   }
 };
 uploads = setupUploads(allowed ? sb : null, () => loadGallery());

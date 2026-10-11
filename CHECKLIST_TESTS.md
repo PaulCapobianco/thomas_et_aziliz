@@ -429,3 +429,27 @@ Détail et tableaux dans `DETECTEUR_NSFW.md`. Résumé : filtre NSFWJS 4.4.0 / M
 | Fuite des photos privées | PASS (`real-http-test.mjs`, `real-admin.spec.js`, `share-flow.spec.js` : chemins `maries/…`, absentes de la galerie) |
 | Non-régression générale après la correction du partage | `npm run test` depuis la racine : **349 réussis**, 35 ignorés (opt-in), 0 échec ; `npm run test:real` : **30/30** + 54 contrôles HTTP |
 | Mobiles réels, projet Supabase hébergé | NON_TESTÉ |
+
+## Signalement : UN SEUL signalement motivé masque la photo (11 octobre 2026, branche `signalement-premier-suffit`)
+
+Détail, règles, abus, liens signés et migration dans `SIGNALEMENTS.md` ; décision D24 dans `DECISIONS.md`. **Migration `0004_report_first_hides.sql` à appliquer par vous** (SQL Editor, après 0001-0003, puis publier le site) : incrémentale, rejouable, sans suppression de données ; **non appliquée au projet hébergé**.
+Audit de l'existant : `report_photo` masquait au 2ᵉ signalement distinct, `admin_set_status('published')` effaçait les signalements, la table avait `unique(photo_id, reporter_id)`, motifs `embarrassing` / `child` / `other`, 20 signalements / 10 min / navigateur. Modifié : motifs et commentaire validés côté serveur, masquage au 1er signalement valide dans la même transaction (verrou de ligne), signalements conservés et résolus à la décision (trace `photo_moderation`), plus de remasquage par d'anciens signalements, frein global (12 photos / 10 min) et 5 signalements / 10 min / navigateur. Inchangés : envois publics/privés, choix de destination, compression, NSFWJS, authentification admin, design général, Cloudflare.
+
+| Contrôle | Résultat |
+|---|---|
+| Signalement sans motif / motif inconnu / « Autre » sans description (ou < 3 caractères) / commentaire > 500 : refusés **par le serveur** (22023), rien masqué ni enregistré | PASS (SQL T09a–T09b3 ; pile réelle) |
+| 1er signalement valide : photo masquée immédiatement et atomiquement (hidden/reports), motif et commentaire enregistrés, fichiers conservés | PASS (SQL T09, T09c, T09d, T11c ; pile réelle) |
+| Absente de la galerie, de la lecture directe de la table, du Storage (URL signées, 7 variantes d'URL directes) ; aucun nouveau lien signé ; l'admin peut encore la lire | PASS (SQL T11b–T11e ; pile réelle `real-http-test.mjs`, `real-admin.spec.js`) |
+| Administration : miniature, date, motif, commentaire, total / à examiner, statut, dernière décision ; compteur « Signalées (n) » ; commentaire affiché en texte (pas de HTML) ; anciens motifs lisibles | PASS ×3 (`tests/report.spec.js`) |
+| Restaurer : visible de nouveau, signalements conservés (résolus), décision tracée ; ancien signalement ne remasque pas ; nouveau signalement valide remasque | PASS (SQL T15–T15h ; `report.spec.js` ; pile réelle navigateur + HTTP) |
+| Maintenir masquée (hidden/admin, résolus) ; Supprimer avec confirmation (ligne + deux fichiers, comportement existant) ; lot : Restaurer (n) avec confirmation, Maintenir masquée (n), Supprimer (n) | PASS ×3 (`report.spec.js`) |
+| Un invité ne peut ni appeler les fonctions d'administration ni modifier signalements, trace ou statut | PASS (SQL T19, T21c ; `real-admin.spec.js` ; `real-http-test.mjs`) |
+| Deux signalements simultanés : un masquage, deux signalements enregistrés ; double clic du même navigateur : un seul signalement ; 4 signalements simultanés sur la pile réelle | PASS (SQL T12 en vrais processus parallèles ; pile réelle) |
+| Frein aux abus : 6e signalement d'un navigateur en 10 min, puis plus de 12 photos différentes en 10 min : `rate_limited` | PASS (SQL T22, T22b, T22c ; pile réelle) |
+| Migration 0004 sur des données existantes : 3 signalements anciens (motifs historiques) conservés, photos intactes, photo masquée toujours masquée ; rejeu complet 0001→0004 | PASS (SQL T30 + idempotence) |
+| Interface invité (Chromium 1440 px, Pixel 7 360 px, iPhone 13 WebKit émulés) : fenêtre « Pourquoi signalez-vous cette photo ? », 5 motifs, rien de coché, bouton inactif (aussi pour un envoi forcé), « Autre raison » : description obligatoire, texte de confirmation exact, photo retirée de la grille, rien d'exposé publiquement, fenêtre dans l'écran, choix ≥ 50 px, axe-core 0 violation | PASS ×3 |
+| Liens signés : un lien délivré avant le masquage répond encore (HTTP 200, au plus 3600 s) — **limite documentée, pas une révocation** | INFO vérifié sur la pile réelle |
+| `npm run test` depuis la racine | **PASS 391**, 41 ignorés (opt-in), 0 échec |
+| `npm run test:real` (Storage, PostgREST, GoTrue réels) | **PASS 36/36** + 63 contrôles HTTP |
+| `npm run test:sql` (PostgreSQL 16 jetable, stub) | **PASS 138 lignes**, concurrence T12 comprise |
+| Safari iPhone / Chrome Android réels (feuille de signalement, clavier virtuel), projet Supabase hébergé (migration non appliquée) | **NON_TESTÉ** |

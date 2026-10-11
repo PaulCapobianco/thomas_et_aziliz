@@ -204,7 +204,7 @@ test("'Récentes': a Retirer button on every card, multiple selection and the sa
   await cards(page).nth(1).getByRole("button", { name: "Retirer", exact: true }).click();
   await expect.poll(() => page.evaluate(() => mock.records.filter((r) => r.status === "hidden").length)).toBe(3);
   // Other tabs keep the old wording and have no selection.
-  await page.getByRole("button", { name: "Signalées", exact: true }).click();
+  await page.getByRole("button", { name: "Masquées", exact: true }).click();
   await expect(page.locator(".select-box")).toHaveCount(0);
 });
 
@@ -239,7 +239,7 @@ test("'Supprimer (n)' sits in its own danger row in the pending queue and in Ré
   await expect(page.locator("#batch-remove")).toHaveText("Retirer (1)");
   await expect(page.locator("#batch-delete")).toHaveText("Supprimer (1)");
   // No selection (and so no bar) on the other tabs.
-  await page.getByRole("button", { name: "Signalées", exact: true }).click();
+  await page.getByRole("button", { name: "Masquées", exact: true }).click();
   await expect(page.locator("#batch-delete")).toBeHidden();
 });
 

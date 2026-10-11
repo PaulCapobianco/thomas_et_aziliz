@@ -19,12 +19,26 @@ PSQL="psql -X -q -v ON_ERROR_STOP=1"
 $PSQL -c "drop database if exists $DB" -c "create database $DB" || { echo "Connexion PostgreSQL impossible"; exit 2; }
 export PGDATABASE=$DB
 
-echo ">> stub Supabase + migrations"
+echo ">> stub Supabase + migrations 0001-0003"
 for f in 00_stub_supabase.sql ../migrations/0001_schema.sql ../migrations/0002_functions.sql ../migrations/0003_rls_storage.sql; do
   $PSQL -f "$f" > /dev/null || { echo "ECHEC sur $f"; exit 2; }
 done
+echo ">> données d'avant 0004 (signalements à l'ancienne) puis migration 0004 : rien ne doit être perdu"
+$PSQL > /dev/null <<'SQL'
+insert into public.photos (id, audience, status, review_reason, full_path, thumb_path, original_sha256, uploader_id, published_at) values
+ ('0a0a0a0a-0000-4000-8000-000000000001','public','hidden','reports','public/full/0a0a0a0a-0000-4000-8000-000000000001.jpg','public/thumbs/0a0a0a0a-0000-4000-8000-000000000001.jpg',repeat('1',64),gen_random_uuid(),now()),
+ ('0a0a0a0a-0000-4000-8000-000000000002','public','published',null,'public/full/0a0a0a0a-0000-4000-8000-000000000002.jpg','public/thumbs/0a0a0a0a-0000-4000-8000-000000000002.jpg',repeat('2',64),gen_random_uuid(),now());
+insert into public.photo_reports (photo_id, reporter_id, reason) values
+ ('0a0a0a0a-0000-4000-8000-000000000001', gen_random_uuid(), 'embarrassing'),
+ ('0a0a0a0a-0000-4000-8000-000000000001', gen_random_uuid(), 'child'),
+ ('0a0a0a0a-0000-4000-8000-000000000002', gen_random_uuid(), 'other');
+SQL
+$PSQL -f ../migrations/0004_report_first_hides.sql > /dev/null || { echo "ECHEC sur 0004"; exit 2; }
+KEPT=$(psql -X -qAt -c "select (select count(*) from public.photo_reports) || '/' || (select count(*) from public.photo_reports where resolved_at is null) || '/' || (select count(*) from public.photos where id::text like '0a0a0a0a%') || '/' || (select status from public.photos where id = '0a0a0a0a-0000-4000-8000-000000000001')")
+if [ "$KEPT" = "3/3/2/hidden" ]; then echo "T30 | PASS | 0004 sur des données existantes : 3 signalements anciens conservés (motifs historiques valides), 2 photos intactes, photo masquée toujours masquée"; else echo "T30 | FAIL | $KEPT"; exit 2; fi
+$PSQL -c "delete from public.photos where id::text like '0a0a0a0a%'" > /dev/null   # nettoyage de la base JETABLE avant les tests suivants
 echo ">> migrations rejouées une 2e fois (idempotence)"
-for f in ../migrations/0001_schema.sql ../migrations/0002_functions.sql ../migrations/0003_rls_storage.sql; do
+for f in ../migrations/0001_schema.sql ../migrations/0002_functions.sql ../migrations/0003_rls_storage.sql ../migrations/0004_report_first_hides.sql; do
   $PSQL -f "$f" > /dev/null || { echo "ECHEC (non idempotent) sur $f"; exit 2; }
 done
 
@@ -43,30 +57,30 @@ do $$
 declare i int; v uuid;
 begin
   delete from public.photos;
-  for i in 1..40 loop
+  for i in 1..10 loop
     v := gen_random_uuid();
     insert into public.photos (id, audience, status, full_path, thumb_path, original_sha256, uploader_id, published_at)
     values (v, 'public', 'published', 'public/full/'||v||'.jpg', 'public/thumbs/'||v||'.jpg', md5('race'||i)||md5('race'||i||'x'), gen_random_uuid(), now());
-    insert into tc.race values (v, case when i <= 20 then 'distinct' else 'same' end);
+    insert into tc.race values (v, case when i <= 5 then 'distinct' else 'same' end);
   end loop;
 end $$;
 SQL
 # Concurrence DÉTERMINISTE : la session A signale puis garde sa transaction ouverte 1,5 s (pg_sleep) ;
-# pendant ce temps la session B signale la même photo. Sans verrou sur la ligne de la photo, B ne voit pas
-# le vote de A (non validé) et la photo resterait visible avec 2 votes : le test échoue alors à coup sûr.
-#   'distinct' : deux navigateurs différents  => doit finir 'hidden' avec 2 votes
-#   'same'     : même navigateur (double clic) => doit rester 'published' avec 1 vote
+# pendant ce temps la session B signale la même photo. Sans verrou sur la ligne de la photo, B ne verrait pas
+# le signalement de A (non validé) et pourrait créer un état incohérent.
+#   'distinct' : deux navigateurs différents  => photo 'hidden' avec EXACTEMENT 2 signalements enregistrés
+#   'same'     : même navigateur (double clic) => photo 'hidden' avec EXACTEMENT 1 signalement (le 2e = already_reported)
 while read -r id kind; do
-  if [ "$kind" = distinct ]; then RB=22222222-2222-2222-2222-222222222222; RA=11111111-1111-1111-1111-111111111111
-  else RB=33333333-3333-3333-3333-333333333333; RA=33333333-3333-3333-3333-333333333333; fi
-  ( psql -X -qAt -c "begin; set local role anon; select public.report_photo('$id','$RA'); select pg_sleep(1.5); commit;" </dev/null >/dev/null 2>&1 ) &
-  ( sleep 0.5; psql -X -qAt -c "set role anon; select public.report_photo('$id','$RB')" </dev/null >/dev/null 2>&1 ) &
+  RA=$(cat /proc/sys/kernel/random/uuid)
+  if [ "$kind" = distinct ]; then RB=$(cat /proc/sys/kernel/random/uuid); else RB=$RA; fi
+  ( psql -X -qAt -c "begin; set local role anon; select public.report_photo('$id','$RA','sexual'); select pg_sleep(1.5); commit;" </dev/null >/dev/null 2>&1 ) &
+  ( sleep 0.5; psql -X -qAt -c "set role anon; select public.report_photo('$id','$RB','violence')" </dev/null >/dev/null 2>&1 ) &
 done < <(psql -X -qAt -c "select id||' '||kind from tc.race")
 wait   # (la boucle n'est pas dans un sous-shell : wait attend bien toutes les sessions)
-BAD1=$(psql -X -qAt -c "select count(*) from public.photos p join tc.race r on r.id=p.id where r.kind='distinct' and (p.status <> 'hidden' or (select count(*) from public.photo_reports x where x.photo_id=p.id) <> 2)")
-BAD2=$(psql -X -qAt -c "select count(*) from public.photos p join tc.race r on r.id=p.id where r.kind='same' and (p.status <> 'published' or (select count(*) from public.photo_reports x where x.photo_id=p.id) <> 1)")
+BAD1=$(psql -X -qAt -c "select count(*) from public.photos p join tc.race r on r.id=p.id where r.kind='distinct' and (p.status <> 'hidden' or p.review_reason <> 'reports' or (select count(*) from public.photo_reports x where x.photo_id=p.id) <> 2)")
+BAD2=$(psql -X -qAt -c "select count(*) from public.photos p join tc.race r on r.id=p.id where r.kind='same' and (p.status <> 'hidden' or p.review_reason <> 'reports' or (select count(*) from public.photo_reports x where x.photo_id=p.id) <> 1)")
 if [ "$BAD1" = 0 ] && [ "$BAD2" = 0 ]; then
-  echo "T12 | PASS | 20 photos x 2 votes distincts simultanés => toutes masquées (2 votes) ; 20 photos x double-clic => 1 vote, visibles"
+  echo "T12 | PASS | 5 photos x 2 signalements distincts simultanés => masquées avec 2 signalements ; 5 photos x double-clic => masquées avec 1 seul signalement"
 else
   echo "T12 | FAIL | distinct incohérents=$BAD1, doubles-clics incohérents=$BAD2"; FAILS=$((FAILS+1))
 fi

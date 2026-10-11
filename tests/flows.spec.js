@@ -248,20 +248,20 @@ test("200 photos: pagination, refresh removal and new insertion, lightbox focus 
   await page.locator("#more").click();
   await expect(page.locator(".photo-card")).toHaveCount(200);
 });
-test("report UI submits once and honors already-reported result", async ({
+test("report UI: mandatory reason, one report hides the photo at once, repeated report is refused", async ({
   page,
 }) => {
-  await installMock(page, { photos: 1 });
+  await installMock(page, { photos: 2 });
   await page.goto("/");
-  await page.locator(".photo-card").click();
+  await page.locator(".photo-card").first().click();
   await page.locator("#report-open").click();
-  await page.getByRole("button", { name: "Signaler", exact: true }).click();
-  await expect(page.locator("#gallery-status")).toContainText("Merci");
+  await expect(page.locator("#report-submit")).toBeDisabled();
+  await page.getByRole("radio", { name: "Photo inappropriée ou hors sujet" }).check();
+  await page.getByRole("button", { name: "Envoyer le signalement" }).click();
+  await expect(page.locator("#gallery-status")).toContainText(
+    "Merci pour votre signalement. Cette photo a été retirée temporairement de la galerie et sera examinée par les administrateurs.",
+  );
   await expect(page.locator(".photo-card")).toHaveCount(1);
-  await page.locator(".photo-card").click();
-  await page.locator("#report-open").click();
-  await page.getByRole("button", { name: "Signaler", exact: true }).click();
-  await expect(page.locator("#report-status")).toContainText("déjà signalé");
 });
 test("admin login, remove restore validation mode delete and logout", async ({ page }) => {
   await installMock(page, { photos: 2 });
@@ -349,7 +349,7 @@ test("real locally hosted model loads and classifies without CDN", async ({
   });
   expect(result).toEqual(["Drawing", "Hentai", "Neutral", "Porn", "Sexy"]);
 });
-test("touch swipe, second distinct report and modal keyboard trap", async ({
+test("touch swipe and modal keyboard trap, then a report from the lightbox", async ({
   page,
 }) => {
   await installMock(page, { photos: 2 });
@@ -375,12 +375,9 @@ test("touch swipe, second distinct report and modal keyboard trap", async ({
       await page.evaluate(() => document.activeElement.closest("dialog")?.id),
     ).toBe("lightbox");
   }
-  await page.evaluate(() => {
-    mock.records[1].reports = ["another-browser"];
-    mock.records[1].report_count = 1;
-  });
   await page.locator("#report-open").click();
-  await page.getByRole("button", { name: "Signaler", exact: true }).click();
+  await page.getByRole("radio", { name: "Violence ou contenu choquant" }).check();
+  await page.getByRole("button", { name: "Envoyer le signalement" }).click();
   await expect(page.locator(".photo-card")).toHaveCount(1);
 });
 test("blocked localStorage uses memory identity and selection accepts malicious filename as text", async ({
