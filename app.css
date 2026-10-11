@@ -476,6 +476,10 @@ fieldset {
   font-size: 0.9rem;
   margin: 0.3rem 0 0;
 }
+.selection-header[hidden],
+.selection[hidden] {
+  display: none;
+}
 .selection-header h2 {
   font: 400 0.78rem/1.5 var(--font-ui);
   letter-spacing: 0.12em;

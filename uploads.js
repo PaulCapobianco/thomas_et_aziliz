@@ -282,6 +282,7 @@ export async function uploadPhoto(sb, file, audience, seen, update = () => {}) {
 const SUCCESS_MS = 5000,
   PENDING_MS = 10000,
   FADE_MS = 400;
+const trimStop = (text) => String(text).replace(/[.\s]+$/, "");
 const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
 function createMessage(onChange = () => {}) {
   let timer = 0,
@@ -347,7 +348,7 @@ function finalMessage(items, cancelled) {
     ? `${plural(pend, "photo reçue", "photos reçues")} : ${pend > 1 ? "elles apparaîtront" : "elle apparaîtra"} dans la galerie après vérification par les organisateurs.`
     : "";
   if (failed.length) {
-    const reasons = [...new Set(failed.map((item) => item.reason).filter(Boolean))];
+    const reasons = [...new Set(failed.map((item) => item.reason).filter(Boolean).map(trimStop))];
     const why = reasons.length
       ? ` Raison : ${reasons.slice(0, 2).join(" ; ")}${reasons.length > 2 ? " ; …" : ""}.`
       : "";
@@ -369,6 +370,16 @@ function finalMessage(items, cancelled) {
     };
   if (cancelled)
     return { kind: "info", options: { close: "OK" }, text: head + (done.length ? `${done.join(" · ")}.` : "") };
+  // Only photos for the shared gallery (no private send, no duplicate): a plain thank-you.
+  if (shared && !priv && !dup)
+    return {
+      kind: "success",
+      options: { autoHide: SUCCESS_MS },
+      text:
+        shared > 1
+          ? `Merci ! Vos ${shared} photos ont bien été ajoutées à la galerie.`
+          : "Merci ! Votre photo a bien été ajoutée à la galerie.",
+    };
   return {
     kind: "success",
     options: { autoHide: SUCCESS_MS },
@@ -388,6 +399,8 @@ export function setupUploads(sb, onComplete) {
   };
   function render() {
     $("selection").replaceChildren();
+    // Nothing selected (initially, or once everything was sent): no "selected photos" block at all.
+    $("selection-title").parentElement.hidden = $("selection").hidden = !items.length;
     $("selection-title").textContent =
       `Vos photos sélectionnées (${items.length})`;
     items.forEach((item) => {
@@ -464,7 +477,7 @@ export function setupUploads(sb, onComplete) {
     const ready = items.filter((item) => !item.result).length;
     const unreadable = items.filter((item) => item.result === "error");
     if (unreadable.length) {
-      const reasons = [...new Set(unreadable.map((item) => item.reason))];
+      const reasons = [...new Set(unreadable.map((item) => trimStop(item.reason)))];
       message.show(
         "error",
         `${plural(unreadable.length, "fichier n’a pas pu être utilisé", "fichiers n’ont pas pu être utilisés")}. Raison : ${reasons.slice(0, 2).join(" ; ")}.${ready ? ` ${plural(ready, "photo est prête", "photos sont prêtes")} à être envoyée${ready > 1 ? "s" : ""}.` : ""}`,
@@ -532,9 +545,17 @@ export function setupUploads(sb, onComplete) {
     busy = false;
     $("cancel-upload").disabled = true;
     render();
+    // The message is built from the whole outcome, then the list keeps only what still needs the guest:
+    // photos that failed (to retry) and photos not processed yet (after a cancel). Sent, duplicate and
+    // kept-for-review photos leave the list, and the file field is reset so the same file can be chosen again.
+    const final = finalMessage(items, cancelled);
+    items
+      .filter((item) => item.result && item.result !== "error")
+      .forEach(revoke);
+    items = items.filter((item) => !item.result || item.result === "error");
+    $("files").value = "";
     // The progress block gives way to the final message: never both on screen.
     $("progress-panel").hidden = true;
-    const final = finalMessage(items, cancelled);
     message.show(final.kind, final.text, final.options);
     render();
     $("upload-message").scrollIntoView({ block: "nearest" });

@@ -321,3 +321,19 @@ Maintenant : lightbox en colonne flex (`100dvh`) : barre du haut, zone image (`f
 | Le nouveau test échoue bien avec l'ancien CSS (0,16 px d'air au-dessus du bandeau ; rapport de boîte erroné) | confirmé |
 | `npm run test` depuis la racine | **PASS 190**, 26 ignorés (opt-in), 0 échec |
 | iPhone réel (barre d'adresse Safari dynamique) | NON_TESTÉ ; la hauteur utilise `100dvh` |
+
+## Après l'envoi : la sélection se vide (11 octobre 2026)
+
+`uploads.js` : une fois l'envoi terminé, la liste « Vos photos sélectionnées » ne garde que ce qui demande encore une action : les photos en échec (avec leur message et le moyen de réessayer) et, après un « Annuler », celles pas encore traitées. Les photos envoyées, les doublons et les photos reçues en attente de validation sortent de la liste (aperçus libérés) et le champ fichier est réinitialisé (`input.value = ""`), ce qui permet de rechoisir la même photo. Le bloc (titre et liste) est masqué quand la sélection est vide, y compris au départ.
+Nouveau texte (le seul) : « Merci ! Votre photo a bien été ajoutée à la galerie. » / « Merci ! Vos N photos ont bien été ajoutées à la galerie. », qui disparaît seul après 5 s ou dès la sélection suivante ; les messages avec doublon, envoi privé, attente ou échec sont inchangés (un point final en double a été supprimé dans la raison des échecs). Réglages 3000/800 px, Supabase et migrations inchangés.
+
+| Contrôle (Chromium, Pixel 7, iPhone 13 WebKit) | Résultat |
+|---|---|
+| Envoi réussi : liste vide et bloc masqué (aussi au départ), champ fichier vide, remerciement singulier puis pluriel, il disparaît seul, bouton Envoyer désactivé | PASS ×3 |
+| La sélection suivante remplace le remerciement immédiatement | PASS ×3 |
+| Échec partiel : seule la photo en échec reste (nom, « Échec », titre « (1) »), « Bien reçues : 1 photo ajoutée à la galerie » ; « Réessayer » l'envoie, liste vidée et masquée | PASS ×3 |
+| Même fichier choisi deux puis trois fois de suite (champ vide après chaque envoi) ; le doublon est annoncé | PASS ×3 |
+| Photos envoyées visibles dans la galerie sans rechargement | PASS ×3 |
+| `npm run test` depuis la racine | **PASS 205**, 26 ignorés (opt-in), 0 échec |
+| `npm run test:real` (Storage, PostgREST, GoTrue réels) | PASS 21/21 + 54 contrôles HTTP |
+| Sélecteur de fichiers natif iOS/Android (rechoix de la même photo sur téléphone) | NON_TESTÉ |

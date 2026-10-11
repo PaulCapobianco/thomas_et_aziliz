@@ -25,10 +25,10 @@ test("real send from the unmodified site to the hosted project", async ({ page }
   await expect(page.locator("#upload-message")).toHaveAttribute("data-kind", /success|pending|error/, { timeout: 90000 });
   const status = await page.locator("#upload-status").textContent();
   console.log(`[${info.project.name}] ${status}`);
-  expect(status).toMatch(/1 photo ajoutée à la galerie|1 photo reçue/);
+  expect(status).toMatch(/Votre photo a bien été ajoutée à la galerie|1 photo reçue/);
   const after = [...(await ids())].filter((id) => !before.has(id));
   console.log(`[${info.project.name}] nouvelle(s) photo(s) publique(s): ${after.join(", ") || "(aucune: en attente)"}; erreurs réseau: ${errors.join(" | ") || "aucune"}`);
-  if (/1 photo ajoutée/.test(status)) {
+  if (/ajoutée à la galerie/.test(status)) {
     expect(after.length).toBe(1);
     await page.getByRole("link", { name: "Accueil", exact: true }).click();
     await page.locator("#refresh").click();

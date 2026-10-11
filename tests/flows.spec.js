@@ -171,7 +171,7 @@ test("failure after 3 attempts is retryable, cancellation stops after current ph
   await expect(page.locator("#upload-status")).toContainText("1 photo n’a pas pu être envoyée");
   expect(await page.evaluate(() => mock.records.length)).toBe(0);
   await page.locator("#message-retry").click();
-  await expect(page.locator("#upload-status")).toContainText("1 photo ajoutée à la galerie");
+  await expect(page.locator("#upload-status")).toContainText("Merci ! Votre photo a bien été ajoutée à la galerie.");
   await page
     .locator("#files")
     .setInputFiles([fixture("photo_02.jpg"), fixture("photo_03.jpg")]);
@@ -543,9 +543,11 @@ test.describe("add-photos action", () => {
     expect(await page.evaluate(() => window.__progressSeen)).toBeTruthy();
     await expect(page.locator("#progress-panel")).toBeHidden();
     await expect(page.locator("#upload-status")).toContainText(
-      "2 photos ajoutées à la galerie",
+      "Merci ! Vos 2 photos ont bien été ajoutées à la galerie.",
     );
-    await expect(page.locator("#selection")).toContainText("Ajoutée à la galerie");
+    // Everything was sent: the list is emptied and its block hidden (nothing left to do).
+    await expect(page.locator("#selection li")).toHaveCount(0);
+    await expect(page.locator("#selection")).toBeHidden();
   });
 
   test("a failed upload says so and offers a retry", async ({ page }) => {
@@ -627,7 +629,7 @@ test.describe("gallery never loses photos around a publication", () => {
     await page.goto("/");
     await expect(cards(page)).toHaveCount(2);
     await sendFiles(page, ["photo_03.jpg"]);
-    await expect(page.locator("#upload-status")).toContainText("1 photo ajoutée à la galerie");
+    await expect(page.locator("#upload-status")).toContainText("Merci ! Votre photo a bien été ajoutée à la galerie.");
     await page.getByRole("link", { name: "Accueil", exact: true }).click();
     await expect(cards(page)).toHaveCount(3);
     await expect.poll(() => allImagesLoaded(page)).toBeTruthy();
