@@ -73,16 +73,33 @@ Date / URL / modèle iPhone + version Safari / modèle Android + version Chrome 
 
 Ne cocher que ce qui a été réellement testé. Les étapes exactes sont dans README_DEPLOIEMENT, recette express.
 
-## Projet Supabase hébergé — séance 2 (11 octobre 2026)
+## Projet Supabase hébergé — séance 2 (11 octobre 2026, après application des migrations)
 
 Commande : `node scripts/hosted-check.mjs --hosted` (clé publishable de `.env.local`, non versionné). Projet `yxzxctaobzxmrcvxuifc`.
+Le premier passage (migrations absentes) s'était arrêté sans écriture ; le second, ci-dessous, a été exécuté après leur application.
 
 | Test | Projet hébergé | Détail |
 |---|---|---|
 | Rôle de la clé | PASS | `sb_publishable_…` (anon), vérifié avant tout appel |
-| 7a Projet actif, non en pause | PASS | L'API répond (erreur PostgREST JSON, pas de timeout) |
+| 7a Projet actif, non en pause | PASS | L'API répond |
 | 7b Offre / quota | NON_TESTÉ | Non exposés par l'API publique |
-| **Migrations 0001–0003** | **FAIL (absentes)** | `PGRST202: Could not find the function public.check_duplicates(p_audience, p_hashes) in the schema cache` ; `GET /storage/v1/bucket/photos` : `404 Bucket not found`. Le script s'arrête avant toute écriture |
-| 1 A–E, 2, 3, 4, 5, 6 | NON_TESTÉ | Dépendent des migrations. Aucun fichier ni ligne déposé |
+| 1A Dépôt anonyme | PASS | Plan B inutile |
+| 1B Signature d'un fichier non enregistré | PASS | `404 Object not found` |
+| 1C list('public/thumbs') | PASS | 0 entrée visible |
+| 1D check_duplicates([]) | PASS | `[]` |
+| 1E admin_status | PASS | `42501 permission denied for function admin_status` |
+| 2 Parcours (published, duplicate, gallery_page, URL signées HTTP 200 octets identiques, maries refusé et absent) | PASS ×9 | |
+| 3 Suspecte (pending_review, absente, signature refusée) | PASS ×3 | |
+| 4 Signalements (1 vote visible, already_reported, 2 votes masquent, privée / inexistante not_found) | PASS ×5 | |
+| 5 Fuites directes (3 tables, 3 colonnes, INSERT/UPDATE/DELETE, 6 fonctions admin, écrasement, suppression) | PASS ×21 | |
+| 6 Limites (3 Mo `413`, text/html et image/png `415`, 3 chemins `403`) | PASS ×6 | |
+| **Total** | **48/48 PASS** | Non couvert : connexion admin (Auth), offre/quota, téléphones |
 
-À refaire après exécution des migrations : même commande, sans autre changement.
+Objets déposés (à supprimer depuis l'admin) — bucket `photos` :
+`public/thumbs/ded44a29-b9ee-41a4-aca9-a443c28d7114.jpg` (orphelin, test A) ;
+photo publiée `ccd00903-8636-4898-ba60-cb088ee23028` (`public/thumbs|full/…`) — **visible dans la galerie publique** ;
+doublon `577bc358-b339-41c8-880a-12d804b242c6` (fichiers orphelins, sans ligne) ;
+photo mariés `9dabecb9-70db-4487-bb7e-7b65b9e1f9d2` (`maries/thumbs|full/…`) ;
+photo suspecte `1d10d393-0d04-4d61-ab03-6e6859377a99` (en attente) ;
+photo masquée par signalements `74d6e159-4c4d-4560-b507-74c0f26445b3`.
+Lignes `public.photos` : ccd00903…, 577bc358… n'a pas de ligne (doublon), 9dabecb9…, 1d10d393…, 74d6e159… (4 lignes ; les 5 UUID listés par le script incluent le doublon écarté par la base).
