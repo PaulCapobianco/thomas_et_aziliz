@@ -182,3 +182,76 @@ test("validation before publication: server keeps photos pending, batch Valider 
     await adminApi.rpc("admin_set_paused", { p_paused: false });
   }
 });
+
+// ---- Guest send bar: the destination chosen in the bar is the one the server receives ------------------------
+test("real stack: the destination picked in the send bar decides the Storage path and the audience", async ({ page }) => {
+  test.setTimeout(150000);
+  const adminApi = client();
+  await adminApi.auth.signInWithPassword({ email: ADMIN, password: REAL_ADMIN_PASSWORD });
+  await adminApi.rpc("admin_set_paused", { p_paused: false });
+  const fs = await import("node:fs/promises");
+  const photo = async (name, tag) => ({ name, mimeType: "image/jpeg", buffer: Buffer.concat([await fs.readFile("fixtures/photo_02.jpg"), Buffer.from(`${tag}${Date.now()}${Math.random()}`)]) });
+  await page.route("**/config.js", (route) =>
+    route.fulfill({
+      contentType: "application/javascript",
+      body: `export const NAMES='';export const DATE_TXT='';export const SUPABASE_URL='${REAL_URL}';export const SUPABASE_KEY='${REAL_ANON}';export const BUCKET='photos';export const SECRET='';export const LOCATION='';export const COUPLE_PHOTO='';export const NSFW_ENABLED=true;`,
+    }),
+  );
+  await page.goto(`${REAL_URL}/#partager`);
+  const send = async (value) => {
+    await page.locator("#files").setInputFiles([await photo(`${value}.jpg`, value)]);
+    await expect(page.locator("#send")).toBeDisabled(); // nothing preselected
+    await page.locator(`[name=audience][value=${value}]`).check();
+    await page.locator("#send").click();
+    await expect(page.locator("#upload-message")).toHaveAttribute("data-kind", /success|pending/, { timeout: 90000 });
+    await expect(page.locator("[name=audience]:checked")).toHaveCount(0); // forgotten after a successful send
+  };
+  const newest = async (filter) => (await adminApi.rpc("admin_list_photos", { p_filter: filter, p_limit: 5 })).data;
+  await send("maries");
+  const priv = (await newest("maries"))[0];
+  expect(priv.audience).toBe("maries");
+  expect(priv.full_path.startsWith("maries/full/") && priv.thumb_path.startsWith("maries/thumbs/")).toBeTruthy();
+  await send("public");
+  const pub = (await newest("recent"))[0];
+  expect(pub.audience).toBe("public");
+  expect(pub.full_path.startsWith("public/full/")).toBeTruthy();
+  expect(await guestCanSign([pub.full_path, pub.thumb_path])).toBeTruthy();
+  expect(await guestCanSign([priv.full_path, priv.thumb_path])).toBeFalsy();
+});
+
+// ---- Batch delete with the real Storage: both objects really disappear ----------------------------------------
+test("real stack: batch Supprimer deletes the rows and BOTH Storage objects of each photo", async ({ page }) => {
+  test.setTimeout(150000);
+  const adminApi = client();
+  await adminApi.auth.signInWithPassword({ email: ADMIN, password: REAL_ADMIN_PASSWORD });
+  await adminApi.rpc("admin_set_paused", { p_paused: false });
+  const [a, b, keep] = await guestSend(3, "batchdelete");
+  for (const p of [a, b, keep]) expect(p.result).toBe("published");
+  const exists = async (paths) => (await adminApi.storage.from("photos").createSignedUrls(paths, 60)).data?.map((s) => Boolean(s.signedUrl));
+  expect(await exists([...a.paths, ...b.paths, ...keep.paths])).toEqual(Array(6).fill(true));
+  await openAdmin(page);
+  await login(page, ADMIN, REAL_ADMIN_PASSWORD);
+  await expect(page.locator("#dashboard")).toBeVisible({ timeout: 15000 });
+  await page.getByRole("button", { name: "Récentes", exact: true }).click();
+  await expect(page.locator(`input[data-id="${a.id}"]`)).toHaveCount(1, { timeout: 15000 });
+  await page.locator(`input[data-id="${a.id}"]`).check();
+  await page.locator(`input[data-id="${b.id}"]`).check();
+  await page.locator("#batch-delete").click();
+  await expect(page.locator("#confirm-message")).toContainText("Supprimer définitivement 2 photos ?");
+  // Cancelling first: nothing is touched.
+  await page.locator("#confirm-no").click();
+  expect(await exists([...a.paths, ...b.paths])).toEqual(Array(4).fill(true));
+  await page.locator("#batch-delete").click();
+  await page.locator("#confirm-yes").click();
+  await expect(page.locator("#admin-message")).toContainText("2 photos supprimées définitivement.", { timeout: 30000 });
+  await expect(page.locator("#admin-message")).not.toContainText("n’ont pas pu être effacés");
+  // Rows gone from the admin lists, files gone from Storage (the third photo is untouched).
+  const listed = (await adminApi.rpc("admin_list_photos", { p_filter: "recent", p_limit: 200 })).data.map((r) => r.id);
+  expect(listed.includes(a.id) || listed.includes(b.id)).toBeFalsy();
+  expect(listed.includes(keep.id)).toBeTruthy();
+  expect(await exists([...a.paths, ...b.paths])).toEqual(Array(4).fill(false));
+  expect(await exists(keep.paths)).toEqual([true, true]);
+  const visible = await galleryIds();
+  expect(visible.has(a.id) || visible.has(b.id)).toBeFalsy();
+  expect(visible.has(keep.id)).toBeTruthy();
+});

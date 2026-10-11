@@ -362,3 +362,32 @@ Interface uniquement : **aucune migration, `register_photo` et les règles d'acc
 | `npm run test` depuis la racine | **PASS 244**, 29 ignorés (opt-in), 0 échec |
 | `npm run test:real` | **PASS 24/24** + 54 contrôles HTTP |
 | Vrai téléphone (iPhone/Android : appui, barre fixe avec la barre d'adresse, défilement), plus de 200 photos en file, projet Supabase hébergé | NON_TESTÉ |
+
+## Barre d'envoi fixe, choix explicite de la destination, suppression en lot (11 octobre 2026, branche `ux-envoi-et-suppression-lot`)
+
+Interface uniquement : aucune migration, `register_photo` et règles d'accès inchangés, 3000/800 px, lightbox et graphisme global inchangés.
+**Aujourd'hui avant ce changement** : la destination était un groupe de deux boutons radio placé *avant* le sélecteur de fichiers, « galerie commune » présélectionnée, mémorisée entre deux envois ; elle était lue au clic sur « Envoyer ». Un invité arrivant par « Partager mes photos » voyait le sélecteur de fichiers s'ouvrir sans voir ce choix.
+**Maintenant** : à la sélection de photos, une barre fixe apparaît en bas (zone sûre iPhone, `dvh`, défilable si trop haute) avec le groupe radio « Où envoyer vos photos ? » — « Galerie commune : Visible par tous les invités après validation par les mariés. » / « Uniquement aux mariés : Les autres invités ne verront pas cette photo. » —, **aucune option cochée**, le texte « Choisissez où envoyer vos photos » et le bouton unique `#send` (inactif tant que rien n'est choisi ; « Envoyer 3 photos » puis « Envoyer 3 photos vers la galerie commune / les mariés »). Pendant l'envoi la barre montre la progression et « Annuler » existants à la place du choix. Après un envoi qui vide la liste, le choix est oublié ; après un échec partiel il est conservé et la barre propose « Réessayer n photo(s) vers … ». Un seul chemin d'envoi (garde `busy`, destination exigée même pour un `requestSubmit`). La page ne contient plus la section de choix de destination ni le bouton d'envoi d'origine.
+**Suppression en lot** : bouton « Supprimer (n) » dans la barre d'actions admin (onglets « En attente » et « Récentes »), sur sa propre ligne, séparée par un filet, en rouge `--danger`, confirmation « Supprimer définitivement N photos ? Les deux fichiers de chaque photo seront effacés du stockage. Cette action est définitive et irréversible. », une requête par photo via la fonction de suppression individuelle (désormais partagée : ligne puis les deux fichiers Storage), progression, rapport ; les échecs restent cochés ; « supprimée de l'album mais fichiers non effacés » compté à part avec le message existant. Actualisation de 30 s suspendue pendant la confirmation et le traitement.
+
+| Contrôle (Chromium 1440 px, Pixel 7 360 px, iPhone 13 WebKit) | Résultat |
+|---|---|
+| Barre absente sans photo ; avec photo : collée au bas de l'écran, bouton d'envoi visible sans défilement et ≥ 52 px, cartes de choix ≥ 52 px | PASS ×3 |
+| La barre ne masque pas le contenu (la dernière photo de la liste défile au-dessus) | PASS ×3 |
+| Aucune présélection ; envoi inactif ; `requestSubmit` sans choix n'envoie rien ; libellés singulier/pluriel et rappel de la destination | PASS ×3 |
+| Choix modifiable avant l'envoi ; destination appliquée à toutes les photos (chemins `public/` ou `maries/`, `p_audience`) | PASS ×3 |
+| Réinitialisation après succès ; nouvelle sélection ⇒ nouveau choix obligatoire | PASS ×3 |
+| Un seul envoi : double tap + double soumission ⇒ chaque photo envoyée une fois | PASS ×3 |
+| Progression et Annuler dans la barre pendant l'envoi ; barre maintenue si des photos restent | PASS ×3 |
+| Échec partiel puis « Réessayer … vers les mariés » : destination conservée, puis réinitialisée | PASS ×3 |
+| Doublons séparés par destination ; fichier illisible seul ne fait pas apparaître la barre | PASS ×3 |
+| Accessibilité : `group` « Où envoyer vos photos ? » avec 2 radios, clavier (flèches), anneau de focus, axe-core 0 violation (avec et sans choix) | PASS ×3 |
+| « Supprimer (n) » : présent dans En attente et Récentes seulement, ≥ 48 px, séparé (≥ 8 px), rouge, axe-core propre ; Valider/Refuser/Retirer inchangés | PASS ×3 |
+| Confirmation (nombre, définitif, deux fichiers) ; annulation : aucun appel, sélection gardée | PASS ×3 |
+| Lot : 1 requête par photo (ligne puis 2 fichiers), progression, rapport ; échec : la photo reste cochée, nouvel essai réussi, ses fichiers non touchés | PASS ×3 |
+| Fichiers non effacés comptés à part avec le message existant ; bouton « Supprimer » d'une carte inchangé | PASS ×3 |
+| Actualisation 30 s suspendue pendant la confirmation, reprise ensuite | PASS ×3 |
+| **Pile réelle** : destination choisie dans la barre ⇒ chemins `maries/…` / `public/…` et `audience` côté base, privé non signable ; suppression en lot : annulation sans effet, puis lignes supprimées et **les deux objets Storage de chaque photo réellement effacés** (la photo non cochée intacte) | PASS ×3 |
+| `npm run test` depuis la racine | **PASS 301**, 35 ignorés (opt-in), 0 échec |
+| `npm run test:real` (Storage, PostgREST, GoTrue réels) | **PASS 30/30** + 54 contrôles HTTP |
+| Vrai téléphone (barre fixe avec la barre d'adresse, clavier virtuel, appui sur les cartes de choix, sélecteur de fichiers natif), projet Supabase hébergé | NON_TESTÉ |

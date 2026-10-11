@@ -60,6 +60,7 @@ export async function installMock(page, options = {}) {
     window.mock = {
       addPending,
       failStatusFor: new Set(),
+      removeShortFor: new Set(), // ids whose Storage files "cannot be deleted" (Storage answers 200 with a short list)
       statusDelay: 0,
       records,
       objects,
@@ -289,7 +290,8 @@ export async function installMock(page, options = {}) {
               remove: async (paths) => {
                 calls.push(["remove", paths]);
                 // The real Storage API returns the objects it actually deleted.
-                return ok(options.removeNothing ? [] : paths.map((name) => ({ name })));
+                const short = [...window.mock.removeShortFor].some((id) => paths.some((p) => p.includes(id)));
+                return ok(options.removeNothing || short ? [] : paths.map((name) => ({ name })));
               },
             }),
           },
@@ -317,4 +319,10 @@ export async function installMock(page, options = {}) {
       },
     };
   }, options);
+}
+
+// A destination must be chosen explicitly (nothing is preselected). Keeps an explicit choice already made.
+export async function chooseDestination(page, value = "public") {
+  if (await page.locator("[name=audience]:checked").count()) return;
+  await page.locator(`[name=audience][value=${value}]`).check();
 }
