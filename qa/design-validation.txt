@@ -1,0 +1,26 @@
+Mission corrective graphique — 2026-10-11
+Branch: feat/thomas-aziliz-ivory-design
+
+PASS npm run check
+PASS npm run build
+PASS build local references, seven photos identical to source, SQL/tests/QA excluded
+PASS original photos: SHA-256 equality with the seven user-supplied JPEG files
+PASS git diff --check
+
+Final browser command:
+npx playwright test tests/flows.spec.js tests/design.spec.js --config=/tmp/wedding-design-playwright.mjs --reporter=line
+Temporary config: repository playwright.config.js with server/baseURL port 4175;
+outputDir /tmp/wedding-design-results. Isolated from other tests using port 4173.
+
+Final Playwright output:
+120 passed (1.7m)
+
+102 existing flow cases + 18 design cases.
+Chromium desktop, Chromium mobile, WebKit iPhone emulation.
+Design widths: 390, 768, 1440 CSS px. Supabase is mocked.
+18 Chromium screenshots archived in qa/design/.
+The NSFW model load/inference cases use the real local model.
+
+NON TESTÉ in this mission: remote Supabase/Storage/Auth, SQL, physical phones,
+screen-reader audit, mobile field performance, exact reference-image comparison.
+No deployment performed.

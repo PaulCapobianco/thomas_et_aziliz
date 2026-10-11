@@ -1,5 +1,7 @@
 # Actions humaines — maximum 8, avant le 25 octobre 2026
 
+> **Mise à jour graphique du 11 octobre 2026.** L’identité Thomas & Aziliz et les sept originaux sont maintenant intégrés : l’action 5 ci-dessous est réalisée côté développement. Examiner les [captures 390/768/1440 px](qa/DESIGN_REVIEW.md), puis valider la refonte avant tout déploiement. La maquette claire citée dans la mission n’était pas jointe ; la direction écrite a été appliquée. La configuration Supabase publique existe déjà : les mentions historiques « absente » ci-dessous ne décrivent plus `config.js`. Cette mission ne réévalue pas l’état des services distants ; conserver la recette réelle et le contrôle iPhone/Android avant le 25 octobre.
+
 > **Ordre recommandé et regroupé en 4 séances : voir `GUIDE_PRODUCTION.md`.** Ce fichier reste la liste de référence.
 
 Le développement local est livré ; aucune configuration distante ni dépense n'a été faite. Références détaillées : README_DEPLOIEMENT. Le kit fait foi pour le périmètre.

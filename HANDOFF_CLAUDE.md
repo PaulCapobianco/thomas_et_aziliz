@@ -1,5 +1,12 @@
 # Livraison et audit ciblé — 11 octobre 2026
 
+## Reprise après la mission corrective graphique du 11 octobre 2026
+
+La direction actuelle est **ivoire, champagne et sauge** ; elle remplace les anciens choix sombres. Thomas & Aziliz et les sept photos originales sont intégrés sans retouche. La bande Polaroid est décorative et indépendante de `#gallery`. Destination avant sélection sur le formulaire ; administration harmonisée. Auth, RPC/RLS, logique d’envoi, compression et modération n’ont pas été modifiés par cette refonte.
+
+Branche : `feat/thomas-aziliz-ivory-design`. Recette finale : **120/120 PASS**, avec mocks Supabase et modèle NSFW local réel ; pas une nouvelle recette distante. Build et syntaxe PASS. Voir [rapport, limites et 18 captures](qa/DESIGN_REVIEW.md) et [direction graphique](assets/DESIGN_NOTES.md). Le travail préexistant sur la qualité photo a été préservé dans son commit séparé. Aucun déploiement de la refonte : attendre la validation explicite de Paul. Les rubriques suivantes documentent les états antérieurs ; leurs mentions de prénoms/configuration absents et de fallback sombre sont désormais historiques.
+
+
 ## 1. FONCTIONNALITÉS TERMINÉES (preuve de fonctionnement)
 
 Trois écrans réalisés : accueil/galerie premium, partage public/privé, administration. Lightbox, navigation clavier/tactile, téléchargement signé, sélection multiple, compression 1600/400, SHA-256 original, dédoublonnage, modèle NSFW local différé, attente sûre si indisponible, progression du lot, erreurs/retries et annulation. Signalements via RPC, admin Auth avec listes, masquage/restauration/suppression confirmée, pause/reprise et libération contrôlée.

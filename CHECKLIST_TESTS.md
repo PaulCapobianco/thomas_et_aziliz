@@ -1,5 +1,7 @@
 # Recette — état réel au 11 octobre 2026
 
+> **Refonte visuelle du 11 octobre 2026 : PASS 120/120** sur Chromium, Chromium mobile et WebKit, dont 18 tests de design aux largeurs 390/768/1440 px. `npm run check`, build et contrôle des fichiers publiés PASS. [Rapport et captures](qa/DESIGN_REVIEW.md). Cette recette utilise des mocks Supabase ; elle ne renouvelle pas la preuve du service distant. Les résultats des interventions précédentes restent consignés ci-dessous.
+
 **PASS** = exécuté et réussi dans l'environnement indiqué. **FAIL** = exécuté avec anomalie restante. **NON TESTÉ** = preuve absente, jamais assimilée à PASS. Les mocks ne prouvent pas le Storage ni Auth Supabase réels.
 
 ## Commandes et preuves

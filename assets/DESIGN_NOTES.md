@@ -1,40 +1,30 @@
-# Notes de design tirées des 3 maquettes
+# Direction graphique — Thomas & Aziliz
 
-Les maquettes sont des **références de style**, pas des spécifications. Valeurs de couleur : `assets/design_tokens.css`.
-Aucun nom, aucune date, aucun lieu des maquettes (« Louise & Antoine », « Villa Balbiano », 2024/2026 divergents) ne doit apparaître.
+La mission corrective du 11 octobre 2026 remplace la direction sombre des trois maquettes V3. Palette : ivoire `#f8f5ee`, papier clair `#fffcf7`, sauge `#58654b`, détails champagne. Typographies locales existantes : Cormorant Garamond et Jost.
 
-## Ce qu'il faut reprendre
+La maquette claire mentionnée dans le texte de la mission n’est pas présente parmi les pièces jointes accessibles : seuls les sept originaux et la mission écrite sont disponibles. La composition applique donc cette description ; aucune fidélité exacte à une image non consultée n’est revendiquée.
 
-**Écran 1 — Accueil / galerie** (`galerie_de_mariage_au_lac_de_côme.png`)
-- Hero plein cadre : photo du couple, voile sombre dégradé du côté du texte, surtitre en petites capitales (« LE MARIAGE DE »), prénoms sur deux lignes en grand serif (le « & » démarre la 2ᵉ ligne), date en petites capitales espacées, bouton cuivre « Ajouter mes photos » avec icône d'envoi, sous-texte court.
-- Sur téléphone : le hero reste fort mais le bouton doit être visible sans défiler (cahier §15).
-- Section galerie : surtitre « NOS SOUVENIRS », titre serif « Les souvenirs de la soirée », grille éditoriale aux rangées de hauteurs voisines, fine séparation entre photos, fond très sombre.
+## Accueil et galerie
 
-**Écran 2 — Partager** (`interface_de_mariage_chic_sur_appareils.png`)
-- Deux grandes cartes de choix avec bouton radio : « Partager avec les invités » (actif : fond terre cuite, icône de groupe) et « Envoyer uniquement aux mariés » (inactif : fond sombre, icône de cadenas). Texte d'aide sous chaque titre, avec les prénoms configurables.
-- Encart « Un petit conseil » (icône ampoule, filet fin, fond surface) — texte exact : voir `assets/COPY_FR.md`.
-- Bande « Vos photos sélectionnées (N) » : vignettes carrées avec croix de retrait ; lien « + Ajouter d'autres photos ».
-- Bloc de progression : pastille ronde avec icône nuage, « 8 sur 12 photos téléchargées », barre fine cuivre, pourcentage **du lot traité** (pas des octets), bouton « Annuler ». Sur téléphone, ce bloc est ancré en bas de l'écran.
+- Identité Thomas & Aziliz, date réelle, titre « Les photos de notre mariage ».
+- Portrait du jardin dans un cadre en arche, illustration botanique SVG et texture CSS légère. Aucun traitement génératif des photographies.
+- Bouton principal « PARTAGER MES PHOTOS », secondaire « VOIR LA GALERIE ». Sur mobile, les actions précèdent le portrait ; le bouton flottant existant accompagne la consultation de la galerie.
+- Sept Polaroids, défilant horizontalement sur mobile avec une zone accessible au clavier. Cette bande de présentation est séparée du conteneur `#gallery` et ne crée aucune entrée Supabase.
+- Navigation : Accueil, Partager des photos, Galerie. L’administration reste sur son URL dédiée.
+- Galerie des invités : données, signatures, lightbox, téléchargement, signalement et rafraîchissement existants conservés.
 
-**Écran 3 — Administration** (`tableau_de_mariage_élégant_et_sécurisé.png`)
-- Surtitre « ESPACE ORGANISATION », titre « Contrôle d'urgence », gros bouton cuivre « Suspendre la galerie publique » (devient « Reprendre… » quand en pause).
-- Voyant d'état (point vert) « Galerie publique en ligne ».
-- Onglets « Signalées (N) / Récentes » ; cartes de photos signalées avec pastille « 2 signalements », date relative, trois boutons **Masquer** (plein) / **Supprimer** / **Restaurer** (contour).
-- Section « Dernières photos publiées » en vignettes.
-- Sur téléphone ce sont des cartes empilées, boutons larges (≥ 44 px).
+## Partage et administration
 
-## Ce qu'il ne faut PAS reproduire (hors périmètre du cahier V2, §1, §3, §15)
+Les destinations sont affichées avant la sélection. Les radios, identifiants des contrôles, validations et mécanismes d’envoi restent les mêmes. Les cartes sélectionnées sont sauge clair, les conseils sur papier champagne. L’administration reprend les mêmes couleurs avec des actions et onglets de 44 px minimum.
 
-| Dans les maquettes | Décision |
-|---|---|
-| Barre de navigation (Galerie, Infos, Cérémonie, Lieux, Notre histoire, Livre d'or), menu hamburger, sélecteur de langue « FR » | Non. Navigation limitée à **Accueil/Galerie** et **Partager** (2 liens). Pas de langue, pas de hamburger. |
-| Onglets de filtres (Toutes, Cérémonie, Vin d'honneur, Soirée, Invités) | Non. Un seul flux de photos. |
-| Compteur « Invités actifs » (186), « Photos publiées » (432) en vitrine | Non pour « invités actifs » (aucune donnée). Les compteurs utiles de `admin_status` (publiées, signalées, en attente, poids) suffisent, sobrement. |
-| Onglet « Activité », lien « En savoir plus » du bandeau de signalement | Non. |
-| Motifs de signalement des maquettes (« Contenu inapproprié », « Comportement inapproprié », « Visages non consentis ») et mention « Par un invité » | Non. Motifs du cahier : Photo gênante / Photo d'un enfant / Autre. Ne jamais afficher d'identifiant d'invité. |
-| Fond « hero » photographique sur l'écran admin | Non : l'admin est sobre, fond uni. |
-| Citation « Des instants pour toujours » | Optionnelle (texte statique) ; ne pas bloquer dessus. |
-| Photos, lieu, date des maquettes | Jamais. Date réelle : 31 octobre 2026. Lieu uniquement s'il est configuré. |
+## Photographies
 
-## Typographies (indicatif)
-Titrage : serif de contraste élevé (Cormorant Garamond ou Fraunces). Interface : sans-serif géométrique fine (Jost ou Inter), capitales espacées pour les surtitres et la navigation. Pas de police cursive, pas de cœurs décoratifs.
+Les sept fichiers `assets/couple/*.jpg` sont des copies binaires des JPEG fournis, sans recompression, métadonnées modifiées ni retouche. Les noms sont descriptifs. Seul le cadrage d’affichage CSS varie selon le support ; les visages et les arrière-plans ne sont pas reconstruits. Le portrait principal pèse 297 465 octets ; les sept originaux totalisent 1 404 642 octets. Les Polaroids sont chargés paresseusement, les dimensions explicites réservent leur espace et le portrait principal est prioritaire.
+
+Ces sept photos de présentation sont des ressources statiques publiques du site. Elles sont indépendantes des albums privés, dont l’accès Supabase reste inchangé.
+
+## Périmètre
+
+Aucune nouvelle dépendance, aucun service tiers ajouté, aucune migration et aucun déploiement dans cette mission. Les données de test restent dans les mocks ; elles ne sont pas copiées dans `dist/`. Le site de mariage reste volontairement non indexable (métadonnées, robots et en-têtes existants).
+
+Résultats et captures : [revue de la refonte](../qa/DESIGN_REVIEW.md).
