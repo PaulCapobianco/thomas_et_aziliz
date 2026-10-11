@@ -281,13 +281,21 @@ export function setupUploads(sb, onComplete) {
       );
       $("selection").append(li);
     });
-    $("send").disabled = busy || !sb || !items.some((item) => !item.result);
+    const audience = document.querySelector("[name=audience]:checked").value;
+    const waiting = items.filter((item) => !item.result).length;
+    $("send-destination").textContent = waiting
+      ? `Destination : ${audience === "maries" ? "envoi privé, uniquement aux mariés" : "galerie commune, visible par tous les invités"}.`
+      : "";
+    $("send").disabled = busy || !sb || !waiting;
     $("send").textContent =
       `Envoyer ${items.filter((item) => !item.result).length} photo(s)`;
     $("retry").hidden = !items.some((item) => item.result === "error");
     $("retry").disabled = busy;
     $("upload-controls").disabled = busy;
   }
+  document
+    .querySelectorAll("[name=audience]")
+    .forEach((radio) => radio.addEventListener("change", render));
   $("files").onchange = async (event) => {
     const files = [...event.target.files];
     event.target.value = "";
@@ -311,7 +319,11 @@ export function setupUploads(sb, onComplete) {
       items.push(item);
     }
     busy = false;
-    $("upload-status").textContent = "";
+    $("upload-status").classList.remove("error");
+    const ready = items.filter((item) => !item.result).length;
+    $("upload-status").textContent = ready
+      ? `${ready} photo(s) prête(s). Vérifiez la destination, puis appuyez sur « Envoyer ».`
+      : "Aucune photo utilisable dans cette sélection.";
     render();
   };
   async function run(retry = false) {
@@ -375,8 +387,10 @@ export function setupUploads(sb, onComplete) {
         item.audience === "maries" &&
         ["published", "registered"].includes(item.result),
     ).length;
+    const failed = count("error");
+    $("upload-status").classList.toggle("error", failed > 0);
     $("upload-status").textContent =
-      `${count("published") + count("registered") - privateCount} ajoutée(s) à la galerie · ${privateCount} envoyée(s) aux mariés · ${count("duplicate")} doublon(s) ignoré(s) · ${count("pending_review")} en attente · ${count("error")} en échec.${cancelled ? " Envoi arrêté ; les photos restantes peuvent être envoyées." : ""}`;
+      `${cancelled ? "Envoi arrêté ; les photos restantes peuvent être envoyées. " : failed ? "Envoi terminé avec des échecs : appuyez sur « Réessayer les échecs ». " : "Terminé ✓ "}${count("published") + count("registered") - privateCount} ajoutée(s) à la galerie · ${privateCount} envoyée(s) aux mariés · ${count("duplicate")} doublon(s) ignoré(s) · ${count("pending_review")} en attente · ${count("error")} en échec.`;
     onComplete();
   }
   $("upload-form").onsubmit = (event) => {
@@ -396,8 +410,11 @@ export function setupUploads(sb, onComplete) {
     }
   });
   window.addEventListener("pagehide", () => items.forEach(revoke));
-  if (!sb)
+  if (!sb) {
+    $("upload-status").classList.add("error");
     $("upload-status").textContent =
-      "Les envois ne sont pas encore ouverts. Revenez un peu plus tard.";
+      "Les envois ne sont pas encore ouverts : le service photo n'est pas configuré sur ce site. Prévenez les organisateurs.";
+    $("files").disabled = true;
+  }
   render();
 }

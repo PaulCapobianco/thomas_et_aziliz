@@ -2,6 +2,20 @@
 
 État livré : site fonctionnel localement contre des mocks, SQL testé sur PostgreSQL local. **Supabase réel et hébergement : NON TESTÉ, non déployé.** Le gel des fonctions est prévu le 25, corrections critiques jusqu'au 27, départ le 29, mariage le 31. Lire la recette express en fin de document.
 
+## 0. Le site ne s'ouvre jamais en double-clic (file://)
+
+`index.html` charge des modules JavaScript (`type="module"`) : tout navigateur les bloque quand la page est ouverte depuis un fichier
+(`file://…`, erreur « Origin null / CORS »), et la page reste alors **sans aucun comportement**. Il faut toujours un serveur HTTP :
+
+- Aperçu local fidèle à la production (build + mêmes en-têtes) : `npm run preview`, puis http://127.0.0.1:4173
+- Développement sans build : `npm run dev`.
+- Sur téléphone : utiliser l'URL HTTPS déployée (le chargement de la caméra/fichiers et `crypto.subtle` exigent un contexte sécurisé ; une adresse
+  IP locale en `http://` ne convient pas).
+
+Autre cause de « rien ne s'envoie » : `config.js` avec `SUPABASE_URL` / `SUPABASE_KEY` vides **au moment du build**. Le site affiche alors
+« Les envois ne sont pas encore ouverts : le service photo n'est pas configuré » et le bouton d'envoi reste inactif. Renseigner `config.js`,
+relancer `npm run build`, republier `dist/`.
+
 ## 1. Préparer un projet Supabase de test
 
 Dans le Dashboard Supabase, **New project**, choisir une région européenne, conserver le mot de passe dans votre gestionnaire de mots de passe. Le choix d'offre vous appartient ; aucune souscription n'a été faite. Utiliser un projet vide pour la première vérification, sans photos réelles sensibles.

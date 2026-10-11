@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "python3 scripts/serve.py --port 4173",
+    "preview": "npm run build && cd dist && python3 ../scripts/serve.py --port 4173",
     "vendor": "bash scripts/vendor.sh",
     "build": "node scripts/build.mjs",
     "check": "node --check app.js && node --check shared.js && node --check uploads.js && node --check admin.js",

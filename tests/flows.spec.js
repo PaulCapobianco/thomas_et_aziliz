@@ -1,6 +1,13 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { installMock } from "./mock.js";
+const emptyConfig = (page) =>
+  page.route("**/config.js", (route) =>
+    route.fulfill({
+      contentType: "application/javascript",
+      body: "export const NAMES='';export const DATE_TXT='31 octobre 2026';export const SUPABASE_URL='';export const SUPABASE_KEY='';export const BUCKET='photos';export const SECRET='';export const LOCATION='';export const COUPLE_PHOTO='';export const NSFW_ENABLED=true;",
+    }),
+  );
 const fixture = (name) => `fixtures/${name}`;
 async function upload(page, names) {
   await page.locator("#files").setInputFiles(names.map(fixture));
@@ -13,6 +20,8 @@ async function upload(page, names) {
 test("fallback, 360/tablet/desktop, semantics and no indexation", async ({
   page,
 }) => {
+  // The committed config.js now points at the real project; this test is about the unconfigured fallback.
+  await emptyConfig(page);
   await page.goto("/");
   for (const width of [360, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -461,4 +470,96 @@ test("admin delete reports a Storage cleanup that silently removed nothing", asy
   await expect(page.locator("#admin-message")).toContainText(
     "n’ont pas pu être effacés",
   );
+});
+
+test.describe("add-photos action", () => {
+  test.use({ viewport: { width: 375, height: 667 } });
+  test("primary button is large, copper and visible without scrolling on 375x667", async ({
+    page,
+  }) => {
+    await installMock(page);
+    await page.goto("/");
+    const cta = page.locator(".hero-cta");
+    await expect(cta).toBeInViewport({ ratio: 1 });
+    await expect(cta).toHaveText(/Ajouter mes photos/);
+    const box = await cta.boundingBox();
+    expect(box.height).toBeGreaterThanOrEqual(56);
+    expect(box.width).toBeGreaterThanOrEqual(375 - 2 * 32);
+    expect(
+      await cta.evaluate((node) => getComputedStyle(node).backgroundColor),
+    ).toBe("rgb(146, 80, 57)");
+  });
+
+  test("floating button stays reachable while scrolling the gallery, and is absent on the share page", async ({
+    page,
+  }) => {
+    await installMock(page, { photos: 60 });
+    await page.goto("/");
+    const fab = page.locator("#fab-bar .fab");
+    await expect(fab).toBeHidden(); // the hero button is on screen
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect(fab).toBeInViewport({ ratio: 1 });
+    expect((await fab.boundingBox()).height).toBeGreaterThanOrEqual(56);
+    // The footer must stay readable above the bar.
+    await expect(page.locator(".site-footer")).toBeVisible();
+    await fab.click({ trial: true });
+    await page.goto("/#partager");
+    await expect(page.locator("#fab-bar")).toBeHidden();
+  });
+
+  test("one tap opens the chooser; select, send and finish with explicit states", async ({
+    page,
+  }) => {
+    await installMock(page);
+    await page.goto("/");
+    const chooser = page.waitForEvent("filechooser");
+    await page.locator(".hero-cta").click();
+    await (await chooser).setFiles([fixture("photo_01.jpg"), fixture("photo_02.jpg")]);
+    await expect(page.locator("#share-view")).toBeVisible();
+    await expect(page.locator("#upload-status")).toContainText(
+      "2 photo(s) prête(s)",
+    );
+    await expect(page.locator("#send-destination")).toContainText(
+      "galerie commune",
+    );
+    await expect(page.locator("#send")).toHaveText(/Envoyer 2 photo\(s\)/);
+    await page.locator("[name=audience][value=maries]").check();
+    await expect(page.locator("#send-destination")).toContainText("mariés");
+    await page.locator("[name=audience][value=public]").check();
+    await page.locator("#send").click();
+    await expect(page.locator("#progress-panel")).toBeVisible();
+    await expect(page.locator("#upload-status")).toContainText("Terminé ✓", {
+      timeout: 30000,
+    });
+    await expect(page.locator("#upload-status")).toContainText(
+      "2 ajoutée(s) à la galerie",
+    );
+    await expect(page.locator("#selection")).toContainText("Ajoutée à la galerie");
+  });
+
+  test("a failed upload says so and offers a retry", async ({ page }) => {
+    await installMock(page, { failures: 99 });
+    await page.goto("/#partager");
+    await page.locator("#files").setInputFiles([fixture("photo_01.jpg")]);
+    await expect(page.locator("#send")).toBeEnabled();
+    await page.locator("#send").click();
+    await expect(page.locator("#upload-status")).toContainText(
+      "appuyez sur « Réessayer les échecs »",
+      { timeout: 30000 },
+    );
+    await expect(page.locator("#retry")).toBeVisible();
+    await expect(page.locator("#selection")).toContainText("Échec");
+  });
+
+  test("an unconfigured site explains why nothing can be sent", async ({
+    page,
+  }) => {
+    await emptyConfig(page);
+    await page.goto("/#partager");
+    await expect(page.locator("#upload-status")).toContainText(
+      "pas encore ouverts",
+    );
+    await expect(page.locator("#files")).toBeDisabled();
+    await expect(page.locator("#fab-bar")).toBeHidden();
+  });
 });

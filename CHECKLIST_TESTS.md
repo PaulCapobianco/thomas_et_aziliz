@@ -103,3 +103,24 @@ photo mariés `9dabecb9-70db-4487-bb7e-7b65b9e1f9d2` (`maries/thumbs|full/…`) 
 photo suspecte `1d10d393-0d04-4d61-ab03-6e6859377a99` (en attente) ;
 photo masquée par signalements `74d6e159-4c4d-4560-b507-74c0f26445b3`.
 Lignes `public.photos` : ccd00903…, 577bc358… n'a pas de ligne (doublon), 9dabecb9…, 1d10d393…, 74d6e159… (4 lignes ; les 5 UUID listés par le script incluent le doublon écarté par la base).
+
+## Correctif « impossible d'envoyer » et bouton « Ajouter mes photos » (11 octobre 2026)
+
+**Cause exacte du blocage** : (1) `config.js` livré avec `SUPABASE_URL` et `SUPABASE_KEY` vides ⇒ `createClient()` renvoie `null`, le bouton « Envoyer » reste
+désactivé et seul un petit message en bas de page l'expliquait ; (2) ouverture en `file://` ⇒ le navigateur bloque `app.js` (module) : `Origin null is not allowed by
+Access-Control-Allow-Origin`, aucune erreur visible pour l'invité. Reproduit (iPhone 13 WebKit et Pixel 7 Chromium) : config vide ⇒ « Les envois ne sont pas encore ouverts » ;
+`file://` ⇒ erreurs CORS ci-dessus ; config réelle servie en HTTP ⇒ sélection puis envoi possibles, aucune erreur console/réseau. `/vendor` et le modèle NSFWJS se chargent (aucun HTTP 4xx/5xx).
+Correctif : `config.js` renseigné avec l'URL et la clé **publishable** du projet (valeurs publiques), message explicite si le service n'est pas configuré (encadré rouge, sélecteur inactif),
+section 0 de README_DEPLOIEMENT et `npm run preview`.
+
+| Contrôle | Résultat |
+|---|---|
+| `npm run check` | PASS |
+| `npm test` (Chromium, Pixel 7 360 px, iPhone 13 WebKit) | PASS 78, 6 ignorés (pile réelle et projet hébergé, opt-in) |
+| Bouton principal visible sans défiler, ≥ 56 px, cuivre, 375×667 | PASS ×3 moteurs |
+| Barre flottante visible en défilant (apparaît quand le bouton du héros sort de l'écran), absente sur la page Partager | PASS ×3 |
+| Un appui ouvre le sélecteur ; « N photo(s) prête(s) » ; destination rappelée avant l'envoi ; progression ; « Terminé ✓ » | PASS ×3 (client Supabase simulé) |
+| Échec : message explicite + « Réessayer les échecs » ; service non configuré : message explicite | PASS ×3 |
+| `HOSTED_E2E=1 npx playwright test tests/hosted-e2e.spec.js --workers=1 --project=webkit --project=mobile` | PASS ×2 : envoi réel de bout en bout vers le projet hébergé (Storage + RPC + vrai modèle NSFWJS), « 1 ajoutée(s) à la galerie », miniature affichée, 0 erreur réseau |
+| `node scripts/hosted-check.mjs --hosted` (relancé) | PASS 48/48 |
+| Safari/Chrome sur téléphones physiques, sélecteur de fichiers iOS natif | NON_TESTÉ |

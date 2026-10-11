@@ -54,6 +54,9 @@ let rows = [],
   returnFocusId;
 function route(focus = false) {
   const share = location.hash === "#partager";
+  // The floating action only helps on the gallery view; it never covers the share form.
+  $("fab-bar").hidden = share || !allowed || !sb;
+  document.body.classList.toggle("has-fab", !share && allowed && !!sb);
   $("gallery-view").hidden = share;
   $("share-view").hidden = !share;
   document
@@ -70,6 +73,25 @@ function route(focus = false) {
     window.scrollTo(0, 0);
   }
 }
+// One gesture: a tap on "Ajouter mes photos" opens the photo chooser straight away. The link still navigates
+// to the share page (where the same button remains if the browser refuses to open the chooser).
+// Avoid two identical buttons on the first screen: the floating bar appears once the hero button scrolls away.
+if ("IntersectionObserver" in window)
+  new IntersectionObserver(([entry]) =>
+    $("fab-bar").classList.toggle("is-quiet", entry.isIntersecting),
+  ).observe(document.querySelector(".hero-cta"));
+document.querySelectorAll("[data-pick]").forEach((link) =>
+  link.addEventListener("click", () => {
+    if (!sb || !allowed) return;
+    location.hash = "#partager";
+    route(true);
+    try {
+      $("files").click();
+    } catch {
+      /* The share page shows the same button. */
+    }
+  }),
+);
 window.addEventListener("hashchange", () =>
   route(location.hash !== "#souvenirs"),
 );

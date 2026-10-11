@@ -43,9 +43,8 @@
             <h1 id="names">Une journée.<br /><em>Mille souvenirs.</em></h1>
             <p class="date" id="date">31 octobre 2026</p>
             <p id="location" hidden></p>
-            <a class="button primary hero-cta" href="#partager"
-              ><span aria-hidden="true">↥</span> Ajouter mes photos
-              <span aria-hidden="true">⟶</span></a
+            <a class="button primary hero-cta" href="#partager" data-pick
+              ><span aria-hidden="true">↥</span> Ajouter mes photos</a
             >
             <p class="hero-intro">
               Partagez vos photos et revivez ensemble les plus beaux moments de
@@ -92,6 +91,18 @@
             <legend class="sr-only">
               Destination et sélection de vos photos
             </legend>
+            <label class="file-picker" for="files"
+              ><span aria-hidden="true">↥</span> Ajouter mes photos<input
+                id="files"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+            /></label>
+            <p class="hint pick-hint">
+              JPEG, PNG, WebP et HEIC si votre navigateur le permet · 30 Mo
+              maximum par photo.
+            </p>
+            <p id="step-destination" class="step">Où envoyer vos photos ?</p>
             <div class="destinations">
               <label class="destination"
                 ><input
@@ -136,20 +147,10 @@
             </div>
             <div class="selection-header">
               <h2 id="selection-title">Vos photos sélectionnées (0)</h2>
-              <label class="file-picker" for="files"
-                >+ Ajouter des photos<input
-                  id="files"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  multiple
-              /></label>
             </div>
-            <p class="hint">
-              JPEG, PNG, WebP et HEIC si votre navigateur le permet · 30 Mo
-              maximum par photo.
-            </p>
             <ul id="selection" class="selection"></ul>
           </fieldset>
+          <p id="send-destination" class="send-destination" aria-live="polite"></p>
           <div class="upload-actions">
             <button id="send" class="button primary" type="submit" disabled>
               Envoyer mes photos <span aria-hidden="true">↗</span></button
@@ -178,6 +179,11 @@
         </form>
       </section>
     </main>
+    <div id="fab-bar" class="fab-bar" hidden>
+      <a class="button primary fab" href="#partager" data-pick
+        ><span aria-hidden="true">↥</span> Ajouter mes photos</a
+      >
+    </div>
     <footer class="site-footer">
       <span>31 OCTOBRE 2026</span>
       <p>Les instants passent. Les souvenirs restent.</p>
