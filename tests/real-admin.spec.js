@@ -145,7 +145,15 @@ test("validation before publication: server keeps photos pending, batch Valider 
     await page.getByRole("button", { name: /^En attente/ }).click();
     await expect(page.locator(`input[data-id="${a.id}"]`)).toHaveCount(1, { timeout: 15000 });
     await expect(page.locator("[data-filter=pending]")).toHaveText(`En attente (${pendingBefore + 3})`);
-    const thumbsLoaded = () => page.locator(".admin-card img").evaluateAll((imgs) => imgs.every((i) => i.complete && i.naturalWidth > 0));
+    // Only the three photos of this test: other pending photos left by earlier tests may sit below the fold (lazy-loaded).
+    const thumbsLoaded = async () => {
+      for (const photo of [a, b, c]) {
+        const img = page.locator(`.admin-card:has(input[data-id="${photo.id}"]) img`).first();
+        await img.scrollIntoViewIfNeeded();
+        if (!(await img.evaluate((i) => i.complete && i.naturalWidth > 0))) return false;
+      }
+      return true;
+    };
     await expect.poll(thumbsLoaded, { timeout: 15000 }).toBeTruthy();
     // Validate two of them in one batch.
     await page.locator(`input[data-id="${a.id}"]`).check();
