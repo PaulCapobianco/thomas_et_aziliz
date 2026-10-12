@@ -35,7 +35,7 @@ Ton : chaleureux, sobre, bienveillant. Aucune promesse inexacte. `{NOMS}` = cons
 - Voyant : `Galerie publique en ligne` / `Nouvelles publications suspendues (la galerie reste visible)`
 - Onglets : `Signalées` · `En attente` · `Récentes`
 - Boutons : `Masquer` · `Restaurer` · `Supprimer` (confirmation : `Supprimer définitivement cette photo ? Cette action est irréversible.`)
-- Bandeau d'info : `Une photo est automatiquement masquée après 2 signalements.` (jamais « 2 personnes »)
+- Bandeau d'info : `Une photo est masquée dès son premier signalement valide, en attendant l'examen par les administrateurs.` (jamais « 2 personnes »)
 - En attente : `En attente de validation` · motifs : `Contenu à vérifier`, `Publications suspendues`, `Vérification automatique indisponible` · action groupée : `Publier celles en attente à cause de la pause`
 - Connexion : `Adresse e-mail` · `Mot de passe` · `Se connecter` · erreur : `Identifiants incorrects.` · accès refusé : `Ce compte n'a pas accès à l'administration.`
 

@@ -23,8 +23,8 @@ celle-ci vous évite d'attendre.
 
 ## Lundi 19 – vendredi 23 octobre (≈ 3 h)
 9. **Hébergement** : déployer le site (Netlify ou Cloudflare Pages), vérifier HTTPS, noter l'adresse définitive.
-10. **Test avec 5 à 10 proches** pendant une soirée : chacun envoie 5 à 10 photos depuis son téléphone, deux personnes signalent
-    la même photo pour vérifier le masquage, vous la restaurez depuis `admin.html` sur iPhone.
+10. **Test avec 5 à 10 proches** pendant une soirée : chacun envoie 5 à 10 photos depuis son téléphone, une personne signale
+    une photo (un seul signalement suffit) pour vérifier le masquage, vous la restaurez depuis `admin.html` sur iPhone.
 11. **QR code** : le générer vers l'adresse définitive + `?k=…`, l'imprimer sur le papier prévu, **le scanner depuis
     plusieurs téléphones** (lumière faible comprise).
 12. Créer le compte admin du témoin et lui envoyer `GUIDE_TEMOIN.md`.

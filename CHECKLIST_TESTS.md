@@ -22,7 +22,7 @@
 | `node --check scripts/verify-storage.mjs` + compilation Python | PASS | Syntaxe du script distant, serveur et estimateur. |
 | `npm audit --omit=dev` / `npm audit` | FAIL documenté | Code retour 1 : 4 entrées modérées provenant d'une seule chaîne sprintf-js → argparse → TensorFlow → NSFWJS, aucune haute/critique. Pas de correctif compatible disponible. Modules concernés exclus du bundle navigateur, assertion vérifiée lors du vendor. |
 | `bash scripts/real-stack.sh up` puis `npm run test:real` (audit Claude, 11 oct.) | PASS | Pile jetable **réelle** : PostgreSQL 16 + image officielle `supabase/storage-api` 1.14.6 + PostgREST 12.2.3, migrations 0001-0003 appliquées. `scripts/real-http-test.mjs` : 54 contrôles HTTP, tous PASS (dépôt anonyme sans compte, signature refusée sur privé/suspect/indisponible/masqué, lecture directe `/object/authenticated` et `/object/public` refusées, list() sans fuite, UPDATE/DELETE/INSERT directs refusés, 6 RPC admin refusées à anon et à un compte non admin, écrasement et suppression refusés, MIME/3 Mo/chemin refusés, 12 envois simultanés du même fichier = 1 publié + 11 doublons, 6 signalements simultanés = masquée, admin lit/publie/supprime). Test de mutation : une policy SELECT trop large fait échouer 5 contrôles. Limite : pas de GoTrue (JWT admin forgés), pas de Kong/CDN. |
-| `tests/real-stack.spec.js` sur la pile réelle, Chromium + Pixel 7 + iPhone 13 (WebKit) | PASS ×3, répété | Envoi réel via supabase-js et le vrai modèle NSFWJS, doublon exact ignoré, envoi privé absent de la galerie d'un autre navigateur, miniatures et grande photo servies par URL signée, deux signalements de deux navigateurs masquent la photo. Navigateurs de bureau/émulés, pas des téléphones. |
+| `tests/real-stack.spec.js` sur la pile réelle, Chromium + Pixel 7 + iPhone 13 (WebKit) | PASS ×3, répété | Envoi réel via supabase-js et le vrai modèle NSFWJS, doublon exact ignoré, envoi privé absent de la galerie d'un autre navigateur, miniatures et grande photo servies par URL signée, un seul signalement valide masque la photo (migration 0004). Navigateurs de bureau/émulés, pas des téléphones. |
 | `npm test` après l'audit | PASS | 63 passés + 3 ignorés (le test de pile réelle sans `REAL_URL`). |
 | `node scripts/verify-storage.mjs --test-project` | NON TESTÉ distant | Refus local attendu, code 2 : URL/clé absentes. Aucune requête distante effectuée. Procédure A–F prête dans README_DEPLOIEMENT. |
 | Estimation `--assume-full-kb 350` et `--views 120` | PASS du calcul | Hypothèses, pas mesures sur vraies photos. 0,51–3,04 Go selon quantité ; 2,8 Go/24,6 Go de trafic selon scénario, avant marge. |
@@ -45,7 +45,7 @@ Référence de l'audit résiduel : [GHSA-hp3w-g68c-fv3c](https://github.com/advi
 | T08 | Modèle absent → attente, privé envoyé | PASS faux modèle + SQL | NON TESTÉ appareil réel |
 | T09 | Premier signalement visible | PASS UI mock + SQL | NON TESTÉ distant |
 | T10 | Même navigateur une seule voix | PASS UI mock + SQL | NON TESTÉ distant |
-| T11 | Deux identifiants distincts masquent | PASS UI mock + SQL | NON TESTÉ deux navigateurs sur serveur réel |
+| T11 | Un seul signalement valide masque la photo (migration 0004 ; remplace « deux identifiants distincts ») | PASS UI mock + SQL + pile réelle | NON TESTÉ sur le projet hébergé |
 | T12 | Votes concurrents distincts / double clic | PASS 40 photos, 80 sessions SQL | NON TESTÉ Supabase réel |
 | T13 | Auth et admin autorisé/non autorisé | PASS UI mock, droits SQL ; sessionStorage configuré | NON TESTÉ Auth distant/reconnexion réelle |
 | T14 | Masquer/restaurer/pause/reprise | PASS UI mock + SQL persistée | NON TESTÉ distant |
@@ -70,7 +70,8 @@ Date / URL / modèle iPhone + version Safari / modèle Android + version Chrome 
 
 - [ ] Vérification Storage A–E : ____ ; F privé, en attente, masqué : ____.
 - [ ] Envois publics, privés, HEIC natif, doublons et photo verticale : ____.
-- [ ] Deux navigateurs, deux signalements ; admin masque/restaure : ____.
+- [ ] Migration 0004 présente sur le projet HÉBERGÉ (SQL Editor : `select count(*) from information_schema.columns where table_name = 'photo_reports' and column_name = 'comment';` doit donner 1, et `select count(*) from pg_constraint where conname = 'photo_reports_photo_id_reporter_id_key';` doit donner 0) : ____.
+- [ ] Un seul navigateur signale une photo publique : elle disparaît aussitôt de la galerie, apparaît dans « Signalées » de l'admin avec motif et commentaire ; l'admin la restaure ; le même navigateur peut la signaler de nouveau (3 fois au plus) : ____.
 - [ ] Pause/reprise, modèle désactivé ⇒ attente, libération après examen : ____.
 - [ ] Wi-Fi faible/4G/coupure, retries, téléchargement réel et conservation des originaux : ____.
 - [ ] Offre/quota, URL HTTPS/QR imprimé, témoin prêt : ____.

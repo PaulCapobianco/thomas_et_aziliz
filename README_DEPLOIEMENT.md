@@ -126,12 +126,21 @@ Nettoyage manuel, jamais DELETE SQL sur storage.objects :
 - Orphelins : connecté en admin dans l'application, appeler `admin_orphans()` depuis un client admin ; examiner les chemins de plus de 30 min, puis supprimer uniquement les objets confirmés via API Storage ou Dashboard Storage.
 - Suppression partielle : une photo `deleted` dont `Storage.remove` a échoué reste invisible mais ses fichiers occupent de l'espace. `admin_orphans` ne les liste pas. SQL Editor : `select full_path, thumb_path from public.photos where status = 'deleted';`, puis examiner/supprimer ces objets dans Dashboard Storage. Ne jamais supprimer des chemins encore référencés par une photo conservée.
 
+## Signalements (migration 0004)
+**Un seul signalement valide (motif obligatoire) masque immédiatement une photo publique** ; l'administrateur l'examine ensuite (Restaurer, Maintenir masquée, Supprimer). Les fichiers sont conservés. Limites appliquées par le serveur :
+- 3 signalements au plus par navigateur et par photo, **à vie** (restaurations comprises) ; un signalement encore ouvert ne peut pas être répété ;
+- 5 signalements au plus par navigateur en 10 minutes ;
+- 12 photos différentes au plus signalées (donc masquées) en 10 minutes, **tous navigateurs confondus** : frein contre un script, car l'identifiant de navigateur est modifiable. Pendant que ce plafond est atteint, un signalement honnête reçoit « Trop de signalements en peu de temps » et passe après 10 minutes ;
+- restauration en lot possible dans l'administration (onglet Signalées : sélection puis « Restaurer ») ;
+- un lien signé déjà délivré avant le masquage reste valable jusqu'à 1 h (au plus) : ce n'est pas une révocation.
+Un navigateur n'est pas une personne : l'interface ne parle jamais de « deux personnes ».
+
 ## Recette express (20–30 minutes, appareils réels)
 
 1. Safari iPhone puis Chrome Android : scanner le QR, envoyer 3 JPEG et une photo iPhone native. Vérifier les aperçus, orientation, état final et galerie.
 2. Renvoyer un fichier exact, puis une photo ressemblante différente : seul l'exact est ignoré. Envoyer le même fichier aux mariés : destination indépendante.
 3. Photo privée : absente en navigation privée, signature refusée sur les deux chemins connus. Photo suspecte/en attente : même refus.
-4. Deux navigateurs : premier signalement garde la photo, second la masque ; le même navigateur ne compte pas deux fois.
+4. Signalements : vérifier d'abord que la migration 0004 est bien exécutée sur le projet hébergé (voir la section « Signalements »). Depuis **un seul** navigateur, signaler une photo publique : elle disparaît aussitôt, l'admin la voit dans « Signalées » avec le motif. La restaurer ; le même navigateur peut la signaler de nouveau (3 fois au plus par photo).
 5. Admin sur téléphone : masquer/restaurer, pause, nouvel envoi public en attente, privé toujours reçu, reprise puis libération des photos dues à la pause. Examiner individuellement les suspects.
 6. Réseau faible/coupé : aucune fausse réussite, réessai disponible, annulation après la photo en cours. Lightbox : swipe, fermer, télécharger, retour focus au clavier sur ordinateur.
 7. Contrôler Usage/Billing et les en-têtes HTTPS. Remplir les lignes NON TESTÉ de CHECKLIST_TESTS avec appareil, date et résultat réel. Remettre GUIDE_TEMOIN et le lien admin au témoin avant le 25.
