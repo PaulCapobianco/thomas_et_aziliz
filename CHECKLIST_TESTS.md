@@ -451,10 +451,10 @@ Aucune migration, aucune clé `service_role`, aucun changement des règles d'acc
 | axe-core : panneau Export au repos, en cours et avec rapport | PASS ×3 |
 | Pile réelle : anonyme et compte invité connecté ne peuvent ni lister (`admin_list_photos` : 42501) ni signer / télécharger / lister une photo privée ; l'administrateur le peut ; compte non administrateur refusé dans l'interface | PASS (`tests/real-export.spec.js`) |
 | Pile réelle : dossier privé exporté par l'interface, chaque SHA-256 de l'index = octets réellement envoyés | PASS |
-| Pile réelle, 259 photos en attente (≈ 640 Ko chacune, ≈ 162 Mo) : 3 archives [100, 100, 59], SHA-256 exacts | PASS |
-| Mesure 259 photos (Chromium 1440 px, pile locale, 3 mesures) | **6,0 à 6,1 s** (≈ 43 photos/s) ; **tas JavaScript maximal 4 Mo** ; mémoire résidente maximale du processus de rendu **372 à 392 Mo** (hors export ≈ 150 Mo : les Blob restent en mémoire du navigateur jusqu'au téléchargement) |
+| Pile réelle, 255 photos en attente (≈ 640 Ko chacune, ≈ 159 Mo) : 3 archives [100, 100, 55], SHA-256 exacts | PASS |
+| Mesure 255 photos (Chromium 1440 px, pile locale) | **5,0 à 5,1 s** (≈ 50 photos/s) ; **tas JavaScript maximal 4 Mo** ; mémoire résidente maximale du processus de rendu **377 à 383 Mo** (hors export ≈ 150 Mo : les Blob restent en mémoire du navigateur jusqu'au téléchargement) |
 | Pile réelle : photo dont le fichier a disparu → listée « Manquante (fichier introuvable) », « Export incomplet », les autres exportées | PASS |
 | `scripts/export-photos.mjs` (pile locale uniquement) : deux dossiers, full + miniatures, SHA-256 exacts (= octets envoyés), relance sans retéléchargement (date des fichiers inchangée), fichier tronqué réparé, compte non administrateur refusé (code 1), clé secrète refusée (code 2) | PASS |
-| `npm run test` depuis la racine `QR_CODE` | **PASS 523**, 62 ignorés (opt-in), 0 échec |
-| `npm run test:real` (pile neuve : down puis up) | **PASS 45/45** + contrôles HTTP |
+| `npm run test` depuis la racine `QR_CODE` | **PASS 436**, 59 ignorés (opt-in), 0 échec (branche `release-mariage`) |
+| `npm run test:real` (pile neuve : down puis up) | **PASS 42/42** + contrôles HTTP (branche `release-mariage`) |
 | Projet Supabase hébergé ; vrai téléphone (téléchargements multiples iOS / Android, mémoire) ; très gros albums (> 1 000 photos) ; navigateurs de bureau autres que Chromium pour l'export réel | **NON_TESTÉ** |
