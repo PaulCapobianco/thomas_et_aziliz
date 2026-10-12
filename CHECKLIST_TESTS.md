@@ -415,22 +415,6 @@ Interface uniquement : aucune migration, `register_photo` et règles d'accès in
 | `npm run test:real` | **PASS 30/30** + 54 contrôles HTTP |
 | **Safari iPhone et Chrome Android réels** : ouverture du sélecteur par un appui sur la carte, annulation, HEIC natif | **NON_TESTÉ** (seuls des émulateurs WebKit/Chromium ont tourné ; la conformité au geste utilisateur est vérifiée par `navigator.userActivation`, pas par un appareil) |
 
-## Modération des images : audit du filtre et décision (11 octobre 2026)
-
-Détail et tableaux dans `DETECTEUR_NSFW.md`. Résumé : filtre NSFWJS 4.4.0 / MobileNetV2 dans le navigateur ; un objet (sextoy) est classé `Neutral` car aucune catégorie ne le décrit ; verdict transmis à `register_photo`, qui décide côté serveur. **Aucun détecteur complémentaire n'a été ajouté** : aucune image de positif n'étant disponible, la détection de sextoys n'a pu être mesurée pour aucun modèle ; CLIP zéro-shot (≈ 89 Mo) a produit 1 faux positif sur 16 photos ordinaires. Aucun code de production modifié par cette partie (scripts d'évaluation et documentation seulement).
-
-| Contrôle | Résultat |
-|---|---|
-| `scripts/evaluate-detector.mjs` sur 16 négatifs (13 photos ordinaires, 3 synthétiques piégeuses) : MobileNetV2 (actuel) / MobileNetV2Mid / InceptionV3 | **0/16 faux positif** pour les trois (Porn+Hentai max 0,087 / 0,046 / 0,067 ; Sexy max 0,713 / 0,004 / 0,062) ; poids 2,6 / 4,3 / 22,4 Mo |
-| CLIP ViT-B/32 zéro-shot (`scripts/evaluate-clip-zeroshot.mjs`, expérience hors site) | 1/16 photo ordinaire classée « adult toy » (0,41) ; 3 images abstraites entre 0,10 et 0,17 ; ≈ 89 Mo : **non retenu** |
-| Détection de sextoys / contenus explicites par n'importe quel modèle | **NON_TESTÉ** : aucun positif disponible (image du problème non fournie) ; aucune garantie de détection |
-| Photo normale publiée seule quand la validation est désactivée ; en attente quand elle est activée (verdict `clean` forcé côté client) | PASS : `tests/messages.spec.js`, `tests/moderation.spec.js`, `tests/real-admin.spec.js` (pile réelle : 3 envois « clean » restent `pending_review`, invisibles, non signables) |
-| Photo suspecte ⇒ en attente quel que soit le réglage ; modèle indisponible ⇒ en attente avec message adapté ; message invité de la validation | PASS (`flows.spec.js` verdicts suspect/sexy/indisponible, `messages.spec.js`) |
-| Photos en attente : absence d'accès public (galerie, table, Storage, URL signées, URL directes) ; admin : valider, refuser, supprimer | PASS (`scripts/real-http-test.mjs` 54 contrôles, `real-admin.spec.js`, `moderation.spec.js`) ; une vérification dédiée de 55 contrôles (verdicts falsifiés, écritures directes, fonctions admin, course à l'activation, liens signés) a été faite à part sur la pile locale |
-| Fuite des photos privées | PASS (`real-http-test.mjs`, `real-admin.spec.js`, `share-flow.spec.js` : chemins `maries/…`, absentes de la galerie) |
-| Non-régression générale après la correction du partage | `npm run test` depuis la racine : **349 réussis**, 35 ignorés (opt-in), 0 échec ; `npm run test:real` : **30/30** + 54 contrôles HTTP |
-| Mobiles réels, projet Supabase hébergé | NON_TESTÉ |
-
 ## Signalement : UN SEUL signalement motivé masque la photo (11 octobre 2026, branche `signalement-premier-suffit`)
 
 Détail, règles, abus, liens signés et migration dans `SIGNALEMENTS.md` ; décision D24 dans `DECISIONS.md`. **Migration `0004_report_first_hides.sql` à appliquer par vous** (SQL Editor, après 0001-0003, puis publier le site) : incrémentale, rejouable, sans suppression de données ; **non appliquée au projet hébergé**.
@@ -454,25 +438,6 @@ Audit de l'existant : `report_photo` masquait au 2ᵉ signalement distinct, `adm
 | `npm run test:real` (Storage, PostgREST, GoTrue réels) | **PASS 36/36** + 63 contrôles HTTP |
 | `npm run test:sql` (PostgreSQL 16 jetable, stub) | **PASS 138 lignes**, concurrence T12 comprise |
 | Safari iPhone / Chrome Android réels (feuille de signalement, clavier virtuel), projet Supabase hébergé (migration non appliquée) | **NON_TESTÉ** |
-
-## Modération serveur gratuite (11 octobre 2026, branche `moderation-serveur-gratuite`) — voir MODERATION_SERVEUR.md
-Le verdict du navigateur ne publie plus jamais une photo publique : `register_photo` la met en attente, seule une analyse serveur (Pages Function + `moderation_begin/apply`, rôle `service_role`) peut la publier, et seulement avec `MODERATION_AUTOPUBLISH=1`. Livré en mode sûr (rien ne se publie seul).
-
-| Contrôle | Résultat |
-|---|---|
-| Verdict « clean » du navigateur : photo publique en attente, aucun lien signé, absente de la galerie | PASS (SQL M01, M14 ; pile réelle HTTP) |
-| anon / utilisateur connecté / administrateur ne peuvent pas appeler `moderation_begin/apply` (42501) ; `photo_scans` illisible | PASS (SQL M05* ; pile réelle HTTP) |
-| Analyse propre : publiée seulement avec publication automatique ET sans « validation avant publication » ; sinon `scan_clean` / `paused` | PASS (SQL M06–M08) |
-| suspect / inconnu / erreur / quota : jamais publiée, même avec publication automatique | PASS (SQL M09 ; fonction ; navigateur ; pile réelle avec faux modèle) |
-| Plafond quotidien, analyse interrompue reprenable, analyses simultanées (une seule démarre), photo supprimée/privée ignorée | PASS (SQL M10–M12 ; pile réelle HTTP : 5 `begin` simultanés → 1 `go`) |
-| Fonction : fail-closed (JSON illisible/incomplet, non confiant, licence non acceptée, binding absent, fichier manquant, non JPEG, base inaccessible, mauvaise origine, corps falsifié : verdict/chemins ignorés) ; les DEUX fichiers enregistrés sont relus | PASS ×19 (`tests/moderation-function.spec.js`) |
-| Parcours invité : message « Votre photo a bien été reçue et sera visible après vérification. », étape « Vérification de la photo… », envoi privé non analysé | PASS ×3 projets (`tests/server-moderation.spec.js`, messages, flows) |
-| Migration 0005 : rejeu ×2 sans erreur, aucune donnée perdue, signalements et administration inchangés | PASS (`npm run test:sql`) |
-| `npm run test` (3 projets) | **PASS 481**, 44 ignorés (opt-in), 0 échec |
-| `npm run test:real` (pile neuve ; vraie fonction + faux modèle) | **PASS 39/39** + contrôles HTTP |
-| `npm run test:sql` | **PASS** (T01–T30 + M01–M14 + concurrence T12) |
-| Détection réelle des 2 images problématiques par Workers AI / taux de faux positifs / neurons par image / comportement réel au dépassement du quota gratuit | **NON_TESTÉ** : exige votre accord (envoi d'images à Cloudflare, licence Meta) |
-| Projet Supabase hébergé, Cloudflare Pages en ligne (migration 0005 et secret non posés) | **NON_TESTÉ** |
 
 ## Export des photos par dossier (12 octobre 2026, branche `export-admin`) — voir EXPORT_PHOTOS.md
 Aucune migration, aucune clé `service_role`, aucun changement des règles d'accès : l'export utilise `admin_list_photos` et l'URL signée de l'administrateur (`fullUrl`, comme le bouton Télécharger). ZIP « stocké » écrit par `export-zip.js` (aucune bibliothèque, `vendor/` et CSP inchangés). Inchangés : 3000 / 800 px, galerie publique, lightbox, graphisme, modération.
