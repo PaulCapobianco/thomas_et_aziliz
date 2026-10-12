@@ -15,3 +15,6 @@ __pycache__/
 .env.local
 .wrangler/
 .moderation-local/
+
+# Images et fichiers de test sensibles (jamais suivis par Git)
+.sensibles-local/
