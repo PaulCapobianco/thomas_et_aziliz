@@ -91,7 +91,7 @@ run_tests() {
   node scripts/real-http-test.mjs || rc=1
   # The HTTP test exercises the global report flood guard (12 photos / 10 min): age its reports so the browser tests start clean.
   docker exec -u postgres wreal-pg psql -q -d wedding_real -c "update public.photo_reports set created_at = created_at - interval '2 hours'" >/dev/null
-  PLAYWRIGHT_REUSE=1 npx playwright test tests/real-stack.spec.js tests/real-admin.spec.js --workers=1 --reporter=line || rc=1
+  PLAYWRIGHT_REUSE=1 npx playwright test tests/real-stack.spec.js tests/real-admin.spec.js tests/real-export.spec.js --workers=1 --reporter=line || rc=1
   exit $rc
 }
 
