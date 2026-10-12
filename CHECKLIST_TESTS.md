@@ -454,3 +454,42 @@ Audit de l'existant : `report_photo` masquait au 2ᵉ signalement distinct, `adm
 | `npm run test:real` (Storage, PostgREST, GoTrue réels) | **PASS 36/36** + 63 contrôles HTTP |
 | `npm run test:sql` (PostgreSQL 16 jetable, stub) | **PASS 138 lignes**, concurrence T12 comprise |
 | Safari iPhone / Chrome Android réels (feuille de signalement, clavier virtuel), projet Supabase hébergé (migration non appliquée) | **NON_TESTÉ** |
+
+## Modération serveur gratuite (11 octobre 2026, branche `moderation-serveur-gratuite`) — voir MODERATION_SERVEUR.md
+Le verdict du navigateur ne publie plus jamais une photo publique : `register_photo` la met en attente, seule une analyse serveur (Pages Function + `moderation_begin/apply`, rôle `service_role`) peut la publier, et seulement avec `MODERATION_AUTOPUBLISH=1`. Livré en mode sûr (rien ne se publie seul).
+
+| Contrôle | Résultat |
+|---|---|
+| Verdict « clean » du navigateur : photo publique en attente, aucun lien signé, absente de la galerie | PASS (SQL M01, M14 ; pile réelle HTTP) |
+| anon / utilisateur connecté / administrateur ne peuvent pas appeler `moderation_begin/apply` (42501) ; `photo_scans` illisible | PASS (SQL M05* ; pile réelle HTTP) |
+| Analyse propre : publiée seulement avec publication automatique ET sans « validation avant publication » ; sinon `scan_clean` / `paused` | PASS (SQL M06–M08) |
+| suspect / inconnu / erreur / quota : jamais publiée, même avec publication automatique | PASS (SQL M09 ; fonction ; navigateur ; pile réelle avec faux modèle) |
+| Plafond quotidien, analyse interrompue reprenable, analyses simultanées (une seule démarre), photo supprimée/privée ignorée | PASS (SQL M10–M12 ; pile réelle HTTP : 5 `begin` simultanés → 1 `go`) |
+| Fonction : fail-closed (JSON illisible/incomplet, non confiant, licence non acceptée, binding absent, fichier manquant, non JPEG, base inaccessible, mauvaise origine, corps falsifié : verdict/chemins ignorés) ; les DEUX fichiers enregistrés sont relus | PASS ×19 (`tests/moderation-function.spec.js`) |
+| Parcours invité : message « Votre photo a bien été reçue et sera visible après vérification. », étape « Vérification de la photo… », envoi privé non analysé | PASS ×3 projets (`tests/server-moderation.spec.js`, messages, flows) |
+| Migration 0005 : rejeu ×2 sans erreur, aucune donnée perdue, signalements et administration inchangés | PASS (`npm run test:sql`) |
+| `npm run test` (3 projets) | **PASS 481**, 44 ignorés (opt-in), 0 échec |
+| `npm run test:real` (pile neuve ; vraie fonction + faux modèle) | **PASS 39/39** + contrôles HTTP |
+| `npm run test:sql` | **PASS** (T01–T30 + M01–M14 + concurrence T12) |
+| Détection réelle des 2 images problématiques par Workers AI / taux de faux positifs / neurons par image / comportement réel au dépassement du quota gratuit | **NON_TESTÉ** : exige votre accord (envoi d'images à Cloudflare, licence Meta) |
+| Projet Supabase hébergé, Cloudflare Pages en ligne (migration 0005 et secret non posés) | **NON_TESTÉ** |
+
+## Export des photos par dossier (12 octobre 2026, branche `export-admin`) — voir EXPORT_PHOTOS.md
+Aucune migration, aucune clé `service_role`, aucun changement des règles d'accès : l'export utilise `admin_list_photos` et l'URL signée de l'administrateur (`fullUrl`, comme le bouton Télécharger). ZIP « stocké » écrit par `export-zip.js` (aucune bibliothèque, `vendor/` et CSP inchangés). Inchangés : 3000 / 800 px, galerie publique, lightbox, graphisme, modération.
+
+| Contrôle | Résultat |
+|---|---|
+| Onglet Export : deux dossiers avec nombre par statut, « Publiées » et « En attente » cochés, « Masquées » en option, rappel que tout administrateur accède aux photos des mariés | PASS ×3 projets (`tests/export.spec.js`) |
+| ZIP de 100 photos au plus / 150 Mo, noms `mariage-public-lot-01.zip`…, JPEG stockés, noms chronologiques, `index.csv` (SHA-256 exacts, relus avec un lecteur ZIP indépendant : Python `zipfile`, `testzip()`) | PASS ×3 (mock) ; PASS pile réelle |
+| Progression « Lot 2 sur 3 : 1 sur 3 », une photo à la fois, annulation (le lot en cours est enregistré), 3 essais réseau, échec partiel sans blocage du lot, « Réessayer les échecs » (numéros d'ordre conservés), « Export complet : N photos sur N » ou liste des écarts (y compris photo ajoutée pendant l'export) | PASS ×3 |
+| Pas de rafraîchissement automatique de 30 s pendant l'export (horloge simulée) ; avertissement téléphone affiché sur Pixel 7 / iPhone 13 émulés, absent à 1440 px, non bloquant | PASS ×3 |
+| axe-core : panneau Export au repos, en cours et avec rapport | PASS ×3 |
+| Pile réelle : anonyme et compte invité connecté ne peuvent ni lister (`admin_list_photos` : 42501) ni signer / télécharger / lister une photo privée ; l'administrateur le peut ; compte non administrateur refusé dans l'interface | PASS (`tests/real-export.spec.js`) |
+| Pile réelle : dossier privé exporté par l'interface, chaque SHA-256 de l'index = octets réellement envoyés | PASS |
+| Pile réelle, 259 photos en attente (≈ 640 Ko chacune, ≈ 162 Mo) : 3 archives [100, 100, 59], SHA-256 exacts | PASS |
+| Mesure 259 photos (Chromium 1440 px, pile locale, 3 mesures) | **6,0 à 6,1 s** (≈ 43 photos/s) ; **tas JavaScript maximal 4 Mo** ; mémoire résidente maximale du processus de rendu **372 à 392 Mo** (hors export ≈ 150 Mo : les Blob restent en mémoire du navigateur jusqu'au téléchargement) |
+| Pile réelle : photo dont le fichier a disparu → listée « Manquante (fichier introuvable) », « Export incomplet », les autres exportées | PASS |
+| `scripts/export-photos.mjs` (pile locale uniquement) : deux dossiers, full + miniatures, SHA-256 exacts (= octets envoyés), relance sans retéléchargement (date des fichiers inchangée), fichier tronqué réparé, compte non administrateur refusé (code 1), clé secrète refusée (code 2) | PASS |
+| `npm run test` depuis la racine `QR_CODE` | **PASS 523**, 62 ignorés (opt-in), 0 échec |
+| `npm run test:real` (pile neuve : down puis up) | **PASS 45/45** + contrôles HTTP |
+| Projet Supabase hébergé ; vrai téléphone (téléchargements multiples iOS / Android, mémoire) ; très gros albums (> 1 000 photos) ; navigateurs de bureau autres que Chromium pour l'export réel | **NON_TESTÉ** |

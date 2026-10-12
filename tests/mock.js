@@ -28,8 +28,26 @@ export async function installMock(page, options = {}) {
         published_at: new Date(
           Date.UTC(2026, 9, 31, 20, 0, 0) - i * 1000,
         ).toISOString(),
-        created_at: new Date().toISOString(),
+        created_at: options.distinctCreated
+          ? new Date(Date.UTC(2026, 9, 31, 20, 0, 0) - i * 1000).toISOString()
+          : new Date().toISOString(),
         audience: "public",
+        status: "published",
+        report_count: 0,
+        report_reasons: [],
+        reports: [],
+      });
+    }
+    // options.mariesPhotos: n private photos (published = accepted, audience maries), for the export tests.
+    for (let i = 0; i < (options.mariesPhotos || 0); i++) {
+      const id = "aaaa" + String(i).padStart(4, "0") + "-0000-4000-8000-000000000000";
+      records.push({
+        id,
+        full_path: `maries/full/${id}.jpg`,
+        thumb_path: `maries/thumbs/${id}.jpg`,
+        published_at: null,
+        created_at: new Date(Date.UTC(2026, 9, 31, 19, 0, 0) - i * 1000).toISOString(),
+        audience: "maries",
         status: "published",
         report_count: 0,
         report_reasons: [],
@@ -110,6 +128,8 @@ export async function installMock(page, options = {}) {
       error: { code, message: "denied" },
     });
     const url = (path = "") => {
+      // Export tests: one distinct, interceptable URL per photo.
+      if (options.exportUrls) return `/fixtures/photo_01.jpg?mock-id=${path.split("/").at(-1).replace(".jpg", "")}`;
       const index = Number.parseInt(path.split("/").at(-1), 10) || 0;
       const pathUrl = options.photoUrls?.[index % options.photoUrls.length] || "/fixtures/photo_01.jpg";
       return options.uniqueUrls ? `${pathUrl}?mock-photo=${index}` : pathUrl;
