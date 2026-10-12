@@ -634,7 +634,8 @@ progress {
 .error {
   color: var(--danger);
 }
-.notice {
+.notice,
+.export-note {
   padding: 1rem;
   border: 1px solid var(--border);
   color: var(--muted);
@@ -1176,7 +1177,7 @@ html.photo-modal-open body {
   background: linear-gradient(110deg, #edf0e4, #f3eddf);
   box-shadow: 0 2px 5px #62523806;
 }
-.empty, .notice, .login {
+.empty, .notice, .export-note, .login {
   background: linear-gradient(130deg, #f0ecdf, #fffcf7);
   box-shadow: var(--paper-shadow);
 }
@@ -1649,4 +1650,45 @@ body.has-send-bar .site-footer {
   color: var(--text);
   font-size: 0.95rem;
   font-weight: 600;
+}
+
+/* Export des photos (administration) */
+.export-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  margin: 1rem 0;
+}
+.export-statuses label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+.export-folders {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+.export-card {
+  border: 1px solid var(--border);
+  padding: 1rem;
+  background: var(--surface);
+}
+.export-count {
+  font-weight: 600;
+}
+.export-progress,
+.export-result {
+  margin-top: 1.5rem;
+  border: 1px solid var(--border);
+  padding: 1rem;
+}
+.export-progress progress {
+  width: 100%;
+  display: block;
+  margin: 0.75rem 0;
+}
+#export-error:empty {
+  display: none;
 }

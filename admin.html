@@ -73,9 +73,10 @@
           ><button data-filter="recent" aria-pressed="false">Récentes</button
           ><button data-filter="hidden" aria-pressed="false">Masquées</button
           ><button data-filter="maries" aria-pressed="false">
-            Mariés uniquement
-          </button>
+            Mariés uniquement</button
+          ><button id="tab-export" type="button" aria-pressed="false">Export</button>
         </div>
+        <div id="photos-view">
         <div id="release-actions" class="actions" hidden>
           <button data-release="paused">
             Valider toutes les photos en attente de validation</button
@@ -107,6 +108,54 @@
             <button id="batch-delete" class="danger" type="button" hidden>Supprimer (0)</button>
           </div>
         </div>
+        </div>
+        <section id="export-panel" aria-labelledby="export-title" hidden>
+          <h2 id="export-title">Exporter les photos</h2>
+          <p id="export-mobile-warning" class="export-note" hidden>
+            Vous utilisez un téléphone : l’export complet est lourd (plusieurs centaines de Mo, parfois plusieurs Go).
+            Il est conseillé de le faire depuis un ordinateur. Vous pouvez tout de même continuer.
+          </p>
+          <p class="export-note">
+            Chaque dossier est téléchargé en archives ZIP de 100 photos au plus (ou environ 150 Mo), en grande
+            définition (jusqu’à 3000 px), avec un fichier index.csv et une somme de contrôle par photo.
+            Gardez cette page ouverte pendant l’export.
+            <strong>Les photos du dossier « Uniquement aux mariés » sont privées, mais tout administrateur y a accès,
+            y compris dans cet export.</strong>
+          </p>
+          <fieldset class="export-statuses">
+            <legend>Statuts à inclure</legend>
+            <label><input id="export-st-published" type="checkbox" checked /> Publiées</label>
+            <label><input id="export-st-pending" type="checkbox" checked /> En attente</label>
+            <label><input id="export-st-hidden" type="checkbox" /> Masquées</label>
+          </fieldset>
+          <p id="export-error" role="alert"></p>
+          <div class="export-folders">
+            <article class="export-card">
+              <h3>Galerie commune</h3>
+              <p id="export-count-public" class="export-count">…</p>
+              <p id="export-detail-public"></p>
+              <button id="export-btn-public" class="primary" type="button" aria-label="Exporter la Galerie commune" disabled>Exporter</button>
+            </article>
+            <article class="export-card">
+              <h3>Uniquement aux mariés</h3>
+              <p id="export-count-maries" class="export-count">…</p>
+              <p id="export-detail-maries"></p>
+              <button id="export-btn-maries" class="primary" type="button" aria-label="Exporter le dossier Uniquement aux mariés" disabled>Exporter</button>
+            </article>
+          </div>
+          <div class="queue-tools"><button id="export-refresh" class="quiet" type="button">Actualiser les nombres ↻</button></div>
+          <div id="export-progress-panel" class="export-progress" hidden>
+            <p id="export-label" role="status" aria-live="polite"></p>
+            <progress id="export-bar" max="100" value="0" aria-label="Progression de l’export"></progress>
+            <button id="export-cancel" type="button">Annuler</button>
+          </div>
+          <div id="export-result" class="export-result" hidden>
+            <p id="export-summary" tabindex="-1" role="status"></p>
+            <p id="export-lots"></p>
+            <ul id="export-failures"></ul>
+            <button id="export-retry" type="button" hidden>Réessayer les échecs</button>
+          </div>
+        </section>
       </section>
     </main>
     <dialog id="confirm-dialog" aria-labelledby="confirm-title">

@@ -10,9 +10,12 @@ import {
   bindDialog,
   errorText,
 } from "./shared.js";
+import { setupExport } from "./export-photos.js";
 const sb = createClient(true);
 $("admin-message").textContent = "";
 bindDialog($("confirm-dialog"));
+const exporter = sb ? setupExport(sb) : null;
+let view = "photos";
 let offset = 0;
 let filter = "reported",
   rows = [],
@@ -81,6 +84,8 @@ function loginErrorText(error) {
 }
 function clearSessionUI() {
   generation++;
+  exporter?.cancel();
+  showView("photos");
   rows = [];
   selected.clear();
   lastSignature = "";
@@ -554,9 +559,32 @@ $("logout").onclick = async () => {
 };
 $("pause").onclick = () =>
   mutate(() => rpc(sb, "admin_set_paused", { p_paused: !paused }));
+// Two views of the dashboard: the photo queue and the export panel (the 30 s refresh never runs while exporting).
+function showView(next) {
+  view = next;
+  $("photos-view").hidden = next !== "photos";
+  $("export-panel").hidden = next !== "export";
+  $("tab-export").setAttribute("aria-pressed", String(next === "export"));
+  if (next === "export") {
+    document.body.classList.remove("has-batch");
+    document
+      .querySelectorAll("[data-filter]")
+      .forEach((tab) => tab.setAttribute("aria-pressed", "false"));
+    exporter?.show();
+  }
+}
+$("tab-export").onclick = () => {
+  if (!busy && !batchRunning) showView("export");
+};
 document.querySelectorAll("[data-filter]").forEach((button) => {
   button.onclick = () => {
     if (busy) return;
+    if (view !== "photos") {
+      view = "photos";
+      $("photos-view").hidden = false;
+      $("export-panel").hidden = true;
+      $("tab-export").setAttribute("aria-pressed", "false");
+    }
     filter = button.dataset.filter;
     selected.clear();
     lastSignature = "";
@@ -607,6 +635,8 @@ setInterval(() => {
     busy ||
     batchRunning ||
     document.hidden ||
+    view !== "photos" ||
+    exporter?.active ||
     $("confirm-dialog").open ||
     $("admin-preview").open
   )

@@ -26,6 +26,8 @@ for (const file of [
   "uploads.js",
   "app.js",
   "admin.js",
+  "export-zip.js",
+  "export-photos.js",
   "robots.txt",
   "_headers",
   "404.html",
