@@ -1,5 +1,5 @@
 import { mkdir, copyFile, cp, rm, access } from "node:fs/promises";
-import { COUPLE_PHOTO, SUPABASE_KEY, SUPABASE_URL } from "../config.js";
+import { COUPLE_PHOTO, PRIVACY_EMAIL, SUPABASE_KEY, SUPABASE_URL } from "../config.js";
 if (
   SUPABASE_KEY.startsWith("sb_secret_") ||
   (SUPABASE_KEY.split(".").length === 3 &&
@@ -26,6 +26,10 @@ for (const file of [
   "uploads.js",
   "app.js",
   "admin.js",
+  "confidentialite.html",
+  "conditions-utilisation.html",
+  "confidentialite.js",
+  "legal.css",
   "robots.txt",
   "_headers",
   "404.html",
@@ -48,4 +52,8 @@ console.log(
 if (!SUPABASE_URL)
   console.log(
     "NON TESTÉ: Supabase is not configured; uploads remain unavailable.",
+  );
+if (!PRIVACY_EMAIL)
+  console.log(
+    "ATTENTION: PRIVACY_EMAIL est vide dans config.js. La page /confidentialite n'affichera pas d'adresse de contact : à renseigner avant toute mise en ligne.",
   );

@@ -1640,3 +1640,24 @@ body.has-send-bar .site-footer {
 #batch-restore {
   min-height: 56px;
 }
+/* Discreet privacy link under the footer line, on its own row (the 3-column desktop footer is untouched). */
+.footer-legal-row { text-align: center; }
+.footer-legal {
+  display: inline-block;
+  min-height: 44px;
+  padding: .75rem .5rem 0;
+  font-size: .63rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: .3em;
+  text-decoration-color: var(--border);
+}
+.footer-legal:hover { color: var(--accent); text-decoration-color: currentColor; }
+@media (min-width: 640px) {
+  .site-footer { flex-wrap: wrap; }
+  .footer-legal-row { flex-basis: 100%; }
+  .footer-legal { padding-top: .25rem; }
+  .footer-legal + .footer-legal { margin-left: .75rem; }
+}
