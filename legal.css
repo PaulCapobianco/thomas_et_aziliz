@@ -1,0 +1,38 @@
+/* Privacy page only. Reuses the site tokens, header, footer and the .share-section heading style from app.css. */
+.legal { max-width: 46rem; }
+.legal-updated { font-size: .8rem; color: var(--muted); margin: -1rem 0 2rem; }
+.legal section { margin-top: 2.75rem; scroll-margin-top: 1rem; }
+.legal h2 {
+  font-size: clamp(1.7rem, 3.4vw, 2.2rem);
+  margin-bottom: .9rem;
+}
+.legal h3 { font-size: 1.3rem; margin-bottom: .4rem; }
+.legal p, .legal li { line-height: 1.7; }
+.legal p { margin: 0 0 1rem; max-width: 68ch; }
+.legal ul { padding-left: 1.2rem; margin: 0 0 1rem; max-width: 68ch; }
+.legal li { margin-bottom: .7rem; }
+.legal li::marker { color: #b9a57c; }
+.legal a { text-decoration: underline; text-underline-offset: .22em; text-decoration-color: #b9a57c; }
+.legal a:hover { color: var(--accent); }
+.legal .button { text-decoration: none; }
+.legal code { font-size: .85em; overflow-wrap: anywhere; }
+.legal-toc {
+  display: block;
+  margin: 0 0 1rem;
+  padding: 1.1rem 1.4rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.legal-toc ol { margin: 0; padding-left: 1.3rem; columns: 1; }
+.legal-toc li { margin-bottom: .15rem; line-height: 1.5; }
+.legal-toc a { display: inline-block; min-height: 32px; padding-block: .25rem; text-decoration-color: transparent; }
+.legal-toc a:hover { text-decoration-color: currentColor; }
+.legal-cards { display: grid; gap: 1rem; margin: 1rem 0; }
+.legal-card { padding: 1.1rem 1.3rem; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid #b9a57c; }
+.legal-card p { margin: 0; }
+.legal-status { padding: 1rem 1.2rem; background: var(--accent-soft); border: 1px solid var(--border); }
+.legal-back { margin-top: 3rem; }
+@media (min-width: 640px) {
+  .legal-toc ol { columns: 2; column-gap: 2rem; }
+  .legal-cards { grid-template-columns: 1fr 1fr; }
+}

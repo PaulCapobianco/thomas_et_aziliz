@@ -8,7 +8,7 @@
     "preview": "npm run build && cd dist && python3 ../scripts/serve.py --port 4173",
     "vendor": "bash scripts/vendor.sh",
     "build": "node scripts/build.mjs",
-    "check": "node --check app.js && node --check shared.js && node --check uploads.js && node --check admin.js && node --check export-zip.js && node --check export-photos.js",
+    "check": "node --check app.js && node --check shared.js && node --check uploads.js && node --check admin.js && node --check export-zip.js && node --check export-photos.js && node --check confidentialite.js",
     "test": "playwright test",
     "test:sql": "bash scripts/test-sql.sh",
     "test:real": "bash scripts/real-stack.sh test"

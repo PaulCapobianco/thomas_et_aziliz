@@ -18,6 +18,14 @@ for line in Path('_headers').read_text().splitlines():
         rules[-1][1][key] = value.strip()
 
 class Handler(SimpleHTTPRequestHandler):
+    def translate_path(self, path):
+        # Same clean URLs as Cloudflare Pages: /confidentialite serves confidentialite.html.
+        translated = super().translate_path(path)
+        candidate = Path(translated)
+        if not candidate.exists() and candidate.suffix == '' and candidate.with_suffix('.html').is_file():
+            return str(candidate.with_suffix('.html'))
+        return translated
+
     def end_headers(self):
         headers = {}
         for pattern, values in rules:
