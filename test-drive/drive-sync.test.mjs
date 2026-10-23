@@ -231,3 +231,28 @@ test("16 - source code never logs (no console.* in server code)", async () => {
   for (const dir of ["functions/_lib", "functions/api"])
     for (const file of readdirSync(dir)) assert.ok(!/console\./.test(readFileSync(`${dir}/${file}`, "utf8")), file);
 });
+
+// A Supabase that accepts the connection and never answers must not block the run (regression: no deadline before).
+const hangOn = (world, pattern) => (url, init) =>
+  pattern.test(String(url))
+    ? new Promise((_, reject) => init?.signal?.addEventListener("abort", () => reject(init.signal.reason)))
+    : world.fetch(url, init);
+
+test("17 - Storage that never answers: the photo fails fast with 'source_unreachable', no Drive file, run ends", { timeout: 5000 }, async () => {
+  const w = two();
+  const started = Date.now();
+  const keepAlive = setInterval(() => {}, 20); // Node unrefs AbortSignal.timeout timers; Workers do not need this
+  const r = await runSync({ ...ENV, DRIVE_FETCH_TIMEOUT_MS: "80" }, { fetchFn: hangOn(w, /\/storage\/v1\/object\//), md5Hex }).finally(() => clearInterval(keepAlive));
+  assert.ok(Date.now() - started < 3000, "returned quickly");
+  assert.deepEqual([r.transferred, r.failed], [0, 2]);
+  assert.ok(w.photos.every((p) => p.status === "failed" && p.error === "source_unreachable"));
+  assert.equal(w.drive.size, 0);
+});
+
+test("17b - PostgREST that never answers at the start: clean 'supabase_unavailable', Google not contacted", { timeout: 5000 }, async () => {
+  const w = two();
+  const keepAlive = setInterval(() => {}, 20);
+  const r = await runSync({ ...ENV, DRIVE_FETCH_TIMEOUT_MS: "80" }, { fetchFn: hangOn(w, /\/rest\/v1\/rpc\//), md5Hex }).finally(() => clearInterval(keepAlive));
+  assert.deepEqual([r.ok, r.error], [false, "supabase_unavailable"]);
+  assert.ok(!w.calls.some((c) => c.includes("google")));
+});
