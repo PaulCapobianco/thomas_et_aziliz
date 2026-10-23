@@ -8,6 +8,11 @@ PROJECT=thomas-aziliz-mariage
 npm run check
 if [ "${1:-}" = "--test" ]; then npm test -- --reporter=line; fi
 npm run build
+# Never publish a build that lacks the legal pages (linked from the Google OAuth consent screen) or their contact address.
+for page in confidentialite.html conditions-utilisation.html; do
+  [ -f "dist/$page" ] || { echo "ARRÊT: dist/$page absent : cette version supprimerait les pages légales déjà en ligne."; exit 1; }
+done
+grep -Eq 'PRIVACY_EMAIL = "[^"@ ]+@[^"@ ]+"' dist/config.js || { echo "ARRÊT: PRIVACY_EMAIL vide dans config.js (adresse de contact des pages légales)."; exit 1; }
 # The public config must be filled, and no private key may be inside the published folder.
 grep -q 'SUPABASE_URL = "https://' dist/config.js || { echo "ARRÊT: SUPABASE_URL vide dans config.js"; exit 1; }
 grep -q 'SUPABASE_KEY = "sb_publishable_\|SUPABASE_KEY = "eyJ' dist/config.js || { echo "ARRÊT: clé publique absente de config.js"; exit 1; }
