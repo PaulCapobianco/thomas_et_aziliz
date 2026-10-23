@@ -183,3 +183,100 @@ Un secret Pages n'est pris en compte qu'après un **nouveau déploiement** (poin
 | Dépendance au quota Supabase | les photos restent sur Supabase pendant cette phase (aucune suppression) | surveiller `Stockage` dans l'admin |
 | Écran de consentement/validation Google inattendu | blocage de l'étape 7 | consulter l'écran « Audience » ; en dernier recours, désactiver la sauvegarde : le mariage ne dépend pas d'elle |
 | Photos supprimées ensuite par l'admin | la copie Drive subsiste | suppression manuelle dans Drive |
+
+## 10. Tests réels du 24 octobre 2026 : ce qui est prouvé, ce qui ne l'est pas
+
+### Prouvé sur de VRAIS composants (en local, sans compte ni coût)
+| Quoi | Résultat |
+|---|---|
+| `scripts/drive-integration-test.mjs` : **vrai** Supabase Storage API (image officielle v1.14.6) + **vrai** PostgREST + PostgreSQL 16, migrations 0001 → 0005 ; Google simulé | **27/27 PASS** : file vide sans appel Google ; dépôt d'invité comme le site (clé anon, Storage, `register_photo`) ; A publique visible en galerie, B « mariés » jamais ; lien de signature refusé à un invité pour B ; `DRIVE_SYNC_ENABLED=false` → 503 sans effet ; 401 sans identifiants / mauvais secret / utilisateur non admin (JWT réel) / clé anon ; **copie déclenchée par un vrai JWT administrateur** (`is_admin()` via PostgREST) ; statuts `transferred` + `drive_file_id` + taille ; modération inchangée ; A dans le dossier public, B **uniquement** dans le privé, taille et MD5 exacts, aucun partage ; fichiers sources conservés ; 2e exécution = file vide ; relance sans doublon ; jeton invalide → `drive_auth`, photo restée en file ; **Storage gelé** (`docker pause`) → `failed/source_unreachable` après le délai, puis reprise sans doublon ; compteurs admin et refus aux non-admin |
+| `scripts/real-http-test.mjs` (test de sécurité HTTP existant du dépôt) avec 0005 appliquée | **ALL PASS** : rien de l'existant n'est altéré |
+| Runtime Cloudflare réel (workerd, `wrangler pages dev`) + vraie pile Supabase, Google simulé | 401 utilisateur ordinaire, copie des 2 photos avec le vrai JWT admin, 2e appel `idle` (inclut `AbortSignal.timeout` et MD5 dans workerd) |
+| **`pg_cron` 1.6.4 + `pg_net` 0.20.4 + Vault 0.3.1** (image officielle `supabase/postgres:15.19.0.007`) | Les **deux** variantes du §5 (secret dans l'en-tête, et secret dans Vault) se déclenchent à la minute pile ; le récepteur reçoit le POST, l'en-tête `x-sync-secret` (64 car.), `content-type` et le corps ; `cron.job_run_details` = `succeeded` ; `net._http_response` = 200. La syntaxe Vault est validée |
+| Playwright, branche `feat/drive-sync-live-tests` | **454 réussis, 0 échec**, 59 ignorés (pile réelle / projet hébergé, désactivés par défaut) ; dont 18 tests de la ligne Drive de l'admin |
+| `npm run test:drive`, `npm run test:sql` | 27/27 ; tous PASS (dont 2 sessions PostgreSQL simultanées) |
+| `wrangler pages functions build` | seule la route `/api/drive-sync` est envoyée au Worker : le trafic statique du site reste gratuit et illimité |
+
+### NON prouvé (nécessite vos accès, rien n'est affirmé à leur sujet)
+- **L'API Google Drive réelle** : aucun secret n'existe dans la session de l'assistant. Commandes ci-dessous, à lancer dans **votre** terminal.
+- **Un projet Supabase hébergé de test** : aucun n'existe. L'équivalent local (mêmes composants officiels) a été utilisé.
+- **`pg_cron` / `pg_net` sur le plan gratuit hébergé** : la documentation officielle consultée ne fixe aucune restriction (recommandation : 8 tâches simultanées au plus, nous en utilisons une) mais ne le garantit pas non plus. À vérifier : Supabase > Database > Extensions, `pg_cron` et `pg_net` doivent pouvoir s'activer. Un projet gratuit est mis en pause après 7 jours d'inactivité (source tierce, à confirmer sur la page de tarification) : les tâches planifiées s'arrêtent alors.
+- L'appel réel de `pg_net` vers `thomas-aziliz-mariage.pages.dev` (réseau Internet), et les téléphones.
+
+### Défauts trouvés par ces tests et corrigés (avec tests de non-régression)
+1. **Aucun délai sur les appels réseau** : un Supabase qui accepte la connexion sans répondre bloquait le lot. Délai de 20 s ; la photo passe en `failed` (`source_unreachable`) et est reprise. Tests 17 / 17b.
+2. **Message du bouton « Relancer » écrasé** par le rafraîchissement des compteurs : aucun retour visible si Drive était indisponible. Ligne dédiée. 2 tests.
+
+### Commandes à lancer dans VOTRE terminal (les secrets ne passent jamais par la conversation)
+```bash
+cd /home/paul/www/formation.studi/QR_CODE/worktree-drive-live    # branche feat/drive-sync-live-tests
+export GOOGLE_CLIENT_ID='xxxx.apps.googleusercontent.com'
+read -rs -p "Code secret client : " GOOGLE_CLIENT_SECRET; export GOOGLE_CLIENT_SECRET; echo
+read -rs -p "Refresh token : "      GOOGLE_REFRESH_TOKEN; export GOOGLE_REFRESH_TOKEN; echo
+```
+**A. Contrôle de confidentialité des dossiers de production (lecture seule, ne modifie rien)**
+```bash
+export DRIVE_FOLDER_PUBLIC='<identifiant du dossier « Photos publiques »>'
+export DRIVE_FOLDER_PRIVATE='<identifiant du dossier « Photos privées »>'
+node scripts/drive-verify-folders.mjs        # attendu : « tout est PASS » (non partagé, propriétaire seul)
+```
+**B. Test réel complet : vraie API Google Drive + pile Supabase locale jetable** (crée un dossier « TEST - Mariage (sync) » séparé, réutilisé s'il existe ; envoie 2 JPEG synthétiques, non personnels ; ne supprime **rien** ; n'utilise **jamais** les dossiers de production)
+```bash
+bash scripts/real-stack.sh up                 # ~15 s
+node scripts/real-stack-proxy.mjs &           # passerelle locale :5057
+node scripts/drive-integration-test.mjs --google=live --with-docker-outage
+kill %1; bash scripts/real-stack.sh down      # nettoyage de la pile jetable
+```
+Attendu : `RÉSULTAT : 27/27 PASS — Google RÉEL`. Le test affiche seulement des identifiants de fichiers (non secrets). Copiez-collez la sortie : elle ne contient aucun secret. Ensuite, supprimez à la main le dossier de test dans Drive si vous le souhaitez.
+
+**C. (Optionnel) Fonction Cloudflare en local avec `.dev.vars`** (projet Supabase de TEST uniquement ; le script refuse l'URL de production)
+```bash
+# exporter aussi SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY / SUPABASE_SERVICE_ROLE_KEY du projet de TEST, DRIVE_FOLDER_* de TEST
+bash scripts/make-dev-vars.sh                 # écrit .dev.vars (mode 600, ignoré par Git, aucune valeur affichée)
+npm run build && npx wrangler pages dev dist --port 8788
+```
+**Créer un projet Supabase de test (gratuit)** : supabase.com > New project « mariage-test » > SQL Editor : coller `0001` → `0005` dans l'ordre > Authentication > Users : un admin de test > `insert into public.admin_users …` > Project Settings > API : URL, clé publique, clé `service_role` **de ce projet de test seulement**. Ne jamais mettre la `service_role` de production dans `.dev.vars`.
+
+## 11. Procédure de mise en production (rien n'est lancé sans votre accord)
+
+### Où en est chaque lignée de code
+Un déploiement Cloudflare Pages **remplace tout le site**. Le piège connu : déployer une branche sans les pages légales les supprimerait de la production (liens donnés à Google).
+
+| Branche | Contenu | À déployer ? |
+|---|---|---|
+| `deploy/legal-sur-production` | production actuelle (déploiement `00e0920a`) : site d'origine + pages légales | état actuel |
+| **`deploy/legal-drive`** | production actuelle **+ Drive uniquement** (sans Export, sans refonte). Admin : +47 lignes additives. Garde-fou `deploy.sh` : refuse tout déploiement sans pages légales ni adresse de contact | **candidate** |
+| `feat/drive-sync-live-tests` | Drive + tests réels, sur la lignée `release-mariage` (donc avec l'onglet Export) | non : pas la base de production |
+| `refonte-legal` | refonte graphique + pages légales (sans Drive) | après le Drive |
+| `refonte-graphique`, `feat/page-confidentialite` | sans pages légales / avec Export | non pour la production |
+
+### Étapes
+**Étape 0 : tests Google réels (vous, ~10 min).** Commandes A et B du §10. Ne passez pas à la suite si B n'est pas `27/27 PASS`.
+
+**Étape 1 : préparer, sans rien activer.**
+1. Sauvegarde : Supabase > Database > Backups (ou `pg_dump`) + export des photos (page admin « Exporter les photos » si disponible).
+2. Secrets Cloudflare (§4), avec **`DRIVE_SYNC_ENABLED=false`**.
+3. Migration `0005_drive_sync.sql` dans le SQL Editor de la production (additive, rejouable). Contrôle : `select count(*) from information_schema.columns where table_name='photos' and column_name like 'drive_%';` doit donner **7**.
+
+**Étape 2 : déployer `deploy/legal-drive`** (`npm run deploy` depuis ce dossier ; le script s'arrête si les pages légales manquent). Contrôles immédiats : `/`, `/confidentialite`, `/conditions-utilisation` en 200 ; `POST /api/drive-sync` → `503 {"error":"disabled"}` ; l'admin affiche la ligne « Sauvegarde Google Drive » ; un invité peut envoyer une photo ; la galerie s'affiche.
+
+**Étape 3 : activer, progressivement.**
+1. `DRIVE_SYNC_ENABLED=true` (un secret Pages ne s'applique qu'à un nouveau déploiement : redéployer).
+2. Premier essai sur **une seule photo** : `curl -X POST -H "x-sync-secret: …" -d '{"id":"<uuid d'une photo>"}' https://thomas-aziliz-mariage.pages.dev/api/drive-sync`, puis contrôle dans Drive (dossier, taille, non partagé).
+3. Bouton admin « Lancer la sauvegarde Drive maintenant » : copie progressive de l'existant (6 photos par appel).
+
+**Étape 4 : planification** (SQL du §5, étape D-3, avec Vault de préférence). Vérifier ensuite `cron.job_run_details` et `net._http_response`.
+
+**Étape 5 : surveillance** pendant l'événement : ligne Drive de l'admin (alerte si une photo attend plus de 15 min), bouton de secours, `select * from cron.job_run_details order by start_time desc limit 5;`.
+
+**Étape 6 (après le Drive, si vous le voulez) : la refonte graphique** sur la même base, avec la procédure utilisée pour `refonte-legal` (commits de design appliqués un à un), puis nouveau cycle de tests et de déploiement gardé.
+
+### Calendrier conseillé avant le 31 octobre
+Tests réels : aujourd'hui ou demain · migration + déploiement `deploy/legal-drive` : **au plus tard le 27** · cron et premiers contrôles : le 27-28 · **aucune modification du code ni du déploiement à partir du 29**. Si un point bloque, la sauvegarde Drive reste facultative : le site fonctionne à l'identique sans elle.
+
+### Retour arrière
+| Besoin | Action |
+|---|---|
+| Couper Drive immédiatement | `select cron.unschedule('drive-sync');` et `DRIVE_SYNC_ENABLED=false` (+ redéploiement) |
+| Revenir au site d'avant Drive | Cloudflare > Pages > Déploiements > `00e0920a-fc4a-4778-aa43-694e73b9be35` > « Rollback to this deployment » (pages légales conservées) |
+| Retirer la base Drive | `supabase/optional/rollback_0005_drive_sync.sql` (ne touche ni photos, ni fichiers, ni modération) |
