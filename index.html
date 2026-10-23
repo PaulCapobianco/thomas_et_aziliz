@@ -13,6 +13,7 @@
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/design_tokens.css" />
     <link rel="stylesheet" href="app.css" />
+    <script src="motion.js"></script>
     <script src="vendor/supabase.js" defer></script>
     <script src="app.js" type="module"></script>
   </head>
@@ -48,9 +49,21 @@
           </div>
           <figure class="hero-portrait">
             <img class="hero-photo" src="assets/couple/thomas-aziliz-au-jardin.jpg" alt="Thomas et Aziliz dans un jardin ensoleillé" width="1532" height="2048" fetchpriority="high" />
+            <svg class="seal" viewBox="0 0 140 140" aria-hidden="true" focusable="false">
+              <defs><path id="seal-path" d="M70,70 m-52,0 a52,52 0 1,1 104,0 a52,52 0 1,1 -104,0" /></defs>
+              <circle class="seal-disc" cx="70" cy="70" r="68" />
+              <text class="seal-text"><textPath href="#seal-path" startOffset="0" textLength="322" lengthAdjust="spacing">Les instants passent ✧ Les souvenirs restent ✧ </textPath></text>
+              <text class="seal-mark" x="70" y="84" text-anchor="middle">T&amp;A</text>
+            </svg>
             <figcaption>Le bonheur de vous avoir à nos côtés.</figcaption>
           </figure>
         </section>
+        <div class="marquee" aria-hidden="true">
+          <div class="marquee-track">
+            <span class="marquee-row is-a">Notre jour ✧ Vos souvenirs ✧ 31 octobre 2026 ✧ Notre jour ✧ Vos souvenirs ✧ 31 octobre 2026 ✧ </span>
+            <span class="marquee-row is-a">Notre jour ✧ Vos souvenirs ✧ 31 octobre 2026 ✧ Notre jour ✧ Vos souvenirs ✧ 31 octobre 2026 ✧ </span>
+          </div>
+        </div>
         <section class="couple-memories" aria-labelledby="couple-memories-title">
           <div class="memories-heading"><span></span><h2 id="couple-memories-title">Quelques instants à deux</h2><span></span></div>
           <div class="polaroid-strip" tabindex="0" role="region" aria-label="Les sept photos de Thomas et Aziliz, défilement horizontal">
