@@ -37,7 +37,7 @@ for (const file of [
   await copyFile(file, `dist/${file}`);
 for (const file of ["design_tokens.css", "favicon.svg", "botanical.svg", "botanical-sprig.svg"])
   await copyFile(`assets/${file}`, `dist/assets/${file}`);
-for (const dir of ["vendor", "fonts", "assets/couple"])
+for (const dir of ["vendor", "fonts", "assets/couple", "assets/fonts"])
   await cp(dir, `dist/${dir}`, { recursive: true });
 if (COUPLE_PHOTO && !/^assets\/couple\/[a-zA-Z0-9_-]+\.jpg$/.test(COUPLE_PHOTO)) {
   if (!/^[a-zA-Z0-9_-]+\.(jpg|jpeg|webp|avif)$/i.test(COUPLE_PHOTO))

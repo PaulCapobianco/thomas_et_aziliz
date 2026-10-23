@@ -1,22 +1,32 @@
-/* Ivory paper, champagne details and sage foliage. */
+/* Papier ivoire, encre marine, laiton et sauge profonde.
+   La marine reprend les tenues bleues du couple ; le laiton, les lanternes et les bougies de leurs photos. */
 :root {
-  --bg: #f8f5ee;
-  --surface: #fffcf7;
-  --text: #383e33;
-  --muted: #666858;
-  --accent: #58654b;
-  --accent-hover: #435139;
-  --accent-soft: #e9eddf;
-  --border: #d6cfbf;
-  --ok: #49633c;
+  --bg: #f6f1e6;
+  --surface: #fffcf5;
+  --paper-2: #ede6d6;
+  --text: #1b2838;
+  --ink: #1b2838;
+  --muted: #586071;
+  --accent: #46563f;
+  --accent-hover: #1b2838;
+  --accent-soft: #e7ecdd;
+  --border: #d8cfbb;
+  --brass: #b49a66;
+  --brass-ink: #7a5d2c;
+  --night: #121922;
+  --ok: #3f5a35;
   --danger: #9d392e;
   --font-display: "Cormorant Garamond", Georgia, serif;
   --font-ui: "Jost", system-ui, sans-serif;
   --tap: 44px;
-  --radius: 3px;
+  --radius: 0;
   --ease: cubic-bezier(.2, .7, .2, 1);
 }
-.eyebrow { font: 400 .72rem/1.5 var(--font-ui); letter-spacing: .24em; text-transform: uppercase; color: var(--muted); }
+.eyebrow {
+  font: 500 .92rem/1.5 var(--font-ui);
+  letter-spacing: .01em;
+  color: var(--brass-ink);
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
