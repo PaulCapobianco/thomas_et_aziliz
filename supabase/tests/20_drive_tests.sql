@@ -103,6 +103,13 @@ begin
   r := t.as_role('authenticated', adm, format($q$select count(*) from public.drive_claim(5)$q$));
   perform t.expect('T48c', 'l''admin connecté (rôle authenticated) n''a pas accès à la file serveur', r like 'ERR:42501%', r);
 
+  -- T47b : drive_queue_size reflète exactement ce que drive_claim peut prendre
+  update public.photos set drive_sync_status = 'pending' where id = b;
+  r := t.as_role('service_role', null, $q$select public.drive_queue_size()$q$);
+  perform t.expect('T47b', 'drive_queue_size = nombre de photos réservables', r = 'OK:2', r);
+  r := t.as_role('anon', null, $q$select public.drive_queue_size()$q$);
+  perform t.expect('T47c', 'drive_queue_size refusé à anon', r like 'ERR:42501%', r);
+
   -- T49 : colonnes Drive invisibles pour les invités (liste de colonnes de 0001 inchangée)
   r := t.as_role('anon', null, $q$select drive_file_id from public.photos limit 1$q$);
   perform t.expect('T49', 'drive_file_id illisible par anon', r like 'ERR:42501%', r);

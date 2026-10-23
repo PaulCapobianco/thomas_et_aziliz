@@ -369,7 +369,10 @@ async function loadDrive() {
     const mb = (d.bytes / 1e6).toFixed(1);
     $("drive-summary").textContent =
       `Sauvegarde Google Drive : ${d.transferred} copiée(s), ${d.pending} en attente, ${d.failed} en échec, ${mb} Mo transférés` +
-      (d.failed && d.last_error ? ` (dernière erreur : ${d.last_error})` : "");
+      (d.failed && d.last_error ? ` (dernière erreur : ${d.last_error})` : "") +
+      (d.oldest_waiting && Date.now() - Date.parse(d.oldest_waiting) > 15 * 60 * 1000 && d.pending + d.failed > 0
+        ? " — attention : des photos attendent depuis plus de 15 minutes, lancez la sauvegarde manuellement."
+        : "");
     $("drive-summary").hidden = false;
     $("drive-retry").hidden = !d.failed && !d.pending;
     $("drive-retry").textContent = d.failed ? "Relancer les échecs de sauvegarde Drive" : "Lancer la sauvegarde Drive maintenant";

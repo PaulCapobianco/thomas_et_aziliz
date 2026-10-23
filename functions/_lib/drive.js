@@ -24,7 +24,7 @@ function classify(status, body) {
   const reason = body?.error?.errors?.[0]?.reason || body?.error?.status || body?.error || "";
   if (status === 401 || body?.error === "invalid_grant") return new DriveError("auth", "drive_auth", status);
   if (reason === "storageQuotaExceeded") return new DriveError("quota", "drive_full", status);
-  if (status === 429 || /rateLimitExceeded|userRateLimitExceeded/i.test(reason)) return new DriveError("rate", "drive_rate_limited", status);
+  if (status === 429 || /rateLimitExceeded|userRateLimitExceeded|dailyLimitExceeded|sharingRateLimitExceeded/i.test(reason)) return new DriveError("rate", "drive_rate_limited", status);
   if (status === 403) return new DriveError("auth", "drive_forbidden", status);
   if (status >= 500 || status === 408) return new DriveError("transient", `drive_${status}`, status);
   return new DriveError("permanent", `drive_${status}`, status);
