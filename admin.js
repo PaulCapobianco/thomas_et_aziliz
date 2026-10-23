@@ -362,6 +362,21 @@ async function signRows(list) {
     return old ? [{ ...row, thumbUrl: old.thumbUrl, signedAt: old.signedAt }] : fresh.has(row.id) ? [fresh.get(row.id)] : [];
   });
 }
+// Google Drive backup follow-up. Fail-soft: hidden when migration 0005 is not applied or the sync is not set up.
+async function loadDrive() {
+  try {
+    const d = await rpc(sb, "admin_drive_status");
+    const mb = (d.bytes / 1e6).toFixed(1);
+    $("drive-summary").textContent =
+      `Sauvegarde Google Drive : ${d.transferred} copiée(s), ${d.pending} en attente, ${d.failed} en échec, ${mb} Mo transférés` +
+      (d.failed && d.last_error ? ` (dernière erreur : ${d.last_error})` : "");
+    $("drive-summary").hidden = false;
+    $("drive-retry").hidden = !d.failed && !d.pending;
+    $("drive-retry").textContent = d.failed ? "Relancer les échecs de sauvegarde Drive" : "Lancer la sauvegarde Drive maintenant";
+  } catch {
+    $("drive-summary").hidden = $("drive-retry").hidden = true;
+  }
+}
 async function load(more = false, silent = false) {
   if (!sb || busy || batchRunning) return;
   busy = true;
@@ -390,6 +405,7 @@ async function load(more = false, silent = false) {
       : "Activer la validation avant publication";
     $("pending-count").textContent = ` (${state.pending})`;
     $("reported-count").textContent = ` (${state.reported})`;
+    loadDrive();
     $("stats").replaceChildren();
     for (const [label, value] of [
       ["Publiées", state.published],
@@ -555,6 +571,27 @@ $("logout").onclick = async () => {
   } catch {
     $("admin-message").textContent =
       "La déconnexion n’a pas pu être confirmée. Fermez cet onglet.";
+  }
+};
+$("drive-retry").onclick = async () => {
+  $("drive-retry").disabled = true;
+  try {
+    await rpc(sb, "admin_drive_retry", {});
+    const { data } = await sb.auth.getSession();
+    const response = await fetch("/api/drive-sync", {
+      method: "POST",
+      headers: { authorization: `Bearer ${data.session?.access_token}`, "content-type": "application/json" },
+      body: "{}",
+    });
+    const result = await response.json().catch(() => ({}));
+    $("drive-summary").textContent = response.ok
+      ? `Sauvegarde Drive : ${result.transferred} photo(s) copiée(s), ${result.failed} échec(s)${result.error ? ` (${result.error})` : ""}.`
+      : `Sauvegarde Drive indisponible (${result.error || response.status}). Les photos restent conservées dans Supabase.`;
+  } catch {
+    $("drive-summary").textContent = "Sauvegarde Drive indisponible. Les photos restent conservées dans Supabase.";
+  } finally {
+    $("drive-retry").disabled = false;
+    loadDrive();
   }
 };
 $("pause").onclick = () =>

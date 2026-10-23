@@ -36,9 +36,12 @@ SQL
 $PSQL -f ../migrations/0004_report_first_hides.sql > /dev/null || { echo "ECHEC sur 0004"; exit 2; }
 KEPT=$(psql -X -qAt -c "select (select count(*) from public.photo_reports) || '/' || (select count(*) from public.photo_reports where resolved_at is null) || '/' || (select count(*) from public.photos where id::text like '0a0a0a0a%') || '/' || (select status from public.photos where id = '0a0a0a0a-0000-4000-8000-000000000001')")
 if [ "$KEPT" = "3/3/2/hidden" ]; then echo "T30 | PASS | 0004 sur des données existantes : 3 signalements anciens conservés (motifs historiques valides), 2 photos intactes, photo masquée toujours masquée"; else echo "T30 | FAIL | $KEPT"; exit 2; fi
+$PSQL -f ../migrations/0005_drive_sync.sql > /dev/null || { echo "ECHEC sur 0005"; exit 2; }
+KEPT5=$(psql -X -qAt -c "select (select count(*) from public.photos where id::text like '0a0a0a0a%') || '/' || (select count(*) from public.photos where id::text like '0a0a0a0a%' and drive_sync_status = 'pending' and drive_file_id is null) || '/' || (select status from public.photos where id = '0a0a0a0a-0000-4000-8000-000000000001') || '/' || (select count(*) from public.photo_reports)")
+if [ "$KEPT5" = "2/2/hidden/3" ]; then echo "T40 | PASS | 0005 sur des données existantes : 2 photos et 3 signalements intacts, photos anciennes en file 'pending', statut de modération inchangé"; else echo "T40 | FAIL | $KEPT5"; exit 2; fi
 $PSQL -c "delete from public.photos where id::text like '0a0a0a0a%'" > /dev/null   # nettoyage de la base JETABLE avant les tests suivants
 echo ">> migrations rejouées une 2e fois (idempotence)"
-for f in ../migrations/0001_schema.sql ../migrations/0002_functions.sql ../migrations/0003_rls_storage.sql ../migrations/0004_report_first_hides.sql; do
+for f in ../migrations/0001_schema.sql ../migrations/0002_functions.sql ../migrations/0003_rls_storage.sql ../migrations/0004_report_first_hides.sql ../migrations/0005_drive_sync.sql; do
   $PSQL -f "$f" > /dev/null || { echo "ECHEC (non idempotent) sur $f"; exit 2; }
 done
 
@@ -46,6 +49,7 @@ echo ">> tests SQL"
 RES=$(mktemp)
 trap 'rm -f "$RES"' EXIT
 $PSQL -A -F ' | ' -f 10_tests.sql > "$RES" || { echo "FAIL: SQL assertions aborted"; exit 2; }
+$PSQL -A -F ' | ' -f 20_drive_tests.sql >> "$RES" || { echo "FAIL: drive SQL assertions aborted"; exit 2; }
 grep -E '^T[0-9]|^id ' "$RES" || true
 FAILS=$(grep -c ' | FAIL | ' "$RES" || true)
 
