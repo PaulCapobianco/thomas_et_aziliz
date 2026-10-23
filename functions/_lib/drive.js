@@ -29,10 +29,11 @@ function classify(status, body) {
   if (status >= 500 || status === 408) return new DriveError("transient", `drive_${status}`, status);
   return new DriveError("permanent", `drive_${status}`, status);
 }
+const DEADLINE_MS = 20000;
 async function call(fetchFn, url, init) {
   let response;
   try {
-    response = await fetchFn(url, init);
+    response = await fetchFn(url, { ...init, signal: init?.signal || AbortSignal.timeout(DEADLINE_MS) });
   } catch {
     throw new DriveError("transient", "drive_network");
   }

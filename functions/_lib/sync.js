@@ -14,8 +14,12 @@ const MIN_FREE_BYTES = 500 * 1024 * 1024; // refuse to start a run below this ma
 const MAX_BYTES = 3 * 1024 * 1024; // same ceiling as the Supabase bucket
 const MAX_BATCH = 8; // 8 photos x ~5 subrequests stays under the 50 subrequests of the free Workers plan
 
+// A hung Supabase or Google must never block a run: every outgoing call has a deadline (default 20 s).
+export const timeoutMs = (env) => Math.max(1, Number(env.DRIVE_FETCH_TIMEOUT_MS) || 20000);
+
 async function supabaseRpc(fetchFn, env, name, params) {
   const response = await fetchFn(`${env.SUPABASE_URL}/rest/v1/rpc/${name}`, {
+    signal: AbortSignal.timeout(timeoutMs(env)),
     method: "POST",
     headers: {
       apikey: env.SUPABASE_SERVICE_ROLE_KEY,
@@ -29,11 +33,18 @@ async function supabaseRpc(fetchFn, env, name, params) {
 }
 async function downloadSource(fetchFn, env, path) {
   const encoded = path.split("/").map(encodeURIComponent).join("/");
-  const response = await fetchFn(`${env.SUPABASE_URL}/storage/v1/object/photos/${encoded}`, {
-    headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` },
-  });
-  if (!response.ok) throw new DriveError("permanent", response.status === 404 ? "source_missing" : `source_${response.status}`);
-  const bytes = new Uint8Array(await response.arrayBuffer());
+  let response, bytes;
+  try {
+    response = await fetchFn(`${env.SUPABASE_URL}/storage/v1/object/photos/${encoded}`, {
+      signal: AbortSignal.timeout(timeoutMs(env)),
+      headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` },
+    });
+    if (!response.ok) throw new DriveError("permanent", response.status === 404 ? "source_missing" : `source_${response.status}`);
+    bytes = new Uint8Array(await response.arrayBuffer());
+  } catch (error) {
+    if (error instanceof DriveError) throw error;
+    throw new DriveError("transient", "source_unreachable"); // network error or timeout: retried later, nothing lost
+  }
   if (!bytes.length || bytes.length > MAX_BYTES) throw new DriveError("permanent", "source_invalid_size");
   return bytes;
 }

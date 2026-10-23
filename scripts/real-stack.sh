@@ -54,7 +54,7 @@ up() {
     [ "$(docker_ps -Atc "select to_regclass('storage.objects') is not null and to_regclass('auth.users') is not null and to_regclass('auth.identities') is not null" 2>/dev/null)" = t ] && break; sleep 1
   done
   sleep 3
-  for f in 0001_schema 0002_functions 0003_rls_storage 0004_report_first_hides; do docker_ps -f "/tmp/supabase/migrations/$f.sql" >/dev/null 2>&1; done
+  for f in 0001_schema 0002_functions 0003_rls_storage 0004_report_first_hides 0005_drive_sync; do docker_ps -f "/tmp/supabase/migrations/$f.sql" >/dev/null 2>&1; done
   docker_ps -f /tmp/supabase/tests/real_after_storage.sql >/dev/null
   # Real accounts through the GoTrue admin API (email already confirmed, as with "Auto Confirm User").
   for who in "aaaaaaaa-0000-0000-0000-000000000001 admin@example.test" "bbbbbbbb-0000-0000-0000-000000000002 invite@example.test"; do

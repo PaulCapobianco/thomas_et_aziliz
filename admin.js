@@ -561,6 +561,11 @@ $("logout").onclick = async () => {
 };
 $("drive-retry").onclick = async () => {
   $("drive-retry").disabled = true;
+  // The result goes to its own line: refreshing the counters below must not erase it.
+  const say = (text) => {
+    $("drive-result").textContent = text;
+    $("drive-result").hidden = false;
+  };
   try {
     await rpc(sb, "admin_drive_retry", {});
     const { data } = await sb.auth.getSession();
@@ -570,11 +575,13 @@ $("drive-retry").onclick = async () => {
       body: "{}",
     });
     const result = await response.json().catch(() => ({}));
-    $("drive-summary").textContent = response.ok
-      ? `Sauvegarde Drive : ${result.transferred} photo(s) copiée(s), ${result.failed} échec(s)${result.error ? ` (${result.error})` : ""}.`
-      : `Sauvegarde Drive indisponible (${result.error || response.status}). Les photos restent conservées dans Supabase.`;
+    say(
+      response.ok
+        ? `Sauvegarde Drive : ${result.transferred} photo(s) copiée(s), ${result.failed} échec(s)${result.error ? ` (${result.error})` : ""}.`
+        : `Sauvegarde Drive indisponible (${result.error || response.status}). Les photos restent conservées dans Supabase.`,
+    );
   } catch {
-    $("drive-summary").textContent = "Sauvegarde Drive indisponible. Les photos restent conservées dans Supabase.";
+    say("Sauvegarde Drive indisponible. Les photos restent conservées dans Supabase.");
   } finally {
     $("drive-retry").disabled = false;
     loadDrive();
