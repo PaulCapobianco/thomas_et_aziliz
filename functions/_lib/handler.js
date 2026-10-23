@@ -36,7 +36,7 @@ export async function md5Hex(bytes) {
 export async function handle(request, env, deps = { fetchFn: fetch, md5Hex }) {
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   if (env.DRIVE_SYNC_ENABLED !== "true") return json({ error: "disabled" }, 503);
-  const allowed = sameSecret(request.headers.get("x-sync-secret") || "", env.SYNC_SECRET || "") || (await isAdmin(request, env, deps.fetchFn));
+  const allowed = (String(env.SYNC_SECRET || "").length >= 32 && sameSecret(request.headers.get("x-sync-secret") || "", env.SYNC_SECRET)) || (await isAdmin(request, env, deps.fetchFn));
   if (!allowed) return json({ error: "unauthorized" }, 401);
   let onlyId = null;
   try {
@@ -48,6 +48,11 @@ export async function handle(request, env, deps = { fetchFn: fetch, md5Hex }) {
   } catch {
     /* empty body is fine */
   }
-  const summary = await runSync(env, deps, { onlyId });
-  return json(summary, summary.error === "not_configured" ? 503 : 200);
+  try {
+    const summary = await runSync(env, deps, { onlyId });
+    return json(summary, summary.error === "not_configured" ? 503 : 200);
+  } catch {
+    // Never echo error details: they could contain request data. The photos stay queued (claimed ones are retried after 10 min).
+    return json({ error: "internal" }, 500);
+  }
 }

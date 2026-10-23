@@ -49,6 +49,12 @@ export async function runSync(env, deps, { onlyId = null } = {}) {
   const missing = REQUIRED_ENV.filter((key) => !env[key]);
   if (missing.length) return { ok: false, error: "not_configured", missing };
   const summary = { ok: true, claimed: 0, transferred: 0, failed: 0, released: 0, bytes: 0, error: null };
+  // Nothing waiting: do not even contact Google. Supabase unreachable: stop here, nothing was claimed.
+  try {
+    if (!onlyId && !(await supabaseRpc(fetchFn, env, "drive_queue_size", {}))) return { ...summary, idle: true };
+  } catch {
+    return { ...summary, ok: false, error: "supabase_unavailable" };
+  }
   let token;
   try {
     token = await refreshAccessToken(fetchFn, env);
@@ -59,7 +65,12 @@ export async function runSync(env, deps, { onlyId = null } = {}) {
     return { ...summary, ok: false, error: error.code || "drive_unreachable" };
   }
   const batch = Math.min(MAX_BATCH, Math.max(1, Number(env.DRIVE_BATCH) || 6));
-  const claimed = (await supabaseRpc(fetchFn, env, "drive_claim", { p_limit: batch, p_id: onlyId })) || [];
+  let claimed;
+  try {
+    claimed = (await supabaseRpc(fetchFn, env, "drive_claim", { p_limit: batch, p_id: onlyId })) || [];
+  } catch {
+    return { ...summary, ok: false, error: "supabase_unavailable" };
+  }
   summary.claimed = claimed.length;
   for (let index = 0; index < claimed.length; index++) {
     const photo = claimed[index];

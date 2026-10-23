@@ -11,7 +11,10 @@ const two = () => makeWorld({ photos: [
   { id: ID2, audience: "maries", full_path: `maries/full/${ID2}.jpg` },
 ] });
 const deps = (w) => ({ fetchFn: w.fetch, md5Hex });
-const noDeletes = (w) => assert.ok(!w.calls.some((c) => /^DELETE|remove|trash/i.test(c)), "no delete/trash call may ever be made");
+const noDeletes = (w) => {
+  assert.ok(!w.calls.some((c) => /^DELETE|remove|trash/i.test(c)), "no delete/trash call may ever be made");
+  assert.ok(!w.calls.some((c) => /permissions/i.test(c)), "no sharing/permission call may ever be made (Drive stays private)");
+};
 
 test("4 - public and private photos reach Drive, in the right folder, verified, nothing deleted", async () => {
   const w = two();
@@ -141,4 +144,90 @@ test("endpoint: single photo id validated and honoured", async () => {
   const response = await handle(post({ "x-sync-secret": ENV.SYNC_SECRET }, JSON.stringify({ id: ID2 })), ENV, deps(w));
   assert.equal((await response.json()).transferred, 1);
   assert.equal(w.photos.find((p) => p.id === ID1).status, "pending");
+});
+
+test("9 - temporary Supabase failure when claiming: nothing uploaded, nothing lost", async () => {
+  const w = two();
+  w.supabaseFault = "drive_claim";
+  const r = await runSync(ENV, deps(w));
+  assert.deepEqual([r.ok, r.error], [false, "supabase_unavailable"]);
+  assert.equal(w.drive.size, 0);
+  assert.ok(w.photos.every((p) => p.status === "pending"));
+});
+test("9b - Supabase down at the very start: Google is not even contacted", async () => {
+  const w = two();
+  w.supabaseFault = "all";
+  const r = await runSync(ENV, deps(w));
+  assert.equal(r.error, "supabase_unavailable");
+  assert.ok(!w.calls.some((c) => c.includes("google")));
+});
+test("9c - Storage download unavailable (503): photo failed and retried later, no Drive file", async () => {
+  const w = two();
+  w.supabaseFault = "download";
+  const r = await runSync(ENV, deps(w));
+  assert.deepEqual([r.transferred, r.failed], [0, 2]);
+  assert.equal(w.drive.size, 0);
+  assert.ok(w.photos.every((p) => p.error === "source_503"));
+});
+test("9d - Supabase fails AFTER the Drive upload: next run adopts the existing file (no duplicate)", async () => {
+  const w = makeWorld({ photos: [{ id: ID1, audience: "public", full_path: `public/full/${ID1}.jpg` }] });
+  w.supabaseFault = "drive_mark_transferred";
+  await runSync(ENV, deps(w));
+  assert.equal(w.drive.size, 1);
+  assert.notEqual(w.photos[0].status, "transferred");
+  w.supabaseFault = null;
+  w.photos[0].status = "pending"; // what the 10-minute abandoned-processing rule does in the database
+  await runSync(ENV, deps(w));
+  assert.equal(w.drive.size, 1);
+  assert.equal(w.photos[0].status, "transferred");
+});
+test("10 - nothing waiting: Google is not contacted", async () => {
+  const w = two();
+  await runSync(ENV, deps(w));
+  const before = w.calls.length;
+  const r = await runSync(ENV, deps(w));
+  assert.equal(r.idle, true);
+  assert.ok(w.calls.slice(before).every((c) => c.includes("supabase")));
+});
+test("11 - two simultaneous triggers never upload the same photo twice", async () => {
+  const w = two();
+  const [a, b] = await Promise.all([runSync(ENV, deps(w)), runSync(ENV, deps(w))]);
+  assert.equal(a.transferred + b.transferred, 2);
+  assert.equal(w.drive.size, 2);
+});
+test("12 - already registered photos (backlog) are copied oldest first, 6 per run", async () => {
+  const photos = Array.from({ length: 14 }, (_, i) => {
+    const id = `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+    return { id, audience: i % 3 ? "public" : "maries", full_path: `${i % 3 ? "public" : "maries"}/full/${id}.jpg` };
+  });
+  const w = makeWorld({ photos });
+  const runs = [];
+  for (let i = 0; i < 3; i++) runs.push((await runSync(ENV, deps(w))).transferred);
+  assert.deepEqual(runs, [6, 6, 2]);
+  assert.equal(w.drive.size, 14);
+});
+test("13 - DRIVE_SYNC_ENABLED must be exactly 'true'; anything else does nothing at all", async () => {
+  for (const value of ["false", "FALSE", "TRUE", "1", "", undefined]) {
+    const w = two();
+    const response = await handle(post({ "x-sync-secret": ENV.SYNC_SECRET }), { ...ENV, DRIVE_SYNC_ENABLED: value }, deps(w));
+    assert.equal(response.status, 503, String(value));
+    assert.equal(w.calls.length, 0, "no call to Google or Supabase when disabled");
+  }
+});
+test("14 - a weak or short SYNC_SECRET never authenticates", async () => {
+  const w = two();
+  assert.equal((await handle(post({ "x-sync-secret": "short" }), { ...ENV, SYNC_SECRET: "short" }, deps(w))).status, 401);
+  assert.equal((await handle(post({ "x-sync-secret": "" }), { ...ENV, SYNC_SECRET: "" }, deps(w))).status, 401);
+});
+test("15 - unexpected crash returns a generic error without details", async () => {
+  const w = two();
+  const response = await handle(post({ "x-sync-secret": ENV.SYNC_SECRET }), ENV, { fetchFn: () => { throw new Error("secret-detail rtoken"); }, md5Hex });
+  const text = await response.text();
+  assert.ok(response.status === 200 || response.status === 500);
+  assert.ok(!text.includes("secret-detail") && !text.includes(ENV.GOOGLE_REFRESH_TOKEN));
+});
+test("16 - source code never logs (no console.* in server code)", async () => {
+  const { readFileSync, readdirSync } = await import("node:fs");
+  for (const dir of ["functions/_lib", "functions/api"])
+    for (const file of readdirSync(dir)) assert.ok(!/console\./.test(readFileSync(`${dir}/${file}`, "utf8")), file);
 });

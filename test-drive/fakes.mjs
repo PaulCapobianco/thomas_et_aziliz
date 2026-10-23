@@ -12,7 +12,7 @@ export const ENV = {
   DRIVE_FOLDER_PUBLIC: "folder-public",
   DRIVE_FOLDER_PRIVATE: "folder-private",
   DRIVE_SYNC_ENABLED: "true",
-  SYNC_SECRET: "sync-secret-fake",
+  SYNC_SECRET: "sync-secret-fake-0123456789abcdef0123456789abcdef",
 };
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
@@ -23,7 +23,7 @@ export function makeWorld({ photos, quota = { limit: "16106127360", usage: "1000
     drive: new Map(), // id -> { id, name, parents, appProperties, bytes }
     calls: [],
     // fault injection
-    tokenStatus: 200, aboutQuota: quota, uploadFault: null, corruptMd5: false, adminOk: true,
+    supabaseFault: null, tokenStatus: 200, aboutQuota: quota, uploadFault: null, corruptMd5: false, adminOk: true,
   };
   w.fetch = async (url, init = {}) => {
     const u = new URL(url);
@@ -52,6 +52,7 @@ export function makeWorld({ photos, quota = { limit: "16106127360", usage: "1000
     }
     if (u.host === "fake.supabase.test" && u.pathname.startsWith("/storage/v1/object/photos/")) {
       const path = decodeURIComponent(u.pathname.replace("/storage/v1/object/photos/", ""));
+      if (w.supabaseFault === "download") return json({ error: "unavailable" }, 503);
       return w.storage.has(path) ? new Response(w.storage.get(path)) : json({ error: "not_found" }, 404);
     }
     if (u.host === "fake.supabase.test" && u.pathname === "/rest/v1/rpc/is_admin") {
@@ -61,6 +62,8 @@ export function makeWorld({ photos, quota = { limit: "16106127360", usage: "1000
       const name = u.pathname.split("/").pop();
       const body = JSON.parse(init.body);
       const row = (id) => w.photos.find((p) => p.id === id);
+      if (w.supabaseFault === name || w.supabaseFault === "all") return json({ message: "boom" }, 503);
+      if (name === "drive_queue_size") return json(w.photos.filter((p) => p.status === "pending").length);
       if (name === "drive_claim") {
         const picked = w.photos.filter((p) => p.status === "pending" && (!body.p_id || p.id === body.p_id)).slice(0, body.p_limit);
         for (const p of picked) { p.status = "processing"; p.attempts++; }

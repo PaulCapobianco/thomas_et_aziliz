@@ -3,6 +3,7 @@
 drop function if exists public.admin_drive_retry(uuid);
 drop function if exists public.admin_drive_status();
 drop function if exists public.drive_release(uuid);
+drop function if exists public.drive_queue_size();
 drop function if exists public.drive_mark_failed(uuid, text);
 drop function if exists public.drive_mark_transferred(uuid, text, bigint);
 drop function if exists public.drive_claim(int, uuid);

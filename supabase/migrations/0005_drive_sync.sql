@@ -65,6 +65,18 @@ begin
   returning p.id, p.audience, p.full_path, p.created_at, p.drive_file_id, p.drive_sync_attempts;
 end $$;
 
+-- Nombre de photos prêtes à être prises (même condition que drive_claim) : permet au déclencheur planifié de ne pas
+-- appeler Google quand la file est vide (1 appel par minute reste alors quasi gratuit).
+create or replace function public.drive_queue_size() returns int
+language sql stable security definer set search_path = public, pg_temp as $$
+  select count(*)::int from public.photos p
+   where p.status <> 'deleted'
+     and (p.drive_sync_status = 'pending'
+       or (p.drive_sync_status = 'failed' and p.drive_sync_attempts < 6
+           and p.drive_locked_at < now() - make_interval(mins => 2 * greatest(p.drive_sync_attempts, 1)))
+       or (p.drive_sync_status = 'processing' and p.drive_locked_at < now() - interval '10 minutes'));
+$$;
+
 -- Transfert vérifié par le serveur (taille + empreinte comparées à Drive AVANT cet appel).
 create or replace function public.drive_mark_transferred(p_id uuid, p_file_id text, p_bytes bigint)
 returns void language plpgsql security definer set search_path = public, pg_temp as $$
@@ -105,6 +117,7 @@ begin
       'transferred', count(*) filter (where drive_sync_status = 'transferred'),
       'pending',     count(*) filter (where drive_sync_status in ('pending', 'processing')),
       'failed',      count(*) filter (where drive_sync_status = 'failed'),
+      'oldest_waiting', min(created_at) filter (where drive_sync_status in ('pending', 'processing', 'failed')),
       'bytes',       coalesce(sum(drive_bytes) filter (where drive_sync_status = 'transferred'), 0),
       'last_error',  (select drive_sync_error from public.photos where drive_sync_status = 'failed'
                        order by drive_locked_at desc nulls last limit 1)
@@ -129,13 +142,13 @@ end $$;
 -- ---------------------------------------------------------------------
 revoke all on function
   public.drive_claim(int, uuid), public.drive_mark_transferred(uuid, text, bigint),
-  public.drive_mark_failed(uuid, text), public.drive_release(uuid),
+  public.drive_mark_failed(uuid, text), public.drive_release(uuid), public.drive_queue_size(),
   public.admin_drive_status(), public.admin_drive_retry(uuid)
   from public, anon, authenticated;
 
 grant execute on function
   public.drive_claim(int, uuid), public.drive_mark_transferred(uuid, text, bigint),
-  public.drive_mark_failed(uuid, text), public.drive_release(uuid)
+  public.drive_mark_failed(uuid, text), public.drive_release(uuid), public.drive_queue_size()
   to service_role;
 
 grant execute on function public.admin_drive_status(), public.admin_drive_retry(uuid) to authenticated;

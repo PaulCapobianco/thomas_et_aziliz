@@ -89,6 +89,21 @@ else
   echo "T12 | FAIL | distinct incohérents=$BAD1, doubles-clics incohérents=$BAD2"; FAILS=$((FAILS+1))
 fi
 
+echo ">> T51 : double déclenchement de la synchronisation (2 sessions PostgreSQL simultanées)"
+$PSQL > /dev/null <<'SQL'
+delete from public.photos;
+do $$ declare i int; v uuid; begin
+  for i in 1..10 loop v := gen_random_uuid();
+    insert into public.photos (id, audience, status, full_path, thumb_path, original_sha256, uploader_id, published_at, created_at)
+    values (v, 'public', 'published', 'public/full/'||v||'.jpg', 'public/thumbs/'||v||'.jpg', md5('claim'||i)||md5('claim'||i||'x'), gen_random_uuid(), now(), now() + i * interval '1 second');
+  end loop; end $$;
+SQL
+( psql -X -qAt -c "begin; set local role service_role; select count(*) from public.drive_claim(5); select pg_sleep(1.5); commit;" </dev/null >/dev/null 2>&1 ) &
+( sleep 0.5; psql -X -qAt -c "set role service_role; select count(*) from public.drive_claim(5)" </dev/null >/dev/null 2>&1 ) &
+wait
+CLAIMED=$(psql -X -qAt -c "select count(*) || '/' || count(*) filter (where drive_sync_attempts = 1) from public.photos where drive_sync_status = 'processing'")
+if [ "$CLAIMED" = "10/10" ]; then echo "T51 | PASS | 2 déclenchements simultanés : 10 photos réservées une seule fois chacune (aucune reprise en double)"; else echo "T51 | FAIL | $CLAIMED"; FAILS=$((FAILS+1)); fi
+
 echo
 if [ "${FAILS:-0}" -gt 0 ]; then echo "RÉSULTAT : $FAILS test(s) FAIL"; exit 1; fi
 echo "RÉSULTAT : tous les tests SQL et de concurrence sont PASS (sur PostgreSQL local avec stub, PAS sur Supabase réel)"
