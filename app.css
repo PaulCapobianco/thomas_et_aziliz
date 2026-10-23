@@ -2494,34 +2494,6 @@ html.motion .in .word {
 @keyframes fade-in {
   from { opacity: 0; }
 }
-@keyframes marquee {
-  to { transform: translateX(-50%); }
-}
-
-/* Bandeau défilant */
-.marquee {
-  overflow: hidden;
-  padding: clamp(.9rem, 2.6vw, 1.8rem) 0;
-  border-block: 1px solid #1b283822;
-  background: var(--bg);
-}
-.marquee-track {
-  display: flex;
-  width: max-content;
-}
-.marquee-row {
-  flex: 0 0 auto;
-  white-space: pre;
-  font: italic 400 clamp(3rem, 9.5vw, 7.6rem)/1.05 var(--font-display);
-  letter-spacing: -.02em;
-  color: transparent;
-  -webkit-text-stroke: 1px var(--ink);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .marquee-track {
-    animation: marquee 46s linear infinite;
-  }
-}
 
 /* Souvenirs : la nuit tombe, les photos s'allument comme des lanternes */
 .couple-memories {
