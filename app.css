@@ -2628,7 +2628,8 @@ html.motion .in .word {
 html.motion .reveal {
   opacity: 0;
   transform: translateY(28px);
-  transition: opacity .9s var(--ease), transform .9s var(--ease);
+  /* Keep text at full contrast as soon as it appears; animate only its position. */
+  transition: transform .9s var(--ease);
 }
 html.motion .reveal.in {
   opacity: 1;
