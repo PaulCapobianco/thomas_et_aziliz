@@ -1640,26 +1640,28 @@ body.has-send-bar .site-footer {
 #batch-restore {
   min-height: 56px;
 }
-/* Discreet privacy link under the footer line, on its own row (the 3-column desktop footer is untouched). */
-.footer-legal-row { text-align: center; }
+/* Legal links in the navy footer: same voice as the other footer lines (Jost 500, #c3cad4), own row so the
+   3-column desktop footer is untouched. Contrast of #c3cad4 on the navy ink is well above 4.5:1. */
+.footer-legal-row { text-align: center; margin-top: 1.1rem; }
 .footer-legal {
   display: inline-block;
   min-height: 44px;
-  padding: .75rem .5rem 0;
-  font-size: .63rem;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-  color: var(--muted);
+  padding: .75rem .6rem 0;
+  font: 500 .82rem/1.4 var(--font-ui);
+  letter-spacing: .1em;
+  color: #c3cad4;
   text-decoration: underline;
-  text-underline-offset: .3em;
-  text-decoration-color: var(--border);
+  text-decoration-color: var(--brass);
+  text-underline-offset: .35em;
+  text-decoration-thickness: 1px;
 }
-.footer-legal:hover { color: var(--accent); text-decoration-color: currentColor; }
+.footer-legal:hover, .footer-legal:focus-visible { color: #f6f1e6; text-decoration-color: #f6f1e6; }
+.footer-legal[aria-current="page"] { color: #f6f1e6; }
 @media (min-width: 640px) {
   .site-footer { flex-wrap: wrap; }
-  .footer-legal-row { flex-basis: 100%; }
+  .footer-legal-row { flex-basis: 100%; margin-top: .4rem; }
   .footer-legal { padding-top: .25rem; }
-  .footer-legal + .footer-legal { margin-left: .75rem; }
+  .footer-legal + .footer-legal { margin-left: 1.1rem; }
 }
 
 /* ==========================================================================
