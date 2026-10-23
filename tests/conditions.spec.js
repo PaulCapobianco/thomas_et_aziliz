@@ -78,15 +78,18 @@ test("terms and privacy pages link to each other, and back to the album", async 
   await expect(page).toHaveURL(/\/$/);
 });
 
-test("terms page: contact falls back to a visible sentence, then a mailto link; invalid values are ignored", async ({ page }) => {
+test("terms page: the configured contact address is a working mailto link; fallback sentence and invalid values handled", async ({ page }) => {
   await open(page);
-  await expect(page.locator("[data-contact] a")).toHaveCount(0);
-  await expect(page.locator("#contact [data-contact]")).toContainText("sera indiquée");
+  const links = page.locator("[data-contact] a");
+  await expect(links).toHaveCount(2);
+  for (const link of await links.all()) await expect(link).toHaveAttribute("href", "mailto:paul.capobianco13@gmail.com");
+  await expect(page.locator("#contact")).toContainText("paul.capobianco13@gmail.com");
   await page.route("**/config.js", (route) =>
-    route.fulfill({ contentType: "text/javascript", body: `export const PRIVACY_EMAIL="contact@example.test";` }),
+    route.fulfill({ contentType: "text/javascript", body: `export const PRIVACY_EMAIL="";` }),
   );
   await page.goto("/conditions-utilisation");
-  await expect(page.locator("[data-contact] a").first()).toHaveAttribute("href", "mailto:contact@example.test");
+  await expect(page.locator("[data-contact] a")).toHaveCount(0);
+  await expect(page.locator("#contact [data-contact]")).toContainText("sera indiquée");
   await page.unroute("**/config.js");
   await page.route("**/config.js", (route) =>
     route.fulfill({ contentType: "text/javascript", body: `export const PRIVACY_EMAIL='x" onmouseover="alert(1)';` }),

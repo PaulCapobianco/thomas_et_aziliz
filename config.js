@@ -8,5 +8,5 @@ export const SECRET = ""; // Optional QR convenience gate, not access control.
 export const LOCATION = "";
 export const COUPLE_PHOTO = "assets/couple/thomas-aziliz-au-jardin.jpg";
 export const NSFW_ENABLED = true;
-// Contact address shown on /confidentialite. Left empty on purpose: the couple chooses it (never invented). Public by design.
-export const PRIVACY_EMAIL = "";
+// Contact address shown on /confidentialite and /conditions-utilisation. Chosen and confirmed by the couple; public by design.
+export const PRIVACY_EMAIL = "paul.capobianco13@gmail.com";

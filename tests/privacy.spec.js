@@ -64,19 +64,26 @@ test("privacy page: private photos are never described as public", async ({ page
   await expect(priv).not.toContainText(/publi/i);
 });
 
-test("privacy page: contact stays a visible fallback until PRIVACY_EMAIL is set, then becomes a mailto link", async ({ page }) => {
+test("privacy page: the configured contact address is shown as a working mailto link everywhere it is needed", async ({ page }) => {
+  await open(page);
+  const links = page.locator("[data-contact] a");
+  await expect(links).toHaveCount(3);
+  for (const link of await links.all()) {
+    await expect(link).toHaveAttribute("href", "mailto:paul.capobianco13@gmail.com");
+    await expect(link).toHaveText("paul.capobianco13@gmail.com");
+  }
+  // Public page and public address only: no other mail address on the page.
+  const text = await page.locator("main").innerText();
+  expect([...new Set(text.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g))]).toEqual(["paul.capobianco13@gmail.com"]);
+});
+
+test("privacy page: without an address the page keeps a visible fallback sentence; invalid values are ignored", async ({ page }) => {
+  await page.route("**/config.js", (route) =>
+    route.fulfill({ contentType: "text/javascript", body: `export const PRIVACY_EMAIL="";` }),
+  );
   await open(page);
   await expect(page.locator("[data-contact] a")).toHaveCount(0);
   await expect(page.locator("[data-contact]").first()).toContainText("sera indiquée");
-  // Same page with a configured address (config.js intercepted, never edited).
-  await page.route("**/config.js", (route) =>
-    route.fulfill({ contentType: "text/javascript", body: `export const PRIVACY_EMAIL="contact@example.test";` }),
-  );
-  await page.goto("/confidentialite");
-  const links = page.locator("[data-contact] a");
-  await expect(links).toHaveCount(3);
-  await expect(links.first()).toHaveAttribute("href", "mailto:contact@example.test");
-  // An invalid value is ignored (no injection into href).
   await page.unroute("**/config.js");
   await page.route("**/config.js", (route) =>
     route.fulfill({ contentType: "text/javascript", body: `export const PRIVACY_EMAIL='x" onmouseover="alert(1)';` }),
