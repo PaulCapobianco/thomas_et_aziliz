@@ -2495,6 +2495,37 @@ html.motion .in .word {
   from { opacity: 0; }
 }
 
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+
+/* Fin bandeau doré : une ligne discrète, pas un titre */
+.marquee {
+  overflow: hidden;
+  padding: .85rem 0;
+  border-block: 1px solid #b49a6655;
+  background: var(--bg);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+}
+.marquee-row {
+  flex: 0 0 auto;
+  white-space: pre;
+  font: italic 400 1.15rem/1.4 var(--font-display);
+  letter-spacing: .06em;
+  color: var(--brass-ink);
+  word-spacing: .5em;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .marquee-track {
+    animation: marquee 60s linear infinite;
+  }
+}
+
 /* Souvenirs : la nuit tombe, les photos s'allument comme des lanternes */
 .couple-memories {
   position: relative;
