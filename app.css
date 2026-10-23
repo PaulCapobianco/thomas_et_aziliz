@@ -2164,7 +2164,7 @@ button,
   color: #f6f1e6;
 }
 .destination-card.is-public small {
-  color: #dde4d3;
+  color: #e9eddf;
 }
 .destination-card.is-public .destination-badge {
   background: #f6f1e6;
@@ -2229,42 +2229,24 @@ button,
   box-shadow: none;
 }
 
-/* Visionneuse : fond nuit, la photo reste seule en lumière */
+/* Visionneuse : fond papier clair (exigence conservée), barre d'actions encre, arêtes nettes */
 .lightbox {
-  background: var(--night);
-  color: #f6f1e6;
-}
-dialog::backdrop {
-  background: #121922cc;
-}
-#lightbox #photo-position,
-#lightbox #lightbox-status {
-  color: #c9cfd8;
+  background: #f6f1e6fc;
 }
 #lightbox .lightbox-close {
-  background: transparent;
-  color: #f6f1e6;
-  border-color: #f6f1e680;
-}
-#lightbox .lightbox-close:hover {
-  background: #f6f1e61a;
+  border-color: var(--ink);
+  border-radius: 0;
 }
 .lightbox-stage button {
   border-color: transparent;
-  background: transparent;
-  color: #f6f1e6;
+  color: var(--ink);
   font-size: 1.5rem;
 }
 .lightbox-stage button:hover {
-  background: #f6f1e61a;
-}
-.lightbox-stage button:focus-visible {
-  outline: 2px solid #f6f1e6;
-  outline-offset: 2px;
+  background: #1b28380f;
 }
 #lightbox .lightbox-actions {
-  background: none;
-  border-top: 1px solid #f6f1e620;
+  background: rgb(27 40 56 / .94);
 }
 #lightbox .lightbox-actions button {
   border-radius: 0;
