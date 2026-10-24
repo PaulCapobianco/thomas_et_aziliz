@@ -3001,3 +3001,127 @@ html.motion .photo-card.no-delay::after {
   .seal { right: -1.4rem !important; }
   .marquee { width: 100% !important; }
 }
+
+/* Luxury finish: an open paper field, partial framing and restrained foliage. */
+.hero {
+  border: 0 !important;
+  background:
+    radial-gradient(circle at 18% 16%, rgb(231 210 169 / .34), transparent 30%),
+    radial-gradient(circle at 86% 72%, rgb(214 219 194 / .34), transparent 28%),
+    var(--bg) !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.hero::before {
+  content: "" !important;
+  inset: auto auto -3.8rem -2.4rem !important;
+  width: 14rem !important;
+  height: 17rem !important;
+  border: 0 !important;
+  opacity: .42 !important;
+  background: url("assets/botanical-sprig.svg") center / contain no-repeat !important;
+  transform: rotate(-27deg) !important;
+}
+
+.hero::after {
+  content: "" !important;
+  inset: 1.8rem 1.8rem auto auto !important;
+  width: 8rem !important;
+  height: 8rem !important;
+  border: 0 !important;
+  border-top: 1px solid rgb(180 154 102 / .5) !important;
+  border-right: 1px solid rgb(180 154 102 / .5) !important;
+  border-radius: 0 !important;
+  opacity: 1 !important;
+}
+
+.hero-content::after {
+  content: "";
+  position: absolute;
+  right: 1.5rem;
+  bottom: -2rem;
+  width: 8rem;
+  height: 10rem;
+  opacity: .24;
+  background: url("assets/botanical-sprig.svg") center / contain no-repeat;
+  transform: scaleX(-1) rotate(-8deg);
+  pointer-events: none;
+}
+
+.couple-names {
+  font-size: clamp(5rem, 9.4vw, 8.8rem) !important;
+  line-height: .76 !important;
+  letter-spacing: -.075em !important;
+}
+
+.couple-names span:nth-child(2) {
+  position: relative;
+  z-index: 1;
+  margin: .07em 0 -.015em .12em !important;
+  color: var(--brass) !important;
+  font-size: .7em !important;
+  text-shadow: 0 1px 0 #fff8e9;
+}
+
+.date {
+  margin-top: 1.8rem !important;
+  color: var(--ink) !important;
+  font-size: clamp(1.35rem, 2.1vw, 1.8rem) !important;
+}
+
+.hero h1 {
+  margin-bottom: 1.6rem !important;
+  color: var(--muted) !important;
+  font-size: clamp(1.3rem, 2.3vw, 1.75rem) !important;
+}
+
+.hero-portrait::before {
+  inset: -.9rem -.9rem .1rem !important;
+  border: 1px solid rgb(165 130 65 / .78) !important;
+  border-radius: 50% 50% 0 0 !important;
+  transform: rotate(1.2deg) !important;
+}
+
+.hero-portrait::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -3.8rem;
+  bottom: -1.8rem;
+  width: 10rem;
+  height: 13rem;
+  opacity: .3;
+  background: url("assets/botanical-sprig.svg") center / contain no-repeat;
+  transform: rotate(12deg);
+  pointer-events: none;
+}
+
+.seal {
+  background: #fbf7ed !important;
+  border: 1px solid rgb(165 130 65 / .42);
+  box-shadow: 0 10px 20px -14px rgb(27 40 56 / .62);
+}
+
+.hero-actions .button {
+  min-height: 3.2rem !important;
+  padding-inline: 1.5rem !important;
+  border-width: 1px !important;
+  letter-spacing: .065em !important;
+  box-shadow: 0 8px 18px -16px rgb(27 40 56 / .9);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hero-actions .button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 14px 24px -16px rgb(27 40 56 / .78);
+  }
+}
+
+@media (max-width: 699px) {
+  .hero { overflow: hidden !important; }
+  .hero::after { inset: 1rem 1rem auto auto !important; width: 5rem !important; height: 5rem !important; }
+  .hero-content::after { right: -2rem; bottom: -1rem; opacity: .18; }
+  .couple-names { font-size: clamp(4.2rem, 19vw, 6rem) !important; line-height: .8 !important; }
+  .hero-portrait::after { right: -2.4rem; width: 7rem; height: 9rem; opacity: .24; }
+}
