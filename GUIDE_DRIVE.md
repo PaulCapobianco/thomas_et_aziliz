@@ -220,7 +220,7 @@ export DRIVE_FOLDER_PUBLIC='<identifiant du dossier « Photos publiques »>'
 export DRIVE_FOLDER_PRIVATE='<identifiant du dossier « Photos privées »>'
 node scripts/drive-verify-folders.mjs        # attendu : « tout est PASS » (non partagé, propriétaire seul)
 ```
-**B. Test réel complet : vraie API Google Drive + pile Supabase locale jetable** (crée un dossier « TEST - Mariage (sync) » séparé, réutilisé s'il existe ; envoie 2 JPEG synthétiques, non personnels ; ne supprime **rien** ; n'utilise **jamais** les dossiers de production)
+**B. Test réel complet : vraie API Google Drive + pile Supabase locale jetable** (requiert un dossier privé existant « TEST - Mariage (sync) » ou « TEST - Mariage » avec ses sous-dossiers « Photos publiques » et « Photos privées - Mariés uniquement » ; ne crée aucun dossier ; envoie 2 JPEG synthétiques, non personnels ; ne supprime **rien** ; n'utilise **jamais** les dossiers de production). Si votre dossier de test existant porte un autre nom, définissez `DRIVE_TEST_ROOT_NAME` avec un nom commençant par `TEST - `.
 ```bash
 bash scripts/real-stack.sh up                 # ~15 s
 node scripts/real-stack-proxy.mjs &           # passerelle locale :5057
