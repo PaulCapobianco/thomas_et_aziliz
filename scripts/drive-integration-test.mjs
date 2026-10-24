@@ -2,8 +2,8 @@
 // (scripts/real-stack.sh: PostgreSQL + Supabase Storage API + PostgREST) and either:
 //   --google=fake   a local imitation of the Google endpoints (no account, no secret)   [default]
 //   --google=live   the REAL Google Drive API, with GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN
-//                   read from YOUR shell environment. Everything is created in a separate TEST folder; nothing is
-//                   ever deleted; the production folders are never used for writing.
+//                   read from YOUR shell environment. Existing private TEST folders are required; only synthetic
+//                   photos are created there. Nothing is deleted; production folders are never used for writing.
 // Secrets are never printed. The Supabase side is the throwaway stack (keys in .real-stack/, git-ignored).
 //   bash scripts/real-stack.sh up && node scripts/real-stack-proxy.mjs &      # proxy on :5057 (as in `real-stack.sh test`)
 //   node scripts/drive-integration-test.mjs --google=fake
@@ -12,7 +12,7 @@ import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { runSync } from "../functions/_lib/sync.js";
 import { handle } from "../functions/_lib/handler.js";
-import { refreshAccessToken, createFolder } from "../functions/_lib/drive.js";
+import { refreshAccessToken } from "../functions/_lib/drive.js";
 import { makeWorld } from "../test-drive/fakes.mjs";
 
 const live = (process.argv.find((a) => a.startsWith("--google=")) || "--google=fake").endsWith("live");
@@ -53,12 +53,25 @@ let folders;
 if (live) {
   const token = await refreshAccessToken(fetch, googleEnv);
   const auth = { headers: { authorization: `Bearer ${token}` } };
-  const find = async (name, parent) => (await (await fetch(`https://www.googleapis.com/drive/v3/files?fields=files(id)&q=${encodeURIComponent(`name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false${parent ? ` and '${parent}' in parents` : ""}`)}`, auth)).json()).files?.[0]?.id;
-  const root = (await find("TEST - Mariage (sync)")) || (await createFolder(fetch, token, "TEST - Mariage (sync)")).id;
-  const pub = (await find("Photos publiques", root)) || (await createFolder(fetch, token, "Photos publiques", root)).id;
-  const priv = (await find("Photos privées - Mariés uniquement", root)) || (await createFolder(fetch, token, "Photos privées - Mariés uniquement", root)).id;
+  const rootName = process.env.DRIVE_TEST_ROOT_NAME;
+  if (rootName && !rootName.startsWith("TEST - ")) throw new Error("DRIVE_TEST_ROOT_NAME doit désigner un dossier TEST, jamais la production.");
+  const find = async (name, parent, optional = false) => {
+    const escaped = name.replaceAll("'", "\\'");
+    const q = `name='${escaped}' and mimeType='application/vnd.google-apps.folder' and trashed=false${parent ? ` and '${parent}' in parents` : ""}`;
+    const response = await fetch(`https://www.googleapis.com/drive/v3/files?fields=nextPageToken,files(id,name,ownedByMe,shared)&pageSize=100&q=${encodeURIComponent(q)}`, auth);
+    if (!response.ok) throw new Error(`Lecture Drive impossible pour « ${name} » (HTTP ${response.status}).`);
+    const result = await response.json();
+    if (optional && !result.nextPageToken && result.files?.length === 0) return null;
+    if (result.nextPageToken || result.files?.length !== 1) throw new Error(`Dossier « ${name} » absent ou ambigu : aucun dossier ne sera créé.`);
+    const folder = result.files[0];
+    if (!folder.ownedByMe || folder.shared) throw new Error(`Dossier « ${name} » non privé ou non possédé : test interrompu.`);
+    return folder.id;
+  };
+  const root = rootName ? await find(rootName) : (await find("TEST - Mariage (sync)", undefined, true)) || (await find("TEST - Mariage"));
+  const pub = await find("Photos publiques", root);
+  const priv = await find("Photos privées - Mariés uniquement", root);
   folders = { root, pub, priv };
-  console.log(`Google : API RÉELLE — dossiers de TEST réutilisés ou créés (jamais ceux de production) : racine=${root} publics=${pub} privés=${priv}`);
+  console.log(`Google : API RÉELLE — dossiers de TEST existants réutilisés (aucune création) : racine=${root} publics=${pub} privés=${priv}`);
 } else { folders = { root: "t-root", pub: "folder-public", priv: "folder-private" }; console.log("Google : SIMULÉ localement (aucun appel réseau vers Google)"); }
 console.log(`Supabase : pile locale RÉELLE (Storage API + PostgREST + PostgreSQL) sur ${URL_}\n`);
 const ENV = (extra = {}) => ({ SUPABASE_URL: URL_, SUPABASE_SERVICE_ROLE_KEY: SERVICE, SUPABASE_PUBLISHABLE_KEY: ANON, ...googleEnv, DRIVE_FOLDER_PUBLIC: folders.pub, DRIVE_FOLDER_PRIVATE: folders.priv, DRIVE_SYNC_ENABLED: "true", SYNC_SECRET: randomBytes(24).toString("hex"), ...extra });
