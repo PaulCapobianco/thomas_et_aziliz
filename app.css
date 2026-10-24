@@ -1276,13 +1276,8 @@ html.photo-modal-open body {
 }
 
 .hero::after {
-  inset: 2.4rem 2.8rem auto auto !important;
-  width: 10rem !important;
-  height: 10rem !important;
-  border: 0 !important;
-  border-top: 1px solid rgb(165 130 65 / .48) !important;
-  border-right: 1px solid rgb(165 130 65 / .48) !important;
-  opacity: .8 !important;
+  display: none !important;
+  background: none !important;
 }
 
 .hero-content {
@@ -1293,14 +1288,7 @@ html.photo-modal-open body {
 }
 
 .hero-content::before {
-  content: "";
-  position: absolute;
-  top: .45rem;
-  bottom: 1.2rem;
-  left: 0;
-  width: 1px;
-  background: linear-gradient(to bottom, transparent, var(--brass) 18%, var(--brass) 82%, transparent);
-  opacity: .65;
+  display: none !important;
 }
 
 .hero-content::after {
@@ -1436,7 +1424,7 @@ html.photo-modal-open body {
     gap: 3.1rem !important;
   }
   .hero::before { inset: auto auto -2.2rem -4rem !important; width: 14rem !important; height: 18rem !important; opacity: .3 !important; }
-  .hero::after { inset: 1rem 1rem auto auto !important; width: 5rem !important; height: 5rem !important; }
+  .hero::after { display: none !important; }
   .hero-content { padding-left: 0 !important; transform: none; text-align: center !important; }
   .hero-content::before { display: none; }
   .hero-content::after { right: -2.5rem !important; bottom: -2.3rem !important; width: 8rem !important; height: 10rem !important; opacity: .16 !important; }
