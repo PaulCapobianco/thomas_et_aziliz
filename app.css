@@ -1249,6 +1249,210 @@ html.photo-modal-open body {
   }
 }
 
+/* --------------------------------------------------------------------------
+   Hero editorial luxe — composition unifiée
+   -------------------------------------------------------------------------- */
+.hero {
+  width: min(100%, 1360px) !important;
+  min-height: 700px !important;
+  margin: 0 auto !important;
+  padding: clamp(4rem, 8vw, 6.5rem) clamp(2rem, 7vw, 6.5rem) 4.5rem !important;
+  grid-template-columns: minmax(0, 1.03fr) minmax(360px, .88fr) !important;
+  gap: clamp(2rem, 4vw, 4.8rem) !important;
+  align-items: center !important;
+  background:
+    radial-gradient(ellipse at 15% 12%, rgb(232 215 180 / .42), transparent 34%),
+    radial-gradient(ellipse at 82% 70%, rgb(208 215 190 / .3), transparent 34%),
+    linear-gradient(135deg, #fbf7ed 0%, #f6efdf 52%, #eee4d3 100%) !important;
+}
+
+.hero::before {
+  inset: auto auto -3.5rem -3.5rem !important;
+  width: 21rem !important;
+  height: 26rem !important;
+  opacity: .38 !important;
+  background: url("assets/botanical-sprig.svg") center / contain no-repeat !important;
+  transform: rotate(-20deg) scale(1.05) !important;
+}
+
+.hero::after {
+  inset: 2.4rem 2.8rem auto auto !important;
+  width: 10rem !important;
+  height: 10rem !important;
+  border: 0 !important;
+  border-top: 1px solid rgb(165 130 65 / .48) !important;
+  border-right: 1px solid rgb(165 130 65 / .48) !important;
+  opacity: .8 !important;
+}
+
+.hero-content {
+  position: relative;
+  max-width: 660px !important;
+  padding-left: clamp(0rem, 2vw, 1.6rem) !important;
+  transform: translateY(.4rem);
+}
+
+.hero-content::before {
+  content: "";
+  position: absolute;
+  top: .45rem;
+  bottom: 1.2rem;
+  left: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--brass) 18%, var(--brass) 82%, transparent);
+  opacity: .65;
+}
+
+.hero-content::after {
+  right: -1.5rem !important;
+  bottom: -3.4rem !important;
+  width: 12rem !important;
+  height: 15rem !important;
+  opacity: .2 !important;
+  transform: scaleX(-1) rotate(-13deg) !important;
+}
+
+.hero .eyebrow {
+  margin-bottom: 1.35rem !important;
+  font-size: .72rem !important;
+  letter-spacing: .32em !important;
+}
+
+.couple-names {
+  width: auto !important;
+  font-size: clamp(5.2rem, 8vw, 8rem) !important;
+  line-height: .78 !important;
+  letter-spacing: -.08em !important;
+}
+
+.couple-names span:nth-child(2) {
+  margin: .08em 0 -.02em .13em !important;
+  color: var(--brass-ink) !important;
+  font-size: .68em !important;
+  font-style: italic;
+  text-shadow: 0 1px 0 #fffaf0;
+}
+
+.date {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.8rem !important;
+  font-size: clamp(1.35rem, 2.1vw, 1.8rem) !important;
+}
+
+.date::after {
+  content: "";
+  width: 3.5rem;
+  border-top: 1px solid var(--brass);
+  opacity: .7;
+}
+
+.floral-divider {
+  display: none !important;
+}
+
+.hero h1 {
+  margin: .8rem 0 1.45rem !important;
+  color: var(--brass-ink) !important;
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem) !important;
+  line-height: 1.08 !important;
+}
+
+.hero-intro {
+  max-width: 34ch !important;
+  margin-bottom: 2rem !important;
+  font-size: 1.1rem !important;
+  line-height: 1.5 !important;
+}
+
+.hero-actions {
+  gap: .85rem !important;
+}
+
+.hero-actions .button {
+  min-height: 3.35rem !important;
+  padding-inline: 1.65rem !important;
+  letter-spacing: .075em !important;
+  box-shadow: 0 12px 26px -20px rgb(27 40 56 / .95) !important;
+}
+
+.hero-note {
+  margin-top: 1.3rem !important;
+  font-size: .98rem !important;
+}
+
+.hero-portrait {
+  width: min(100%, 475px) !important;
+  aspect-ratio: .7 !important;
+  transform: translateY(1.2rem) !important;
+}
+
+.hero-portrait::before {
+  inset: -1.1rem -1.05rem .35rem !important;
+  border: 1px solid rgb(165 130 65 / .82) !important;
+  border-radius: 50% 50% 1rem 1rem !important;
+  transform: rotate(1.5deg) !important;
+  box-shadow: 0 0 0 8px rgb(255 250 240 / .45), 0 28px 38px -30px rgb(27 40 56 / .65);
+}
+
+.hero-photo {
+  border-radius: 50% 50% 1rem 1rem !important;
+  object-position: center 38% !important;
+  box-shadow: 0 30px 42px -25px rgb(27 40 56 / .72) !important;
+}
+
+.hero-portrait::after {
+  right: -4.4rem !important;
+  bottom: -2rem !important;
+  width: 12rem !important;
+  height: 16rem !important;
+  opacity: .34 !important;
+  transform: rotate(17deg) !important;
+}
+
+.seal {
+  top: 1.4rem !important;
+  right: -2.65rem !important;
+  width: clamp(6rem, 10vw, 7.8rem) !important;
+  border: 1px solid rgb(165 130 65 / .55) !important;
+  box-shadow: 0 15px 25px -18px rgb(27 40 56 / .75) !important;
+}
+
+.marquee {
+  width: min(100%, 1360px) !important;
+  border: 0 !important;
+  border-top: 1px solid rgb(165 130 65 / .55) !important;
+  border-bottom: 1px solid rgb(165 130 65 / .35) !important;
+  background: linear-gradient(90deg, #e8d5b0, #f1e4cb 50%, #e8d5b0) !important;
+}
+
+@media (max-width: 699px) {
+  .hero {
+    width: 100% !important;
+    min-height: 0 !important;
+    padding: 3.5rem 1.25rem 3rem !important;
+    grid-template-columns: 1fr !important;
+    gap: 3.1rem !important;
+  }
+  .hero::before { inset: auto auto -2.2rem -4rem !important; width: 14rem !important; height: 18rem !important; opacity: .3 !important; }
+  .hero::after { inset: 1rem 1rem auto auto !important; width: 5rem !important; height: 5rem !important; }
+  .hero-content { padding-left: 0 !important; transform: none; text-align: center !important; }
+  .hero-content::before { display: none; }
+  .hero-content::after { right: -2.5rem !important; bottom: -2.3rem !important; width: 8rem !important; height: 10rem !important; opacity: .16 !important; }
+  .hero .eyebrow { margin-inline: auto !important; }
+  .couple-names { width: 100% !important; font-size: clamp(4.35rem, 18.5vw, 6rem) !important; text-align: left !important; }
+  .date { margin-inline: auto !important; }
+  .hero h1 { max-width: 14ch !important; margin-inline: auto !important; }
+  .hero-intro { margin-inline: auto !important; }
+  .hero-actions { justify-content: center !important; }
+  .hero-portrait { width: min(78vw, 335px) !important; transform: none !important; }
+  .hero-portrait::before { inset: -.75rem -.7rem .2rem !important; border-radius: 50% 50% .8rem .8rem !important; box-shadow: 0 0 0 5px rgb(255 250 240 / .46), 0 22px 30px -25px rgb(27 40 56 / .65); }
+  .hero-portrait::after { right: -2.3rem !important; bottom: -1rem !important; width: 8rem !important; height: 10rem !important; opacity: .25 !important; }
+  .seal { top: .65rem !important; right: -1.25rem !important; width: 5.9rem !important; }
+  .marquee { width: 100% !important; }
+}
+
 /* Shared paper surfaces keep the upload and moderation screens in the same album. */
 .share-section {
   max-width: 900px;
