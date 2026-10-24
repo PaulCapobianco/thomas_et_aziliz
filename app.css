@@ -1001,6 +1001,254 @@ html.photo-modal-open body {
   }
 }
 
+/* --------------------------------------------------------------------------
+   Accueil — composition éditoriale de référence (maquette T&A)
+   Cette passe est volontairement limitée à la couverture : les hooks existants
+   restent inchangés et les autres vues ne sont pas concernés.
+   -------------------------------------------------------------------------- */
+.hero {
+  position: relative;
+  isolation: isolate;
+  width: min(100% - 2rem, 1220px);
+  min-height: 650px;
+  margin: 1.2rem auto 0;
+  padding: clamp(3.8rem, 7vw, 6.4rem) clamp(1.4rem, 5vw, 4.8rem) 3rem;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .82fr);
+  align-items: center;
+  gap: clamp(2rem, 6vw, 5.4rem);
+  border: 1px solid rgb(180 154 102 / .24);
+  background: linear-gradient(112deg, #f8f4e9 0%, #f5efe2 60%, #efe4d2 100%);
+  box-shadow: 0 26px 55px -42px rgb(27 40 56 / .5);
+  overflow: hidden;
+}
+
+.hero::before {
+  inset: auto auto -4.5rem 34%;
+  width: 16rem;
+  height: 19rem;
+  opacity: .25;
+  background: url("assets/botanical-sprig.svg") center / contain no-repeat;
+  transform: rotate(-13deg);
+}
+
+.hero::after {
+  inset: 1.3rem 1.8rem auto auto;
+  width: 7rem;
+  height: 7rem;
+  border: 1px solid rgb(180 154 102 / .28);
+  border-radius: 50%;
+  opacity: .7;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 590px;
+  padding-inline: 0;
+  text-align: left;
+}
+
+.hero .eyebrow {
+  margin-bottom: 1rem;
+  color: var(--brass-ink);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+}
+
+.couple-names {
+  display: grid;
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
+  color: var(--ink);
+  font: 400 clamp(4.5rem, 8.8vw, 8.2rem) / .78 var(--font-display);
+  letter-spacing: -.065em;
+}
+
+.couple-names span:nth-child(2) {
+  margin: .04em 0 -.02em .1em;
+  color: var(--brass-ink);
+  font-style: italic;
+  font-size: .72em;
+  line-height: .7;
+}
+
+.date {
+  margin-top: 1.55rem;
+  font: 400 clamp(1.25rem, 2vw, 1.7rem) / 1.2 var(--font-display);
+  letter-spacing: .02em;
+}
+
+.floral-divider {
+  display: block;
+  width: 2rem;
+  margin: 1rem 0 1.15rem;
+  overflow: hidden;
+  color: var(--brass-ink);
+  font-size: 0;
+}
+
+.floral-divider::before {
+  content: "";
+  display: block;
+  border-top: 1px solid currentColor;
+}
+
+.hero h1 {
+  max-width: 34ch;
+  margin: 0 0 1.4rem;
+  color: var(--muted);
+  font: italic 400 clamp(1.25rem, 2.2vw, 1.65rem) / 1.2 var(--font-display);
+  letter-spacing: .01em;
+}
+
+.hero-intro {
+  max-width: 33ch;
+  margin-bottom: 1.8rem;
+  color: var(--muted);
+  font: italic 400 1.18rem / 1.45 var(--font-display);
+}
+
+.hero-actions {
+  justify-content: flex-start;
+  gap: .7rem;
+}
+
+.hero-actions .button {
+  min-height: 3.1rem;
+  padding-inline: 1.35rem;
+  border-radius: 999px;
+  letter-spacing: .04em;
+}
+
+.hero-cta {
+  background: var(--brass-ink);
+  border-color: var(--brass-ink);
+  color: #fffaf1;
+}
+
+.hero-note {
+  margin-top: 1.35rem;
+  color: var(--muted);
+  font: italic 400 1rem / 1.4 var(--font-display);
+}
+
+.hero-portrait {
+  position: relative;
+  z-index: 1;
+  justify-self: center;
+  width: min(100%, 450px);
+  aspect-ratio:  .72;
+  margin: 0;
+  overflow: visible;
+}
+
+.hero-portrait::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -.65rem -.65rem 0;
+  border: 1px solid rgb(180 154 102 / .68);
+  border-radius: 50% 50% 0 0;
+  transform: rotate(1.3deg);
+}
+
+.hero-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+  border-radius: 50% 50% 0 0;
+  box-shadow: 0 22px 38px -24px rgb(27 40 56 / .6);
+}
+
+.hero-portrait figcaption {
+  display: none;
+}
+
+.seal {
+  top: -1.1rem;
+  right: -2.15rem;
+  width: clamp(5.6rem, 10vw, 7.4rem);
+  height: auto;
+  padding: .2rem;
+  background: #f8f4e9;
+  border-radius: 50%;
+  filter: drop-shadow(0 8px 12px rgb(27 40 56 / .16));
+}
+
+.marquee {
+  width: min(100% - 2rem, 1220px);
+  margin: 0 auto;
+  border: 1px solid rgb(180 154 102 / .42);
+  border-top: 0;
+  background: #eadbbd;
+}
+
+.marquee-row {
+  letter-spacing: .11em;
+}
+
+@media (max-width: 699px) {
+  .hero {
+    width: min(100% - 1rem, 560px);
+    min-height: 0;
+    margin-top: .5rem;
+    padding: 3.2rem 1.25rem 2.4rem;
+    grid-template-columns: 1fr;
+    gap: 2.8rem;
+  }
+
+  .hero-content {
+    text-align: center;
+  }
+
+  .hero .eyebrow,
+  .hero-intro {
+    margin-inline: auto;
+  }
+
+  .couple-names {
+    margin-inline: auto;
+    font-size: clamp(4rem, 18vw, 5.8rem);
+    text-align: left;
+  }
+
+  .date,
+  .floral-divider,
+  .hero h1 {
+    margin-inline: auto;
+  }
+
+  .floral-divider {
+    margin-top: .85rem;
+  }
+
+  .hero-actions {
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .hero-actions .button {
+    width: auto;
+    min-width: 0;
+  }
+
+  .hero-portrait {
+    width: min(76vw, 330px);
+  }
+
+  .seal {
+    right: -1.4rem;
+  }
+
+  .marquee {
+    width: 100%;
+  }
+}
+
 /* Shared paper surfaces keep the upload and moderation screens in the same album. */
 .share-section {
   max-width: 900px;
@@ -2713,4 +2961,43 @@ html.motion .photo-card.no-delay::after {
 /* Respiration sous les deux cartes de destination */
 .destination-cards + .pick-hint {
   margin-top: 1.2rem;
+}
+
+/* Final precedence for the accueil cover; kept at EOF so legacy section rules
+   cannot override this isolated composition. */
+.hero {
+  width: min(100% - 2rem, 1220px) !important;
+  min-height: 650px !important;
+  margin: 1.2rem auto 0 !important;
+  padding: clamp(3.8rem, 7vw, 6.4rem) clamp(1.4rem, 5vw, 4.8rem) 3rem !important;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .82fr) !important;
+  align-items: center !important;
+  gap: clamp(2rem, 6vw, 5.4rem) !important;
+  border: 1px solid rgb(180 154 102 / .24) !important;
+  background: linear-gradient(112deg, #f8f4e9 0%, #f5efe2 60%, #efe4d2 100%) !important;
+  overflow: hidden !important;
+}
+.hero-content { max-width: 590px !important; padding-inline: 0 !important; text-align: left !important; }
+.couple-names { display: grid !important; width: max-content !important; max-width: 100% !important; margin: 0 !important; font-size: clamp(4.5rem, 8.8vw, 8.2rem) !important; line-height: .78 !important; text-align: left !important; }
+.couple-names span:nth-child(2) { margin: .04em 0 -.02em .1em !important; font-size: .72em !important; line-height: .7 !important; }
+.hero h1 { max-width: 34ch !important; margin: 0 0 1.4rem !important; color: var(--muted) !important; font: italic 400 clamp(1.25rem, 2.2vw, 1.65rem) / 1.2 var(--font-display) !important; }
+.hero-actions { justify-content: flex-start !important; }
+.hero-actions .button { min-height: 3.1rem !important; border-radius: 999px !important; }
+.hero-portrait { position: relative !important; justify-self: center !important; width: min(100%, 450px) !important; aspect-ratio: .72 !important; margin: 0 !important; overflow: visible !important; }
+.hero-photo { display: block !important; width: 100% !important; height: 100% !important; object-fit: cover !important; object-position: center 40% !important; border-radius: 50% 50% 0 0 !important; }
+.hero-portrait figcaption { display: none !important; }
+.seal { top: -1.1rem !important; right: -2.15rem !important; left: auto !important; width: clamp(5.6rem, 10vw, 7.4rem) !important; height: auto !important; }
+.marquee { width: min(100% - 2rem, 1220px) !important; margin: 0 auto !important; border-top: 0 !important; background: #eadbbd !important; }
+
+@media (max-width: 699px) {
+  .hero { width: min(100% - 1rem, 560px) !important; min-height: 0 !important; margin-top: .5rem !important; padding: 3.2rem 1.25rem 2.4rem !important; grid-template-columns: 1fr !important; gap: 2.8rem !important; }
+  .hero-content { text-align: center !important; }
+  .couple-names { width: 100% !important; max-width: 100% !important; margin-inline: auto !important; grid-template-columns: 1fr !important; justify-items: start !important; font-size: clamp(4rem, 18vw, 5.8rem) !important; }
+  .couple-names span { display: block !important; }
+  .couple-names span:nth-child(2) { margin-left: .08em !important; }
+  .hero-actions { justify-content: center !important; flex-wrap: wrap !important; }
+  .hero-actions .button { width: auto !important; }
+  .hero-portrait { width: min(76vw, 330px) !important; }
+  .seal { right: -1.4rem !important; }
+  .marquee { width: 100% !important; }
 }
