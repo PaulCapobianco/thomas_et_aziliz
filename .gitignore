@@ -21,3 +21,6 @@ __pycache__/
 
 # Cloudflare local dev secrets (never committed)
 .dev.vars
+
+# Polices versionnées de la refonte (sous-ensembles latin, licence OFL) : à ne pas confondre avec fonts/ généré par npm run vendor
+!/assets/fonts/

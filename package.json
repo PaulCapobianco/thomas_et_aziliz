@@ -8,7 +8,7 @@
     "preview": "npm run build && cd dist && python3 ../scripts/serve.py --port 4173",
     "vendor": "bash scripts/vendor.sh",
     "build": "node scripts/build.mjs",
-    "check": "node --check app.js && node --check shared.js && node --check uploads.js && node --check admin.js && node --check confidentialite.js && for f in functions/_lib/*.js functions/api/*.js scripts/drive-auth.mjs scripts/drive-setup.mjs; do node --check $f; done",
+    "check": "node --check app.js && node --check motion.js && node --check shared.js && node --check uploads.js && node --check admin.js && node --check confidentialite.js && for f in functions/_lib/*.js functions/api/*.js scripts/drive-auth.mjs scripts/drive-setup.mjs; do node --check $f; done",
     "test": "playwright test",
     "test:drive": "node --test test-drive/drive-sync.test.mjs",
     "test:sql": "bash scripts/test-sql.sh",

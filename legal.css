@@ -11,8 +11,8 @@
 .legal p { margin: 0 0 1rem; max-width: 68ch; }
 .legal ul { padding-left: 1.2rem; margin: 0 0 1rem; max-width: 68ch; }
 .legal li { margin-bottom: .7rem; }
-.legal li::marker { color: #b9a57c; }
-.legal a { text-decoration: underline; text-underline-offset: .22em; text-decoration-color: #b9a57c; }
+.legal li::marker { color: var(--brass); }
+.legal a { text-decoration: underline; text-underline-offset: .22em; text-decoration-color: var(--brass); }
 .legal a:hover { color: var(--accent); }
 .legal .button { text-decoration: none; }
 .legal code { font-size: .85em; overflow-wrap: anywhere; }
@@ -28,7 +28,7 @@
 .legal-toc a { display: inline-block; min-height: 32px; padding-block: .25rem; text-decoration-color: transparent; }
 .legal-toc a:hover { text-decoration-color: currentColor; }
 .legal-cards { display: grid; gap: 1rem; margin: 1rem 0; }
-.legal-card { padding: 1.1rem 1.3rem; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid #b9a57c; }
+.legal-card { padding: 1.1rem 1.3rem; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--brass); }
 .legal-card p { margin: 0; }
 .legal-status { padding: 1rem 1.2rem; background: var(--accent-soft); border: 1px solid var(--border); }
 .legal-back { margin-top: 3rem; }
