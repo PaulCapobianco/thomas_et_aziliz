@@ -13,3 +13,6 @@ done
 [ "$ready" = true ] || { echo 'FAIL: local PostgreSQL unavailable'; exit 2; }
 docker cp supabase "$container":/tmp/supabase
 docker exec -u postgres "$container" bash /tmp/supabase/tests/run_local.sh
+docker exec -u postgres "$container" psql -X -q -v ON_ERROR_STOP=1 -d wedding_test \
+  -f /tmp/supabase/optional/preflight_0005_drive_sync.sql >/dev/null
+echo 'PASS: read-only Drive preflight SQL runs on the local test database'

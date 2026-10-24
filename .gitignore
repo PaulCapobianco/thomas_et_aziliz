@@ -1,11 +1,12 @@
 fixtures/
 vendor/
-node_modules/
+node_modules
 .env
 .env.*
 !.env.example
 *.log
 dist/
+dist-preview/
 test-results/
 playwright-report/
 fonts/

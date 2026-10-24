@@ -1,4 +1,8 @@
 # Cloudflare Pages (Direct Upload) : ce projet uniquement. Aucun autre projet ou Worker du compte n'est concerné.
 name = "thomas-aziliz-mariage"
 pages_build_output_dir = "./dist"
-compatibility_date = "2026-10-01"
+compatibility_date = "2026-10-11"
+
+# Preview deployments must never run the Drive sync, even if production is enabled later.
+[env.preview.vars]
+DRIVE_SYNC_ENABLED = "false"
