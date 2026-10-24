@@ -28,7 +28,8 @@ fi
 echo "Fichier $ENVF valide : ${#NEEDED[@]} variables renseignées (valeurs non affichées)."
 [ $CHECK -eq 1 ] && exit 0
 set -a; . "$ENVF"; set +a
-cleanup() { kill "${PROXY:-0}" 2>/dev/null || true; bash scripts/real-stack.sh down >/dev/null 2>&1 || true; }
+# Never `kill 0` (that would signal the whole process group): only stop the proxy if it was really started.
+cleanup() { [ -n "${PROXY:-}" ] && kill "$PROXY" 2>/dev/null || true; bash scripts/real-stack.sh down >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 echo; echo "=== 1/2  Contrôle des dossiers de production (lecture seule)"
 node scripts/drive-verify-folders.mjs
