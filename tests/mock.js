@@ -57,6 +57,22 @@ export async function installMock(page, options = {}) {
       return id;
     };
     (options.pending || []).forEach((reason) => addPending(reason));
+    // Private photos ("Mariés uniquement") for the admin: options.maries = n.
+    for (let i = 0; i < (options.maries || 0); i++) {
+      const id = `dddd${String(i).padStart(4, "0")}-0000-4000-8000-000000000000`;
+      records.push({
+        id,
+        full_path: `maries/full/${id}.jpg`,
+        thumb_path: `maries/thumbs/${id}.jpg`,
+        published_at: new Date(Date.UTC(2026, 9, 31, 19, 0, 0) - i * 1000).toISOString(),
+        created_at: new Date(Date.UTC(2026, 9, 31, 19, 0, 0) - i * 1000).toISOString(),
+        audience: "maries",
+        status: "published",
+        report_count: 0,
+        report_reasons: [],
+        reports: [],
+      });
+    }
     // Reported photos for the admin: options.reported = [{ reports: [{ reason, comment }], status? }]
     let reportedSeq = 0;
     const addReported = ({ reports = [{ reason: "sexual", comment: null }], status = "hidden" } = {}) => {

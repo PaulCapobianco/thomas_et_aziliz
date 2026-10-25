@@ -24,7 +24,7 @@ let filter = "reported",
   lastSignature = "";
 // Photos ticked for a batch action (pending queue and "Récentes"); kept by id across refreshes.
 const selected = new Set();
-const batchTab = () => filter === "pending" || filter === "recent" || filter === "reported";
+const batchTab = () => filter === "pending" || filter === "recent" || filter === "reported" || filter === "maries";
 const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
 const SIGNATURE_REUSE_MS = 45 * 60000;
 const reasons = {
@@ -220,14 +220,15 @@ function updateBatchBar(progress) {
   $("batch-bar").hidden = !show;
   document.body.classList.toggle("has-batch", show);
   $("batch-approve").hidden = $("batch-reject").hidden = filter !== "pending";
-  $("batch-restore").hidden = $("batch-keep").hidden = filter !== "reported";
-  $("batch-remove").hidden = filter !== "recent";
+  $("batch-restore").hidden = filter !== "reported" && filter !== "maries";
+  $("batch-keep").hidden = filter !== "reported";
+  $("batch-remove").hidden = filter !== "recent" && filter !== "maries";
   $("batch-delete").hidden = !batchTab();
   $("batch-approve").textContent = `Valider (${count})`;
   $("batch-reject").textContent = `Refuser (${count})`;
   $("batch-restore").textContent = `Restaurer (${count})`;
   $("batch-keep").textContent = `Maintenir masquée (${count})`;
-  $("batch-remove").textContent = `Retirer (${count})`;
+  $("batch-remove").textContent = `${filter === "maries" ? "Masquer" : "Retirer"} (${count})`;
   $("batch-delete").textContent = `Supprimer (${count})`;
   $("batch-summary").textContent = progress
     ? `Traitement : ${progress.done} sur ${progress.total}…`
@@ -251,7 +252,9 @@ async function runBatch(kind) {
   if (
     kind === "restore" &&
     !(await confirmAction(
-      `Rendre à nouveau visibles ${plural(targets.length, "photo signalée", "photos signalées")} dans la galerie ?`,
+      filter === "maries"
+        ? `Rendre à nouveau visibles ${plural(targets.length, "photo", "photos")} dans l’espace des mariés ?`
+        : `Rendre à nouveau visibles ${plural(targets.length, "photo signalée", "photos signalées")} dans la galerie ?`,
     ))
   )
     return;
@@ -308,7 +311,7 @@ async function runBatch(kind) {
   const words = {
     approve: ["validée", "validées"],
     reject: ["refusée", "refusées"],
-    remove: ["retirée", "retirées"],
+    remove: filter === "maries" ? ["masquée", "masquées"] : ["retirée", "retirées"],
     delete: ["supprimée", "supprimées"],
     restore: ["restaurée", "restaurées"],
     keep: ["maintenue masquée", "maintenues masquées"],
