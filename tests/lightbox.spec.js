@@ -160,7 +160,7 @@ test("report keeps its confirmation and reasons; download keeps the forced downl
   await expect(page.locator("#report-dialog")).toBeHidden();
   await page.locator("#download").click();
   await expect
-    .poll(() => page.evaluate(() => mock.calls.some((c) => c[0] === "sign" && c[3]?.download === "photo-mariage.jpg")))
+    .poll(() => page.evaluate(() => mock.calls.some((c) => c[0] === "sign" && /^photo_mariage_Thomas-Aziliz_311026_01\.jpg$/.test(c[3]?.download))))
     .toBeTruthy();
 });
 

@@ -362,6 +362,8 @@ export async function installMock(page, options = {}) {
               },
               createSignedUrl: async (path, ttl, opts) => {
                 calls.push(["sign", path, ttl, opts]);
+                // Storage answers 400 for an object the guest may not read (private, hidden, reported).
+                if (window.mock.signRefused) return { data: null, error: { status: 400, statusCode: "400", message: "Object not found" } };
                 return opts?.download
                   ? ok({ signedUrl: "/fixtures/photo_01.jpg?download=1" })
                   : ok({ signedUrl: url(path) });
