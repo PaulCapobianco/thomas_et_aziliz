@@ -359,7 +359,7 @@ function finalMessage(items, cancelled) {
         : "Merci ! Votre photo sera visible après validation."
       : "",
     unavailable
-      ? `${plural(unavailable, "photo reçue", "photos reçues")} : ${unavailable > 1 ? "elles apparaîtront" : "elle apparaîtra"} dans la galerie après vérification par les organisateurs.`
+      ? `${plural(unavailable, "photo reçue", "photos reçues")} : ${unavailable > 1 ? "elles apparaîtront" : "elle apparaîtra"} dans la galerie après vérification par l’administrateur.`
       : "",
   ]
     .filter(Boolean)
@@ -648,7 +648,7 @@ export function setupUploads(sb, onComplete) {
   if (!sb) {
     message.show(
       "error",
-      "Les envois ne sont pas encore ouverts : le service photo n'est pas configuré sur ce site. Prévenez les organisateurs.",
+      "Les envois ne sont pas encore ouverts : le service photo n'est pas configuré sur ce site. Prévenez l’administrateur.",
     );
     $("files").disabled = true;
     document.querySelectorAll("[data-destination]").forEach((card) => (card.disabled = true));

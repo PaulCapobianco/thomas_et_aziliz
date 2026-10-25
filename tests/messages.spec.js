@@ -49,7 +49,7 @@ test("kept for review: one-sentence reason, OK button, closes by itself after ab
   await sendOne(page);
   await settled(page);
   await expect(box(page)).toHaveAttribute("data-kind", "pending");
-  await expect(status(page)).toContainText("1 photo reçue : elle apparaîtra dans la galerie après vérification par les organisateurs.");
+  await expect(status(page)).toContainText("1 photo reçue : elle apparaîtra dans la galerie après vérification par l’administrateur.");
   await expect(page.locator("#message-close")).toHaveText("OK");
   await expect(page.locator("#message-retry")).toBeHidden();
   await page.locator("#message-close").click();
@@ -312,7 +312,7 @@ test("model unavailable keeps its previous wording; a clean photo without valida
   await page.goto("/#partager");
   await sendOne(page);
   await settled(page);
-  await expect(status(page)).toContainText("après vérification par les organisateurs");
+  await expect(status(page)).toContainText("après vérification par l’administrateur");
   await expect(status(page)).not.toContainText("Merci ! Votre photo sera visible après validation.");
   await page.locator("#message-close").click();
   const other = await page.context().newPage();

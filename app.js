@@ -460,7 +460,7 @@ $("download").onclick = async () => {
 };
 // ---- Report: a reason is mandatory, "Autre" needs a description; the server hides the photo at the FIRST valid report ----
 const REPORT_NOTICE =
-  "Merci pour votre signalement. Cette photo a été retirée temporairement de la galerie et sera examinée par les administrateurs.";
+  "Merci pour votre signalement. Cette photo a été retirée temporairement de la galerie et sera examinée par l’administrateur.";
 let galleryNotice = "";
 let noticeTimer;
 function sayInGallery(text) {

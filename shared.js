@@ -174,7 +174,7 @@ export function errorText(error) {
     error?.code === "42501" ||
     ["401", "403"].includes(String(error?.status || error?.statusCode))
   )
-    return "Accès refusé. Vérifiez votre connexion ou contactez les organisateurs.";
+    return "Accès refusé. Vérifiez votre connexion ou contactez l’administrateur.";
   if (error?.code === "rate_limited")
     return "Trop de photos envoyées, réessayez plus tard";
   if (error?.code === "22023" || error?.statusCode === "413")

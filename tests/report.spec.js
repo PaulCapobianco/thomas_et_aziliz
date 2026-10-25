@@ -10,7 +10,7 @@ const REASONS = [
   ["inappropriate", "Photo inappropriée ou hors sujet"],
   ["other", "Autre raison"],
 ];
-const THANKS = "Merci pour votre signalement. Cette photo a été retirée temporairement de la galerie et sera examinée par les administrateurs.";
+const THANKS = "Merci pour votre signalement. Cette photo a été retirée temporairement de la galerie et sera examinée par l’administrateur.";
 const reportCalls = (page) => page.evaluate(() => mock.calls.filter((c) => c[0] === "report_photo").map((c) => c[1]));
 async function openReport(page, options = { photos: 3 }) {
   await installMock(page, options);

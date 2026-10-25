@@ -259,7 +259,7 @@ test("report UI: mandatory reason, one report hides the photo at once, repeated 
   await page.getByRole("radio", { name: "Photo inappropriée ou hors sujet" }).check();
   await page.getByRole("button", { name: "Envoyer le signalement" }).click();
   await expect(page.locator("#gallery-status")).toContainText(
-    "Merci pour votre signalement. Cette photo a été retirée temporairement de la galerie et sera examinée par les administrateurs.",
+    "Merci pour votre signalement. Cette photo a été retirée temporairement de la galerie et sera examinée par l’administrateur.",
   );
   await expect(page.locator(".photo-card")).toHaveCount(1);
 });
