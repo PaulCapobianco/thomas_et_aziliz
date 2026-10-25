@@ -3317,3 +3317,15 @@ html.motion .photo-card.no-delay::after {
   .couple-names { font-size: clamp(4.2rem, 19vw, 6rem) !important; line-height: .8 !important; }
   .hero-portrait::after { right: -2.4rem; width: 7rem; height: 9rem; opacity: .24; }
 }
+
+/* Les ornements décoratifs du hero ne doivent jamais élargir la page (768 px : 817 px mesurés). */
+#gallery-view { overflow-x: clip; }
+
+/* Contraste WCAG AA du bandeau (4,48 mesuré avec --brass-ink sur #eadbbd). */
+.marquee-row { color: #6b5025; }
+
+/* Bouton principal : grande cible tactile (>= 56 px) et pleine largeur utile sur mobile. */
+.hero-actions .hero-cta { min-height: 3.6rem !important; }
+@media (max-width: 699px) {
+  .hero-actions .hero-cta { width: 100% !important; max-width: 22rem; align-self: stretch; justify-content: center; }
+}
