@@ -3329,3 +3329,28 @@ html.motion .photo-card.no-delay::after {
 @media (max-width: 699px) {
   .hero-actions .hero-cta { width: 100% !important; max-width: 22rem; align-self: stretch; justify-content: center; }
 }
+
+/* Bandeau « Quelques instants à deux » : sous 1000 px les sept photos se replient au lieu de
+   former une bande de ~1610 px à faire défiler (360–412 px : 1,7 photo visible). */
+@media (max-width: 999px) {
+  .polaroid-strip {
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow-x: visible;
+    scroll-snap-type: none;
+    gap: 1.6rem 1.1rem;
+    padding-inline: 1.25rem;
+  }
+  .polaroid { flex: 0 0 calc(50% - .55rem); max-width: none; }
+}
+@media (min-width: 600px) and (max-width: 999px) {
+  .polaroid { flex-basis: calc(25% - .85rem); }
+}
+
+/* Tampon T&A proportionnel à la photo (≈ 25 % de sa largeur : 68 → 80 px de 360 à 768 px). */
+.seal { width: clamp(4.4rem, 25%, 6.2rem) !important; top: .4rem !important; right: -.9rem !important; }
+
+/* 375×667 : le bas du bouton principal tombait à 668,5 px sous WebKit (1,5 px sous le pli). */
+@media (max-width: 699px) {
+  .hero { padding-top: 3rem !important; }
+}

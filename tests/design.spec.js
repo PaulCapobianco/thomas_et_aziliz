@@ -79,3 +79,36 @@ for (const width of [390, 768, 1440]) {
     await page.screenshot({ path: info.outputPath(`admin-mock-${width}.png`), fullPage: true });
   });
 }
+
+for (const [width, height] of [[360, 740], [375, 667], [390, 844], [412, 915], [768, 1024]]) {
+  test(`accueil ${width}px: pas de défilement imposé, tampon calibré, bouton visible`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await installMock(page);
+    await page.goto("/");
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.locator(".polaroid")).toHaveCount(7);
+    const m = await page.evaluate(() => {
+      const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+      const strip = document.querySelector(".polaroid-strip");
+      const seal = box(".seal"), portrait = box(".hero-portrait");
+      return {
+        pageOverflow: document.documentElement.scrollWidth - innerWidth,
+        stripOverflow: strip.scrollWidth - strip.clientWidth,
+        sealRight: seal.right, sealLeft: seal.left, sealWidth: seal.width, portraitWidth: portrait.width,
+        vw: innerWidth,
+      };
+    });
+    expect(m.pageOverflow).toBeLessThanOrEqual(0);
+    expect(m.stripOverflow).toBeLessThanOrEqual(0);
+    expect(m.sealLeft).toBeGreaterThanOrEqual(0);
+    expect(m.sealRight).toBeLessThanOrEqual(m.vw);
+    expect(m.sealWidth / m.portraitWidth).toBeGreaterThan(0.2);
+    expect(m.sealWidth / m.portraitWidth).toBeLessThan(0.3);
+    if (width === 375) {
+      const cta = await page.locator(".hero-cta").boundingBox();
+      expect(cta.y + cta.height).toBeLessThanOrEqual(height);
+      expect(Math.round(cta.height)).toBe(58);
+      expect(Math.round(cta.width)).toBe(319);
+    }
+  });
+}
