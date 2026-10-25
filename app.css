@@ -3387,3 +3387,24 @@ html.motion .photo-card.no-delay::after {
 @media (max-width: 699px) {
   .share-note { text-align: center; }
 }
+
+/* Anneau du tampon : WebKit (Safari, iPhone) résolvait `transform-origin: center` à ~63 px au lieu de 70 (centre du
+   viewBox 140×140), si bien que l'anneau décrivait un cercle de 6 à 7 px autour du monogramme. La rotation est
+   désormais écrite autour d'un centre explicite en unités du viewBox (translate / rotate / translate, origine 0 0),
+   identique dans tous les moteurs et à toutes les largeurs. */
+.seal-text {
+  transform-box: view-box;
+  transform-origin: 0 0;
+  /* Sans cela Chromium arrondit les avances de glyphes sur le chemin circulaire (« Le s insta nts pa sse nt »). */
+  text-rendering: geometricPrecision;
+}
+@keyframes seal-orbit {
+  from { transform: translate(70px, 70px) rotate(0deg) translate(-70px, -70px); }
+  to { transform: translate(70px, 70px) rotate(360deg) translate(-70px, -70px); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .seal-text { animation: seal-orbit 40s linear infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seal-text { animation: none !important; transform: none; }
+}
