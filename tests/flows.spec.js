@@ -106,7 +106,7 @@ test("public JPEG PNG uploads, exact duplicate, similar photos and compressed di
   expect(data.objects).toHaveLength(12);
   for (const [path, obj] of data.objects)
     expect(Math.max(obj.width, obj.height)).toBe(
-      path.includes("thumbs") ? 640 : 3000,
+      path.includes("thumbs") ? 640 : 2400,
     );
   expect(data.calls.filter((c) => c[0] === "model-load")).toHaveLength(1);
   const uploadCalls = data.calls.filter((c) => c[0] === "upload");

@@ -15,8 +15,9 @@ export const NSFW_SEXY_WITH_PORN = 0.25;
 export const NSFW_LOAD_TIMEOUT_MS = 15000;
 export const NSFW_CLASSIFY_TIMEOUT_MS = 8000;
 // Output sizes. The bucket refuses objects above 3 MiB (migration 0003), so the full image keeps a safety margin.
-export const FULL_MAX_SIDE = 3000;
-export const FULL_QUALITY = 0.9;
+// 2400 px / q0.85 is about 1 MB (3000 px / q0.90 was about 1.8 MB): ~40 % less to send on a mobile uplink, still 5.8 MP.
+export const FULL_MAX_SIDE = 2400;
+export const FULL_QUALITY = 0.85;
 export const THUMB_MAX_SIDE = 640;
 export const THUMB_QUALITY = 0.84;
 const OBJECT_BUDGET_BYTES = 2_900_000;
@@ -53,18 +54,29 @@ export function verdict(predictions) {
     ? "suspect"
     : "clean";
 }
+function loadModel() {
+  // Tests replace the library API before page load, never via a production URL flag.
+  return (modelPromise ??= (async () => {
+    const library =
+      window.nsfwjs || (await import("./vendor/nsfwjs/nsfwjs.js"));
+    return library.load(
+      new URL("./vendor/nsfwjs/models/mobilenet_v2/", import.meta.url).href,
+    );
+  })());
+}
+// Warms the filter model while the guest picks photos. Never blocks and never fails visibly: if the preload fails,
+// the promise is forgotten so the first real classification retries the load (same behavior as without a preload).
+export function preloadModel() {
+  if (!NSFW_ENABLED || modelUnavailable || modelPromise) return;
+  const promise = loadModel();
+  promise.catch(() => {
+    if (modelPromise === promise) modelPromise = undefined;
+  });
+}
 async function classify(canvas) {
   if (!NSFW_ENABLED || modelUnavailable) return "unavailable";
   try {
-    // Tests replace the library API before page load, never via a production URL flag.
-    modelPromise ??= (async () => {
-      const library =
-        window.nsfwjs || (await import("./vendor/nsfwjs/nsfwjs.js"));
-      return library.load(
-        new URL("./vendor/nsfwjs/models/mobilenet_v2/", import.meta.url).href,
-      );
-    })();
-    const model = await timeout(modelPromise, NSFW_LOAD_TIMEOUT_MS);
+    const model = await timeout(loadModel(), NSFW_LOAD_TIMEOUT_MS);
     return verdict(
       await timeout(model.classify(canvas), NSFW_CLASSIFY_TIMEOUT_MS),
     );
@@ -191,10 +203,12 @@ function networkError(error) {
       (!status || status >= 500 || status === 408))
   );
 }
+// update(text, fraction): fraction is this photo's progress (0..1) by stage. Storage reports no byte progress, so the
+// bar moves between the real stage boundaries instead of inventing a smooth percentage.
 export async function uploadPhoto(sb, file, audience, seen, update = () => {}, info = {}) {
   let source, thumbCanvas, fullCanvas;
   try {
-    update("Préparation…");
+    update("Préparation…", 0.02);
     source = await decode(file);
     const hash = Array.from(
       new Uint8Array(
@@ -203,6 +217,7 @@ export async function uploadPhoto(sb, file, audience, seen, update = () => {}, i
       (byte) => byte.toString(16).padStart(2, "0"),
     ).join("");
     if (seen.has(`${audience}:${hash}`)) return "duplicate";
+    update("Préparation…", 0.12);
     thumbCanvas = canvasFor(source, THUMB_MAX_SIDE);
     fullCanvas = canvasFor(source, FULL_MAX_SIDE);
     source.close?.();
@@ -224,10 +239,12 @@ export async function uploadPhoto(sb, file, audience, seen, update = () => {}, i
             audience === "public"
               ? "Préparation et premier filtrage…"
               : "Préparation…",
+            0.18,
           );
           verdictValue =
             audience === "public" ? await classify(thumbCanvas) : "skipped";
           info.verdict = verdictValue;
+          update("Préparation…", 0.4);
           thumb = await jpegWithin(thumbCanvas, THUMB_QUALITY);
           full = await jpegWithin(fullCanvas, FULL_QUALITY);
           thumbCanvas.width =
@@ -241,9 +258,11 @@ export async function uploadPhoto(sb, file, audience, seen, update = () => {}, i
             );
         }
         const id = crypto.randomUUID();
-        update(attempt ? `Nouvelle tentative ${attempt + 1}/3…` : "Envoi…");
+        update(attempt ? `Nouvelle tentative ${attempt + 1}/3…` : "Envoi…", 0.5);
         await uploadObject(sb, `${audience}/thumbs/${id}.jpg`, thumb);
+        update("Envoi…", 0.58);
         await uploadObject(sb, `${audience}/full/${id}.jpg`, full);
+        update("Finalisation…", 0.95);
         const result = await rpc(sb, "register_photo", {
           p_id: id,
           p_audience: audience,
@@ -491,10 +510,13 @@ export function setupUploads(sb, onComplete) {
       const radio = document.querySelector(`[name=audience][value="${card.dataset.destination}"]`);
       if (radio) radio.checked = true;
       $("files").click();
+      // After the chooser is opened (the gesture is consumed): the model loads while the guest picks photos.
+      if (card.dataset.destination === "public") setTimeout(preloadModel, 0);
     }),
   );
   $("add-more").addEventListener("click", () => {
     if (!busy && sb && chosenAudience()) $("files").click();
+    if (chosenAudience() === "public") setTimeout(preloadModel, 0);
   });
   // Cancelling the chooser sends nothing and, with no photo listed, forgets the destination (back to step 1).
   $("files").addEventListener("cancel", () => {
@@ -574,9 +596,12 @@ export function setupUploads(sb, onComplete) {
           item.file,
           item.audience,
           seen,
-          (message) => {
+          (message, fraction = 0) => {
             $("progress-label").textContent =
               `${processed} sur ${batch.length} photos traitées · ${message}`;
+            // Never moves backwards (a retry restarts at the sending stage).
+            const value = Math.round(((processed + fraction) / batch.length) * 100);
+            if (value > $("progress").value) $("progress").value = value;
           },
           info,
         );
