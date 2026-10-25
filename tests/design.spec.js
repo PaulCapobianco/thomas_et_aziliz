@@ -96,10 +96,18 @@ for (const [width, height] of [[360, 740], [375, 667], [390, 844], [412, 915], [
         stripOverflow: strip.scrollWidth - strip.clientWidth,
         sealRight: seal.right, sealLeft: seal.left, sealWidth: seal.width, portraitWidth: portrait.width,
         vw: innerWidth,
+        offCenter: ["h1", ".hero-intro"].map((selector) => {
+          const range = document.createRange();
+          range.selectNodeContents(document.querySelector(`.hero ${selector}`));
+          const rects = [...range.getClientRects()].filter((r) => r.width > 0);
+          const ink = (Math.min(...rects.map((r) => r.left)) + Math.max(...rects.map((r) => r.right))) / 2;
+          return Math.abs(ink - innerWidth / 2);
+        }),
       };
     });
     expect(m.pageOverflow).toBeLessThanOrEqual(0);
     expect(m.stripOverflow).toBeLessThanOrEqual(0);
+    if (width < 700) for (const offset of m.offCenter) expect(offset).toBeLessThanOrEqual(1.5);
     expect(m.sealLeft).toBeGreaterThanOrEqual(0);
     expect(m.sealRight).toBeLessThanOrEqual(m.vw);
     expect(m.sealWidth / m.portraitWidth).toBeGreaterThan(0.2);
@@ -110,5 +118,19 @@ for (const [width, height] of [[360, 740], [375, 667], [390, 844], [412, 915], [
       expect(Math.round(cta.height)).toBe(58);
       expect(Math.round(cta.width)).toBe(319);
     }
+  });
+}
+
+for (const width of [360, 375, 412, 768]) {
+  test(`mention de téléchargement près du formulaire d'envoi à ${width}px`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 800 });
+    await installMock(page);
+    await page.goto("/#partager");
+    const note = page.locator(".share-note");
+    await expect(note).toBeVisible();
+    await expect(note).toHaveText("Les photos de la galerie publique peuvent être consultées et téléchargées par tous les invités.");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+    if (width < 700) expect(await note.evaluate((n) => getComputedStyle(n).textAlign)).toBe("center");
+    await page.screenshot({ path: info.outputPath(`partager-${width}.png`), fullPage: true });
   });
 }

@@ -3354,3 +3354,36 @@ html.motion .photo-card.no-delay::after {
 @media (max-width: 699px) {
   .hero { padding-top: 3rem !important; }
 }
+
+/* Accueil mobile : titre et accroche centrés (le titre était décalé de 6 à 25 px vers la gauche selon la largeur,
+   sa marge `0 0 1.4rem !important` annulant `margin-inline: auto`), sans mot orphelin. */
+@media (max-width: 699px) {
+  .hero h1 {
+    max-width: none !important;
+    margin-inline: auto !important;
+    font-size: clamp(1.35rem, 5.9vw, 1.6rem) !important;
+    line-height: 1.1 !important;
+    text-align: center;
+    text-wrap: balance;
+  }
+  .hero-intro {
+    margin-inline: auto !important;
+    text-align: center;
+  }
+  /* Une phrase par bloc : `text-wrap: balance` ne traverse pas un <br>, d'où le mot orphelin. */
+  .intro-line {
+    display: block;
+    text-wrap: balance;
+  }
+}
+
+/* Mention près du formulaire d'envoi : courte, discrète, centrée sur mobile. */
+.share-note {
+  margin: 0 0 1.5rem;
+  font-size: .86rem;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+@media (max-width: 699px) {
+  .share-note { text-align: center; }
+}
