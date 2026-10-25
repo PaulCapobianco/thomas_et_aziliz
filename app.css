@@ -3408,3 +3408,77 @@ html.motion .photo-card.no-delay::after {
 @media (prefers-reduced-motion: reduce) {
   .seal-text { animation: none !important; transform: none; }
 }
+
+/* ---- Grouped download: selection mode and batch bar ---- */
+.heading-actions {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+.photo-card .select-box {
+  position: absolute;
+  top: .4rem;
+  left: .4rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: #fffdf6;
+  color: #fff;
+  font: 700 1rem/1 var(--font-ui);
+  pointer-events: none;
+}
+.photo-card.is-selected {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+.photo-card.is-selected .select-box {
+  background: var(--accent);
+}
+.dl-bar {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 16;
+  display: grid;
+  gap: .35rem;
+  padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom));
+  background: #f8f5ee;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -6px 22px #38472c18;
+}
+.dl-bar[hidden] {
+  display: none;
+}
+.dl-count {
+  margin: 0;
+  font-weight: 600;
+}
+.dl-note {
+  margin: 0;
+  min-height: 1.4em;
+  font-size: .9rem;
+  color: var(--text);
+}
+.dl-bar progress {
+  width: 100%;
+}
+.dl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.dl-actions button {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+.dl-actions .primary {
+  flex-basis: 100%;
+}
+body.selecting .fab-bar {
+  display: none !important;
+}
+body.selecting .site-footer {
+  padding-bottom: calc(12rem + env(safe-area-inset-bottom));
+}

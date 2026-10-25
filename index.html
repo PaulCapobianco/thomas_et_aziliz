@@ -108,9 +108,14 @@
               <p class="eyebrow">Le mariage à travers vos yeux</p>
               <h2 id="gallery-title">La galerie des invités</h2>
             </div>
-            <button id="refresh" class="quiet">
-              Actualiser <span aria-hidden="true">↻</span>
-            </button>
+            <div class="heading-actions">
+              <button id="select-mode" class="quiet" type="button" aria-pressed="false" aria-controls="dl-bar" hidden>
+                Sélectionner
+              </button>
+              <button id="refresh" class="quiet">
+                Actualiser <span aria-hidden="true">↻</span>
+              </button>
+            </div>
           </div>
           <p id="gallery-status" role="status"></p>
           <div id="gallery" class="gallery"></div>
@@ -241,6 +246,16 @@
         </form>
       </section>
     </main>
+    <aside id="dl-bar" class="dl-bar" aria-label="Téléchargement groupé" hidden>
+      <p id="dl-count" class="dl-count" role="status"></p>
+      <p id="dl-note" class="dl-note" role="status"></p>
+      <progress id="dl-progress" value="0" max="1" hidden aria-label="Avancement du lot"></progress>
+      <div class="dl-actions">
+        <button id="dl-go" class="primary" type="button"></button>
+        <button id="dl-all" type="button">Tout sélectionner</button>
+        <button id="dl-cancel" type="button">Annuler</button>
+      </div>
+    </aside>
     <aside id="fab-bar" class="fab-bar" aria-label="Partage rapide" hidden>
       <a class="button primary fab" href="#partager" data-pick
         ><span aria-hidden="true">↥</span> PARTAGER MES PHOTOS</a

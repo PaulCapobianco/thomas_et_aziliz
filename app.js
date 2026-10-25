@@ -12,6 +12,7 @@ import {
   browserId,
   bindDialog,
 } from "./shared.js";
+import { setupBatch } from "./batch.js";
 import { setupUploads } from "./uploads.js";
 const sb = createClient();
 if (NAMES) {
@@ -56,6 +57,7 @@ let navigating = false;
 let savedScroll;
 let backgroundNodes = [];
 let uploads;
+const batch = setupBatch({ sb, names: NAMES, dateText: DATE_TXT, getRows: () => rows, onChange: () => renderGallery() });
 const frame = $("photo-frame");
 const viewport = document.querySelector(".photo-viewport");
 function sizePhotoFrame() {
@@ -200,8 +202,9 @@ function renderGallery() {
       }
     };
     button.append(img);
-    button.onclick = () => openPhoto(index);
+    button.onclick = () => (batch.active() ? batch.toggle(row.id) : openPhoto(index));
     $("gallery").append(button);
+    batch.decorate(button, row, index);
   });
   if (focusedId)
     [...$("gallery").children]
@@ -267,6 +270,7 @@ async function loadGallery(more = false) {
       ).values(),
     ];
     cursor = before;
+    batch.prune();
     $("more").hidden = lastPage.length !== 48;
     lastRefresh = Date.now();
     loaded = true;
