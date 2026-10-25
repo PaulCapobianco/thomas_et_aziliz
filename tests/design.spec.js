@@ -128,7 +128,7 @@ for (const width of [360, 375, 412, 768]) {
     await page.goto("/#partager");
     const note = page.locator(".share-note");
     await expect(note).toBeVisible();
-    await expect(note).toHaveText("Les photos de la galerie publique peuvent être consultées et téléchargées par tous les invités.");
+    await expect(note).toHaveText("Les photos de la galerie publique peuvent être consultées et téléchargées par tous les invités jusqu’au 20 novembre 2026.");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     if (width < 700) expect(await note.evaluate((n) => getComputedStyle(n).textAlign)).toBe("center");
     await page.screenshot({ path: info.outputPath(`partager-${width}.png`), fullPage: true });

@@ -46,15 +46,31 @@ test("privacy page: required sections are present", async ({ page }) => {
     await expect(page.locator(href)).toHaveCount(1);
 });
 
-test("privacy page: Google Drive is described as NOT active yet, with the drive.file scope and no guest sign-in", async ({ page }) => {
+test("privacy page: Google Drive is described as active, with the drive.file scope, no guest copy and no promise of full deletion", async ({ page }) => {
   await open(page);
   const drive = page.locator("#google-drive");
-  await expect(drive.locator("[data-drive-status]")).toHaveAttribute("data-drive-status", "inactive");
-  await expect(drive).toContainText("n’est pas encore activée");
+  await expect(drive.locator("[data-drive-status]")).toHaveAttribute("data-drive-status", "active");
+  await expect(drive).toContainText("la sauvegarde sur Google Drive est active");
+  await expect(drive).toContainText("sans délai garanti");
   await expect(drive).toContainText("drive.file");
   await expect(drive).toContainText("Les invités n’ont pas besoin de connecter de compte Google");
-  // Nothing must claim the backup is already running.
-  await expect(page.locator("main")).not.toContainText(/est activée|est désormais activée|déjà activée/);
+  await expect(drive).toContainText("Les invités n’en reçoivent pas de copie");
+  await expect(drive).toContainText("conservée jusqu’à ce que l’administrateur décide de la supprimer");
+  await expect(drive).toContainText("Supprimer une photo de l’album ne supprime pas sa copie sur Google Drive");
+  await expect(page.locator("main")).not.toContainText(/pas encore activée|lorsqu’elle sera activée|pourra servir/);
+});
+
+test("privacy page: controller, retention date, Supabase region, download counter and vocabulary", async ({ page }) => {
+  await open(page);
+  const main = page.locator("main");
+  await expect(page.locator("#responsable")).toContainText("Paul Capobianco, administrateur unique et responsable du traitement");
+  await expect(page.locator("#conservation")).toContainText("jusqu’au 20 novembre 2026");
+  await expect(page.locator("#hebergement")).toContainText("West Europe (Londres, Royaume-Uni)");
+  await expect(page.locator("#hebergement")).not.toContainText("Union européenne");
+  await expect(main).toContainText("Un numéro de téléchargement");
+  await expect(main).toContainText("Si vous signalez une photo, elle est retirée immédiatement de la galerie et examinée par l’administrateur, qui la supprime si nécessaire. Selon le motif, elle peut aussi être restaurée.");
+  await expect(page.locator(".legal-updated")).toContainText("25 octobre 2026");
+  await expect(main).not.toContainText(/organisateurs|administrateurs/i);
 });
 
 test("privacy page: private photos are never described as public", async ({ page }) => {

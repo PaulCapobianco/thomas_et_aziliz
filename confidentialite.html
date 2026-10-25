@@ -35,7 +35,7 @@
         photo. Les règles d’utilisation de l’album figurent dans les
         <a href="/conditions-utilisation">conditions d’utilisation</a>.
       </p>
-      <p class="legal-updated">Dernière mise à jour : 23 octobre 2026</p>
+      <p class="legal-updated">Dernière mise à jour : 25 octobre 2026</p>
 
       <nav class="legal-toc" aria-label="Sommaire de cette page">
         <ol>
@@ -56,12 +56,14 @@
         <h2 id="t-responsable">Qui gère ce site ?</h2>
         <p>
           Ce site est l’album photo privé du mariage de Thomas et Aziliz. Il est
-          géré par les mariés, pour constituer leurs souvenirs et ceux de leurs
-          invités. Il ne contient aucune publicité.
+          géré par Paul Capobianco, administrateur unique et responsable du
+          traitement des données, pour constituer les souvenirs des mariés et
+          ceux de leurs invités. Il ne contient aucune publicité.
         </p>
         <p>
-          Contact pour toute question ou demande de retrait :
-          <strong data-contact>l’adresse de contact sera indiquée ici par les mariés.</strong>
+          Contact pour toute question, demande de retrait ou exercice de vos
+          droits :
+          <strong data-contact>l’adresse de contact sera indiquée ici par l’administrateur.</strong>
         </p>
       </section>
 
@@ -96,7 +98,7 @@
           <li>
             <strong>Les signalements</strong> : le motif choisi, le commentaire
             facultatif (500 caractères au maximum), la date et l’identifiant
-            aléatoire du navigateur. Les décisions des administrateurs
+            aléatoire du navigateur. Les décisions de l’administrateur
             (photo restaurée, maintenue masquée, supprimée) sont aussi
             enregistrées avec leur date.
           </li>
@@ -113,9 +115,14 @@
             l’album reste accessible. Ce n’est pas un contrôle d’accès.
           </li>
           <li>
-            <strong>Les comptes des administrateurs</strong> (les mariés et les
-            personnes qu’ils désignent) : adresse e-mail et mot de passe, gérés
-            par le service d’authentification de Supabase. Les invités n’ont pas
+            <strong>Un numéro de téléchargement</strong>, gardé dans le stockage
+            de session de votre navigateur (valable pour l’onglet ouvert), sert à
+            numéroter les fichiers que vous téléchargez. Il n’est jamais envoyé
+            au site.
+          </li>
+          <li>
+            <strong>Le compte de l’administrateur</strong> : adresse e-mail et
+            mot de passe, gérés par le service d’authentification de Supabase. Les invités n’ont pas
             de compte.
           </li>
         </ul>
@@ -150,14 +157,15 @@
               photo peut d’abord attendre la validation d’un administrateur.
               L’album n’est pas référencé par les moteurs de recherche, mais
               toute personne qui connaît son adresse peut voir la galerie, et
-              télécharger les photos qui y figurent.
+              télécharger les photos qui y figurent, jusqu’au 20 novembre 2026.
             </p>
           </div>
           <div class="legal-card">
             <h3>Envoyer uniquement aux mariés</h3>
             <p>
               La photo n’apparaît jamais dans la galerie. Elle reste dans un
-              stockage privé et n’est accessible qu’aux administrateurs.
+              stockage privé et n’est accessible qu’aux mariés et à
+              l’administrateur.
             </p>
           </div>
         </div>
@@ -168,13 +176,14 @@
         <ul>
           <li>
             <strong>Supabase</strong> assure le stockage principal des photos, la
-            base de données de l’album et la connexion des administrateurs.
+            base de données de l’album et la connexion de l’administrateur.
+            Ses serveurs sont situés en West Europe (Londres, Royaume-Uni).
           </li>
           <li>
             <strong>Cloudflare</strong> héberge le site et ses fonctions serveur.
           </li>
           <li>
-            <strong>Google Drive</strong> pourra servir de sauvegarde privée des
+            <strong>Google Drive</strong> sert de sauvegarde privée des
             photos. Voir la rubrique <a href="#google-drive">Google Drive</a>.
           </li>
         </ul>
@@ -188,17 +197,19 @@
       <section id="conservation" aria-labelledby="t-conservation">
         <h2 id="t-conservation">Conservation</h2>
         <p>
-          À ce jour, aucune suppression automatique n’est programmée : les photos
-          sont conservées par les mariés pour leurs souvenirs, et peuvent être
-          retirées à tout moment sur demande (voir
-          <a href="#retrait">ci-dessous</a>). Si une durée de conservation est
-          arrêtée, elle sera indiquée sur cette page.
+          Les photos restent sur le site jusqu’au 20 novembre 2026. L’administrateur
+          les supprime ensuite à la main (fiche en base de données et fichiers
+          du stockage principal) : il ne s’agit pas d’une suppression
+          automatique. Avant cette date, une photo peut être retirée à tout
+          moment sur demande (voir <a href="#retrait">ci-dessous</a>).
         </p>
         <p>
-          Lorsqu’un administrateur supprime une photo, elle disparaît de l’album
-          et ses fichiers sont retirés du stockage principal. Une copie déjà
-          enregistrée sur Google Drive (voir plus bas) n’est pas supprimée
-          automatiquement : elle doit être supprimée à la main par les mariés.
+          Lorsque l’administrateur supprime une photo de l’album, elle disparaît
+          de la galerie et ses fichiers sont retirés du stockage principal. La
+          copie enregistrée sur Google Drive (voir plus bas) n’est pas supprimée
+          en même temps : elle est conservée jusqu’à ce que l’administrateur
+          décide de la supprimer, ce qu’il fait à part lorsqu’il traite une
+          demande de retrait.
         </p>
       </section>
 
@@ -207,10 +218,11 @@
         <ul>
           <li>
             <strong>Depuis la galerie :</strong> ouvrez la photo, puis « Signaler
-            cette photo » et choisissez un motif. La photo est aussitôt retirée de
-            la galerie, le temps que les administrateurs l’examinent. Ils peuvent
-            la restaurer, la maintenir masquée ou la supprimer. Le motif de votre
-            signalement n’est pas visible des autres invités.
+            cette photo » et choisissez un motif. Si vous signalez une photo, elle
+            est retirée immédiatement de la galerie et examinée par
+            l’administrateur, qui la supprime si nécessaire. Selon le motif, elle
+            peut aussi être restaurée. Le motif de votre signalement n’est pas
+            visible des autres invités.
           </li>
           <li>
             <strong>Par message :</strong> écrivez à
@@ -221,8 +233,9 @@
         </ul>
         <p>
           Un invité ne peut pas supprimer lui-même une photo qu’il a déjà
-          envoyée : il faut passer par un signalement ou par un message. Les
-          demandes sont examinées par les mariés, sans délai garanti.
+          envoyée : il faut passer par un signalement ou par un message. Sur
+          demande de retrait, l’administrateur supprime la photo de l’album et de
+          Google Drive dès que possible.
         </p>
       </section>
 
@@ -258,19 +271,27 @@
 
       <section id="google-drive" aria-labelledby="t-drive">
         <h2 id="t-drive">Google Drive</h2>
-        <!-- À METTRE À JOUR lorsque la synchronisation Google Drive sera réellement activée (GUIDE_DRIVE.md, étape D-4). -->
-        <p class="legal-status" data-drive-status="inactive">
-          <strong>Statut : la sauvegarde sur Google Drive n’est pas encore
-          activée.</strong> Cette rubrique décrit ce qui se passera lorsqu’elle le
-          sera, et cette page sera alors mise à jour.
+        <!-- Texte au présent : la synchronisation Google Drive est active (mise à jour du 25 octobre 2026). -->
+        <p class="legal-status" data-drive-status="active">
+          <strong>Statut : la sauvegarde sur Google Drive est active.</strong>
+          Les photos sont copiées automatiquement, en quelques instants après
+          leur envoi, sans délai garanti.
         </p>
         <p>
-          Lorsqu’elle sera activée, le site enverra une copie des photos reçues
-          vers un espace Google Drive privé, à des fins de sauvegarde. Les
-          dossiers ne sont pas partagés et aucun lien public n’est créé. Les
-          photos « mariés uniquement » sont rangées dans un dossier distinct de
-          celui des photos publiques. Les photos d’origine restent conservées sur
-          Supabase.
+          Le site enregistre une copie des photos reçues (photos publiques et
+          photos « mariés uniquement ») dans un espace Google Drive privé, comme
+          sauvegarde du mariage. Les dossiers ne sont pas partagés et aucun lien
+          public n’est créé. Les photos « mariés uniquement » sont rangées dans
+          un dossier distinct de celui des photos publiques. Cette sauvegarde
+          n’est accessible qu’aux mariés. Elle est conservée jusqu’à ce que
+          l’administrateur décide de la supprimer.
+        </p>
+        <p>
+          Les invités n’en reçoivent pas de copie : ils téléchargent depuis le
+          site, jusqu’au 20 novembre 2026, les photos publiques qui les
+          intéressent. Supprimer une photo de l’album ne supprime pas sa copie
+          sur Google Drive : l’administrateur la supprime séparément dans Drive
+          lorsqu’il traite une demande de retrait.
         </p>
         <p>
           Pour cela, l’application utilise l’autorisation Google OAuth
@@ -317,7 +338,7 @@
           prévues par la loi. Pour une photo, la démarche est décrite dans la
           rubrique <a href="#retrait">Signaler ou faire retirer une photo</a>
           (voir aussi les <a href="/conditions-utilisation#retrait">conditions d’utilisation</a>).
-          Pour toute autre demande, écrivez à
+          Pour toute autre demande ou pour exercer vos droits, écrivez à
           <strong data-contact>l’adresse de contact indiquée plus haut</strong>.
         </p>
         <p>

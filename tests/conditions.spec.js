@@ -54,7 +54,7 @@ test("terms page: rules match what the site really does (limits, no edit after s
   await expect(main).toContainText("ne permet ni de changer la destination ni de supprimer une photo après son envoi");
   await expect(page.locator("#moderation")).toContainText("attend la validation d’un administrateur");
   await expect(page.locator("#moderation")).toContainText("Une photo en attente n’est jamais visible dans la galerie");
-  await expect(page.locator("#retrait")).toContainText("immédiatement retirée de la galerie");
+  await expect(page.locator("#retrait")).toContainText("retirée immédiatement de la galerie et examinée par l’administrateur, qui la supprime si nécessaire");
   await expect(page.locator("#acces")).toContainText("ne constituent pas un contrôle d’accès");
   // No promise the site does not keep.
   await expect(main).not.toContainText(/garantissons|sous 24|sous 48|délai de \d|supprimée automatiquement/i);
@@ -124,4 +124,15 @@ test("footer of the home page links to both legal pages without widening the pag
   await terms.click();
   await expect(page).toHaveURL(/\/conditions-utilisation$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Conditions d’utilisation");
+});
+
+test("terms page: administrator vocabulary, download end date and report wording", async ({ page }) => {
+  await open(page);
+  const main = page.locator("main");
+  await expect(main).toContainText("Paul Capobianco, administrateur unique");
+  await expect(page.locator("#acces")).toContainText("téléchargées jusqu’au 20 novembre 2026");
+  await expect(page.locator("#acces")).toContainText("accessibles aux mariés et à l’administrateur");
+  await expect(page.locator("#retrait")).toContainText("supprime la photo de l’album et de Google Drive dès que possible");
+  await expect(page.locator(".legal-updated")).toContainText("25 octobre 2026");
+  await expect(main).not.toContainText(/organisateurs|administrateurs/i);
 });
