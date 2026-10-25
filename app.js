@@ -6,6 +6,9 @@ import {
   rpc,
   signPhotos,
   fullUrl,
+  downloadName,
+  peekDownloadCount,
+  commitDownloadCount,
   browserId,
   bindDialog,
 } from "./shared.js";
@@ -438,12 +441,16 @@ $("full-photo").addEventListener(
 $("download").onclick = async () => {
   $("download").disabled = true;
   try {
+    // The number is only consumed once the signed URL exists, so a refused or failed request leaves no gap.
+    const number = peekDownloadCount() + 1;
+    const name = downloadName(NAMES, DATE_TXT, number);
     const a = el("a");
-    a.href = await fullUrl(sb, rows[activeIndex], true);
-    a.download = "photo-mariage.jpg";
+    a.href = await fullUrl(sb, rows[activeIndex], name);
+    a.download = name;
     document.body.append(a);
     a.click();
     a.remove();
+    commitDownloadCount(number);
   } catch {
     $("lightbox-status").textContent =
       "Téléchargement indisponible. Réessayez.";

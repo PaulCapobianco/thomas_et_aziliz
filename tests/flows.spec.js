@@ -228,7 +228,7 @@ test("200 photos: pagination, refresh removal and new insertion, lightbox focus 
       body: "test-download",
       contentType: "image/jpeg",
       headers: {
-        "Content-Disposition": 'attachment; filename="photo-mariage.jpg"',
+        "Content-Disposition": 'attachment; filename="photo_mariage_Thomas-Aziliz_311026_01.jpg"',
       },
     }),
   );
@@ -237,7 +237,7 @@ test("200 photos: pagination, refresh removal and new insertion, lightbox focus 
     await page.evaluate(
       () => mock.calls.filter((c) => c[0] === "sign").at(-1)[3].download,
     ),
-  ).toBe("photo-mariage.jpg");
+  ).toBe("photo_mariage_Thomas-Aziliz_311026_01.jpg");
   await page.keyboard.press("Escape");
   await expect(page.locator("#lightbox")).not.toBeVisible();
   await expect(page.locator(".photo-card").first()).toBeFocused();
