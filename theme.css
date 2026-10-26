@@ -218,3 +218,32 @@ html[data-theme="dark"] [tabindex]:focus-visible {
   outline: none;
   box-shadow: none;
 }
+
+/* ---- Messages at the top of the screen (guest pages) ----
+   Position and style only: the messages, their roles, their timing and their buttons are unchanged.
+   1. The upload error (same component as the success and pending messages, which stay inline) becomes a banner
+      just under the header (80 px, the header is 77 px), so the logo, the theme button and the burger stay
+      uncovered. It stays until "Fermer", as before. The safe area keeps it out of the notch.
+   2. The note of the lightbox (share refused, photo unavailable…) moves from above the action bar to the top of
+      the lightbox, under the toolbar and its status line, away from the "Fermer" button. */
+.upload-message[data-kind="error"].is-open {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 5rem);
+  left: max(.75rem, env(safe-area-inset-left, 0px));
+  right: max(.75rem, env(safe-area-inset-right, 0px));
+  z-index: 60;
+  max-width: 44rem;
+  max-height: 50dvh;
+  margin: 0 auto;
+  overflow-y: auto;
+  box-shadow: 0 14px 34px -12px rgb(17 25 37 / .55);
+}
+#lightbox .save-note {
+  position: fixed;
+  inset: calc(env(safe-area-inset-top, 0px) + 6.4rem) max(.75rem, env(safe-area-inset-right, 0px)) auto max(.75rem, env(safe-area-inset-left, 0px));
+  z-index: 5;
+  max-width: 44rem;
+  margin-inline: auto;
+  border: 1px solid #fffaf3b0;
+  box-shadow: 0 10px 28px -10px rgb(0 0 0 / .6);
+}
