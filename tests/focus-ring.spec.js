@@ -183,3 +183,42 @@ for (const scheme of ["light", "dark"])
     expect(changed).toEqual([]);
     await context.close();
   });
+
+// The programmatic focus on arrival (app.js moves the focus to the page title, or to <main>, for screen readers):
+// a heading is not an operable control, so it never needs a ring. Some phones match :focus-visible for a script
+// focus with no pointer before it, and drew the browser's default frame around the title.
+for (const scheme of ["light", "dark"])
+  test(`${scheme}: no frame around the title or the page when the focus moves there on arrival`, async ({ page }) => {
+    await open(page, scheme);
+    await page.keyboard.press("Shift"); // keyboard modality: the situation where :focus-visible matches a script focus
+    await page.evaluate(() => { location.hash = "#partager"; });
+    await expect(page.locator("#share-view")).toBeVisible();
+    const title = await page.evaluate(() => {
+      const a = document.activeElement, s = getComputedStyle(a);
+      return { id: a.id, outline: s.outlineStyle, width: parseFloat(s.outlineWidth), shadow: s.boxShadow };
+    });
+    expect(title.id).toBe("share-title");
+    expect(title.outline === "none" || title.width === 0).toBeTruthy();
+    await page.evaluate(() => { location.hash = "#galerie"; });
+    await expect(page.locator("#gallery-view")).toBeVisible();
+    const main = await page.evaluate(() => {
+      const a = document.activeElement, s = getComputedStyle(a);
+      return { id: a.id, outline: s.outlineStyle, width: parseFloat(s.outlineWidth) };
+    });
+    expect(main.id).toBe("main");
+    expect(main.outline === "none" || main.width === 0).toBeTruthy();
+  });
+
+test("these elements are not in the Tab order, so the keyboard ring on real controls is untouched", async ({ page }) => {
+  await open(page, "light", 1024);
+  const tabindex = await page.evaluate(() => [document.getElementById("share-title").getAttribute("tabindex"), document.getElementById("main").getAttribute("tabindex")]);
+  expect(tabindex).toEqual(["-1", "-1"]);
+  await page.evaluate(() => { location.hash = "#partager"; });
+  await page.evaluate(() => document.activeElement.blur());
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  // A real control reached with Tab still shows its ring (the control tests above check colour and contrast).
+  const ring = await page.evaluate(() => { const s = getComputedStyle(document.activeElement); return [document.activeElement.tagName, s.outlineStyle, parseFloat(s.outlineWidth)]; });
+  expect(ring[1]).toBe("solid");
+  expect(ring[2]).toBeGreaterThanOrEqual(2);
+});

@@ -207,3 +207,14 @@ html[data-theme="dark"] [tabindex]:focus-visible {
     text-decoration-color: transparent;
   }
 }
+
+/* ---- Focus moved by the script on arrival ----
+   app.js moves the focus to the page title (or to <main>) so a screen reader announces the new page. Those elements
+   are tabindex="-1": reachable only by script, never by Tab, and not controls. Some phones match :focus-visible for
+   such a focus (no pointer interaction before it) and drew the browser's default frame around the title. Controls
+   reached with the keyboard keep their ring (rules above). */
+[tabindex="-1"]:focus,
+[tabindex="-1"]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
