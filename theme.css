@@ -54,14 +54,17 @@ html[data-theme="dark"] .primary,
 html[data-theme="dark"] .primary.button,
 html[data-theme="dark"] #lightbox .lightbox-download,
 html[data-theme="dark"] .destination-card.is-public,
-html[data-theme="dark"] .photo-card.is-selected .select-box {
+html[data-theme="dark"] .photo-card.is-selected .pick-box {
   background: var(--fill);
-  border-color: var(--accent);
+  border-color: var(--ink);
   color: #f6f1e6;
 }
-html[data-theme="dark"] .photo-card .select-box {
+html[data-theme="dark"] .photo-card .pick-box {
   background: #1a2433;
-  border-color: var(--accent);
+  border-color: var(--ink);
+}
+html[data-theme="dark"] .photo-card.is-selected {
+  box-shadow: inset 0 0 0 7px #1a2433;
 }
 html[data-theme="dark"] .button::before {
   background: #0b1018;

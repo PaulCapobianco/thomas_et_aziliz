@@ -45,7 +45,7 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     const n = count(),
       all = getRows().length;
     $("select-mode").hidden = !getRows().length && !active;
-    $("select-mode").textContent = active ? "Quitter la sélection" : "Sélectionner";
+    $("select-mode-label").textContent = active ? "Quitter la sélection" : "Sélectionner";
     $("select-mode").setAttribute("aria-pressed", String(active));
     $("dl-bar").hidden = !active;
     document.body.classList.toggle("selecting", active);
@@ -53,7 +53,7 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     $("dl-count").textContent = n ? plural(n, "photo sélectionnée", "photos sélectionnées") : "Aucune photo sélectionnée";
     $("dl-note").textContent = overLimit()
       ? `${BATCH_LIMIT} photos au maximum par lot. Décochez ${plural(n - BATCH_LIMIT, "photo", "photos")} pour continuer.`
-      : note || (n ? "" : "Touchez des photos pour les choisir.");
+      : note || (n ? "" : "Touchez les photos pour les choisir");
     const share = canShareFiles();
     $("dl-go").textContent =
       phase === "preparing"
@@ -74,14 +74,14 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     $("dl-note").textContent = `${intro}${phase === "preparing" ? "Préparation" : "Téléchargement"} : ${done} sur ${total}`;
   }
   function decorate(button, row, index) {
-    button.querySelector(".select-box")?.remove();
+    button.querySelector(".pick-box")?.remove();
     if (!active) return;
     const on = selected.has(row.id);
     button.classList.add("is-selecting");
     button.classList.toggle("is-selected", on);
     button.setAttribute("aria-pressed", String(on));
     button.setAttribute("aria-label", `${on ? "Retirer de" : "Ajouter à"} la sélection : photo ${index + 1}`);
-    const box = el("span", on ? "✓" : "", "select-box");
+    const box = el("span", on ? "✓" : "", "pick-box");
     box.setAttribute("aria-hidden", "true");
     button.append(box);
   }

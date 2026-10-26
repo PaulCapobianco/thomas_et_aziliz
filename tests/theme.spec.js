@@ -15,7 +15,7 @@ function findLightSurfaces() {
     const f = (c) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
     return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
   };
-  const allowed = ".polaroid, .polaroid *, .seal, .seal *, .select-box, img, svg, video, canvas, .photo-viewport, .photo-viewport *";
+  const allowed = ".polaroid, .polaroid *, .seal, .seal *, .pick-box, img, svg, video, canvas, .photo-viewport, .photo-viewport *";
   const found = [];
   for (const node of document.querySelectorAll("body *")) {
     if (!node.getClientRects().length || node.matches(allowed)) continue;
