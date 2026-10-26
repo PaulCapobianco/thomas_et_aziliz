@@ -101,7 +101,7 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     return support.ok
       ? "Partage disponible : « Préparer » puis « Partager », puis « Enregistrer » pour les mettre dans Photos."
       : isAndroid()
-        ? `Téléchargement direct : les photos iront ${whereFiles()}. ${MULTI_HINT}`
+        ? `Téléchargement direct : photos dans Téléchargements (app Fichiers). ${MULTI_HINT}`
         : `Téléchargement direct (${support.reason}). Retrouvez les photos ${whereFiles()}.`;
   }
   function progress(done, total, intro = "") {

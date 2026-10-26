@@ -217,9 +217,7 @@ test.describe("batch: method, reason and location", () => {
     await open(page);
     await select(page, 2);
     const note = page.locator("#dl-note");
-    await expect(note).toContainText("Téléchargement direct");
-    await expect(note).toContainText("dossier Téléchargements");
-    await expect(note).toContainText("Autoriser plusieurs téléchargements");
+    await expect(note).toHaveText("Téléchargement direct : photos dans Téléchargements (app Fichiers). Si Chrome demande « Autoriser plusieurs téléchargements », touchez « Autoriser ».");
     await expect(page.locator("#dl-go")).toHaveText("Télécharger 2 photos");
     await page.locator("#dl-go").click();
     await expect(page.locator("#dl-bar")).toBeHidden({ timeout: 15000 });
