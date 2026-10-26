@@ -247,3 +247,31 @@ html[data-theme="dark"] [tabindex]:focus-visible {
   border: 1px solid #fffaf3b0;
   box-shadow: 0 10px 28px -10px rgb(0 0 0 / .6);
 }
+
+/* ---- End message of a download or a share: a banner at the top, same look as the upload error banner ---- */
+#gallery-status[data-kind] {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 5rem);
+  left: max(.75rem, env(safe-area-inset-left, 0px));
+  right: max(.75rem, env(safe-area-inset-right, 0px));
+  z-index: 60;
+  max-width: 44rem;
+  max-height: 50dvh;
+  margin: 0 auto;
+  padding: .8rem 1rem;
+  overflow-y: auto;
+  font-size: .9rem;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  box-shadow: 0 14px 34px -12px rgb(17 25 37 / .55);
+  cursor: pointer;
+}
+#gallery-status[data-kind="error"] {
+  border: 2px solid var(--accent);
+}
+#gallery-status[data-kind]:empty {
+  display: none;
+}

@@ -153,7 +153,7 @@ test("touch phone: 'Préparer' then 'Partager' with the named files; the counter
   expect(await page.evaluate(() => window.__shared)).toEqual([[1, 2, 3, 4].map((n) => `${NAME(n)}|image/jpeg|true`)]);
   expect(await counter(page)).toBe(4);
   expect(await anchors(page)).toEqual([]);
-  await expect(page.locator("#gallery-status")).toContainText("4 photos partagées.");
+  await expect(page.locator("#gallery-status")).toContainText("4 photos prêtes.");
   await expect(page.locator("#gallery .is-selected")).toHaveCount(0);
 });
 

@@ -459,7 +459,7 @@ async function downloadCurrent() {
     a.click();
     a.remove();
     commitDownloadCount(number);
-    saver.say(`Photo téléchargée. Retrouvez-la ${whereFiles()}.`);
+    saver.say(`Terminé : 1 photo téléchargée. Retrouvez-la ${whereFiles()}.`);
     return true;
   } catch {
     $("lightbox-status").textContent =

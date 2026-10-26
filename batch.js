@@ -42,8 +42,7 @@ const isIOS = () => {
 const isAndroid = () => /Android/.test(navigator.userAgent || "");
 export function whereFiles() {
   if (isIOS()) return "dans l’app Fichiers (dossier Téléchargements)";
-  if (isAndroid())
-    return "dans le dossier Téléchargements (app Fichiers) et, selon votre téléphone, dans l’album « Téléchargements » de la Galerie";
+  if (isAndroid()) return "dans Téléchargements (app Fichiers) ou dans votre Galerie";
   return "dans votre dossier Téléchargements";
 }
 // Chrome on Android asks once "Autoriser plusieurs téléchargements ?"; refusing it silently blocks every file after the first.
@@ -138,7 +137,31 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     render();
     paint();
   }
-  function exit(message = "") {
+  // The end message is a banner at the top of the screen (same look as the upload error banner), announced politely,
+  // closed by a tap and gone by itself after a few seconds; an error stays a little longer.
+  let announced = "",
+    hideTimer = 0;
+  const banner = () => $("gallery-status");
+  function clearBanner() {
+    clearTimeout(hideTimer);
+    if (banner().textContent === announced) banner().textContent = "";
+    delete banner().dataset.kind;
+    announced = "";
+  }
+  function announce(text, kind = "done") {
+    clearTimeout(hideTimer);
+    banner().textContent = text;
+    if (!text) return clearBanner();
+    announced = text;
+    banner().dataset.kind = kind;
+    hideTimer = setTimeout(clearBanner, kind === "error" ? 15000 : 10000);
+  }
+  banner().addEventListener("click", () => banner().dataset.kind && clearBanner());
+  // Anything else written in the same place (a report notice, a refresh) replaces the banner: drop its look.
+  new MutationObserver(() => {
+    if (banner().dataset.kind && banner().textContent !== announced) delete banner().dataset.kind;
+  }).observe(banner(), { childList: true, characterData: true, subtree: true });
+  function exit(message = "", kind = "done") {
     active = false;
     phase = "idle";
     prepared = null;
@@ -147,7 +170,7 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     selected.clear();
     render();
     onChange();
-    $("gallery-status").textContent = message;
+    announce(message, kind);
     focusForKeyboard($("select-mode"));
   }
   // One file at a time through a signed URL with the imposed name: the same mechanism as the single download.
@@ -179,8 +202,19 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     }
     return { done, failed, aborted: controller.signal.aborted };
   }
-  const summary = ({ done, failed, aborted }, why = "") =>
-    `${why ? `${why} ` : ""}${aborted ? "Téléchargement annulé. " : ""}${plural(done, "photo téléchargée", "photos téléchargées")}.${failed ? ` ${plural(failed, "photo n’a pas pu être téléchargée", "photos n’ont pas pu être téléchargées")}.` : ""}${done ? ` Retrouvez-${done > 1 ? "les" : "la"} ${whereFiles()}.` : ""}${done > 1 && isAndroid() ? ` ${MULTI_HINT} Sinon, seules les premières photos arrivent.` : ""}`;
+  // End message of a batch of downloads, by platform; `reason` is the short reason of a fallback ("partage refusé : …").
+  function summary({ done, failed, aborted }, reason = "") {
+    const photos = plural(done, "photo téléchargée", "photos téléchargées");
+    const where = done ? ` Retrouvez-${done > 1 ? "les" : "la"} ${whereFiles()}.` : "";
+    if (aborted) return { kind: "done", text: `Téléchargement annulé : ${photos}.${where}` };
+    if (failed) {
+      const lost = done
+        ? `${photos}, ${failed} ${failed > 1 ? "n’ont" : "n’a"} pas pu l’être.`
+        : `${plural(failed, "photo n’a pas pu être téléchargée", "photos n’ont pas pu être téléchargées")}.`;
+      return { kind: "error", text: `${done ? "Terminé : " : ""}${lost}${where}` };
+    }
+    return { kind: "done", text: `Terminé : ${photos}${reason ? ` (${reason})` : ""}.${where}` };
+  }
   async function fetchAll(list) {
     phase = "preparing";
     note = "";
@@ -223,15 +257,17 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     controller = new AbortController();
     if (!canShareFiles()) {
       const result = await downloadAll(list);
-      if (controller) exit(summary(result));
+      if (controller) {
+        const end = summary(result);
+        exit(end.text, end.kind);
+      }
       return;
     }
     const { blobs, refused, networkFailed } = await fetchAll(list);
     if (controller?.signal.aborted || !controller) return;
     if (networkFailed) {
       // Preparing failed (network, CORS): fall back to the plain downloads, never a broken share.
-      const why = "Impossible de préparer les photos pour le partage (réseau ou autorisation).";
-      return finish(await downloadAll(list, `${why} Téléchargement une par une. `), why);
+      return finish(await downloadAll(list, "Partage impossible, téléchargement une par une. "), "partage impossible");
     }
     const base = peekDownloadCount();
     const items = list
@@ -252,7 +288,10 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     render();
     focusForKeyboard($("dl-go"));
   }
-  const finish = (result, why = "") => exit(summary(result, why));
+  const finish = (result, reason = "") => {
+    const end = summary(result, reason);
+    exit(end.text, end.kind);
+  };
   // Called directly from the click: navigator.share needs the user gesture, so nothing is awaited before it.
   function share() {
     const { items, base } = prepared;
@@ -260,7 +299,8 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
       .share({ files: items.map((item) => item.file) })
       .then(() => {
         commitDownloadCount(Math.max(peekDownloadCount(), base + items.length));
-        exit(`${plural(items.length, "photo partagée", "photos partagées")}. Si vous avez choisi « Enregistrer », retrouvez-${items.length > 1 ? "les" : "la"} dans Photos.`);
+        const n = items.length;
+        exit(`Terminé : ${plural(n, "photo prête", "photos prêtes")}. Si vous avez choisi « Enregistrer l’image », ${n > 1 ? "elles sont" : "elle est"} dans Photos.`);
       })
       .catch(async (error) => {
         if (error?.name === "AbortError") {
@@ -271,8 +311,8 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
         const list = items.map((item) => item.row);
         prepared = null;
         controller = new AbortController();
-        const why = `Le partage a été refusé (${error?.name || "erreur inconnue"}).`;
-        finish(await downloadAll(list, `${why} Téléchargement une par une. `), why);
+        const reason = `partage refusé : ${error?.name || "erreur inconnue"}`;
+        finish(await downloadAll(list, "Partage refusé, téléchargement une par une. "), reason);
       });
   }
   // Cancelling a running grouped download ends it: what was already handed to the browser stays, the selection is cleared.
@@ -373,13 +413,13 @@ export function setupSinglePhoto({ sb, names, dateText, download }) {
       .share({ files: [file] })
       .then(() => {
         commitDownloadCount(Math.max(peekDownloadCount(), number));
-        say("Photo partagée. Si vous avez choisi « Enregistrer l’image », retrouvez-la dans Photos.");
+        say("Terminé : 1 photo prête. Si vous avez choisi « Enregistrer l’image », elle est dans Photos.");
       })
       .catch(async (error) => {
         if (error?.name === "AbortError") return say("Enregistrement annulé. Vous pouvez réessayer.");
-        const why = `Le partage a été refusé (${error?.name || "erreur inconnue"}).`;
-        say(`${why} Téléchargement direct…`);
-        if (await download()) say(`${why} Photo téléchargée : retrouvez-la ${whereFiles()}.`);
+        const reason = `partage refusé : ${error?.name || "erreur inconnue"}`;
+        say(`Partage refusé (${error?.name || "erreur inconnue"}). Téléchargement direct…`);
+        if (await download()) say(`Terminé : 1 photo téléchargée (${reason}). Retrouvez-la ${whereFiles()}.`);
       });
   });
   return { reset, load, fail, say };

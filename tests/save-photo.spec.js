@@ -70,7 +70,7 @@ test.describe("lightbox: save one photo", () => {
     await expect.poll(() => counter(page)).toBe(1);
     expect(await downloads(page)).toEqual([NAME(1)]);
     expect(await page.evaluate(() => window.__shared.length)).toBe(0);
-    await expect(page.locator("#save-note")).toContainText("dossier Téléchargements");
+    await expect(page.locator("#save-note")).toContainText("Téléchargements (app Fichiers)");
   });
 
   test("iPad asking for the desktop site (Macintosh user agent, touch) still counts as iOS", async ({ page }) => {
@@ -111,7 +111,7 @@ test.describe("lightbox: save one photo", () => {
     await save(page).click();
     await expect.poll(() => counter(page)).toBe(1);
     expect(await downloads(page)).toEqual([NAME(1)]);
-    await expect(page.locator("#save-note")).toContainText("refusé (NotAllowedError)");
+    await expect(page.locator("#save-note")).toContainText("partage refusé : NotAllowedError");
     await expect(page.locator("#save-note")).toContainText("Fichiers");
   });
 
@@ -226,9 +226,8 @@ test.describe("batch: method, reason and location", () => {
     expect(await counter(page)).toBe(2);
     const status = page.locator("#gallery-status");
     await expect(status).toContainText("2 photos téléchargées");
-    await expect(status).toContainText("dossier Téléchargements");
+    await expect(status).toContainText("Téléchargements (app Fichiers)");
     await expect(status).toContainText("Galerie");
-    await expect(status).toContainText("Autoriser");
   });
 
   test("a single downloaded photo on Android carries no multiple-downloads hint", async ({ page }) => {
@@ -238,7 +237,7 @@ test.describe("batch: method, reason and location", () => {
     await select(page, 1);
     await page.locator("#dl-go").click();
     await expect(page.locator("#dl-bar")).toBeHidden({ timeout: 15000 });
-    await expect(page.locator("#gallery-status")).not.toContainText("Autoriser");
+    await expect(page.locator("#gallery-status")).toContainText("Terminé : 1 photo téléchargée");
   });
 
   test("share available: the bar announces the two steps and Photos", async ({ page }) => {
@@ -258,7 +257,7 @@ test.describe("batch: method, reason and location", () => {
     await expect(page.locator("#dl-go")).toHaveText("Partager 2 photos");
     await page.locator("#dl-go").click();
     await expect(page.locator("#dl-bar")).toBeHidden();
-    await expect(page.locator("#gallery-status")).toContainText("2 photos partagées");
+    await expect(page.locator("#gallery-status")).toContainText("2 photos prêtes");
     await expect(page.locator("#gallery-status")).toContainText("Photos");
   });
 
@@ -274,7 +273,7 @@ test.describe("batch: method, reason and location", () => {
     expect(await counter(page)).toBe(2);
     const status = page.locator("#gallery-status");
     await expect(status).toContainText("2 photos téléchargées");
-    await expect(status).toContainText("refusé (NotAllowedError)");
+    await expect(status).toContainText("partage refusé : NotAllowedError");
     await expect(status).toContainText("app Fichiers");
   });
 
