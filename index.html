@@ -298,7 +298,11 @@
         </div>
         <button id="next" aria-label="Photo suivante">→</button>
       </div>
-      <div class="lightbox-actions">
+      <div id="lightbox-actions" class="lightbox-actions">
+        <p id="save-note" class="save-note" role="status"></p>
+        <button id="save-photo" class="lightbox-save" type="button" hidden>
+          <span aria-hidden="true">⇪</span> <span id="save-photo-label">Enregistrer dans Photos</span>
+        </button>
         <button id="download" class="lightbox-download">
           <span aria-hidden="true">↓</span> Télécharger
         </button>

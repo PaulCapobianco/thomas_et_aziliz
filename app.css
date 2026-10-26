@@ -3600,3 +3600,38 @@ body.selecting .site-footer {
     overflow: hidden;
   }
 }
+
+/* ---- Lightbox: "Enregistrer dans Photos" (native share of the photo shown) ---- */
+#lightbox .lightbox-actions {
+  position: relative;
+}
+#lightbox .lightbox-actions.has-save {
+  flex-wrap: wrap;
+}
+#lightbox .lightbox-save {
+  flex: 1 1 100%;
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 500;
+}
+#lightbox .lightbox-save:disabled {
+  opacity: .75;
+}
+#lightbox .lightbox-actions.has-save #download,
+#lightbox .lightbox-actions.has-save #report-open {
+  flex: 1 1 0;
+}
+/* The message floats over the bottom of the photo area: no layout shift when it appears. */
+#lightbox .save-note {
+  position: absolute;
+  inset: auto 0 100% 0;
+  margin: 0;
+  padding: .55rem 1rem;
+  font-size: .85rem;
+  line-height: 1.4;
+  color: #fffaf3;
+  background: rgb(20 18 15 / .92);
+}
+#lightbox .save-note:empty {
+  display: none;
+}

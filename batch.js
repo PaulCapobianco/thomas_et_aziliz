@@ -18,15 +18,29 @@ const sleep = (ms, signal) =>
     signal.addEventListener("abort", () => (clearTimeout(timer), resolve()), { once: true });
   });
 // Native sharing of files: touch devices only (a desktop share sheet is worse than plain downloads, and Firefox
-// does not support files at all).
-export function canShareFiles() {
+// does not support files at all). When it is not offered, the reason is returned so the guest (and we) can see it.
+export function shareSupport() {
   try {
-    if (typeof navigator.share !== "function" || typeof navigator.canShare !== "function") return false;
-    if (!matchMedia("(pointer: coarse)").matches) return false;
-    return navigator.canShare({ files: [new File(["x"], "photo.jpg", { type: "image/jpeg" })] });
+    if (typeof navigator.share !== "function" || typeof navigator.canShare !== "function")
+      return { ok: false, reason: "ce navigateur ne partage pas les fichiers" };
+    if (!matchMedia("(pointer: coarse)").matches) return { ok: false, reason: "appareil non tactile" };
+    if (!navigator.canShare({ files: [new File(["x"], "photo.jpg", { type: "image/jpeg" })] }))
+      return { ok: false, reason: "ce navigateur refuse le partage de photos" };
+    return { ok: true };
   } catch {
-    return false;
+    return { ok: false, reason: "partage indisponible" };
   }
+}
+export const canShareFiles = () => shareSupport().ok;
+const isIOS = () => {
+  const ua = navigator.userAgent || "";
+  return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+};
+// Where a downloaded file ends up (a link download never goes to Photos on iPhone).
+export function whereFiles() {
+  if (isIOS()) return "dans l’app Fichiers (dossier Téléchargements)";
+  if (/Android/.test(navigator.userAgent || "")) return "dans le dossier Téléchargements (app Fichiers)";
+  return "dans votre dossier Téléchargements";
 }
 export function setupBatch({ sb, names, dateText, getRows, onChange }) {
   let active = false,
@@ -53,7 +67,7 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     $("dl-count").textContent = n ? plural(n, "photo sélectionnée", "photos sélectionnées") : "Aucune photo sélectionnée";
     $("dl-note").textContent = overLimit()
       ? `${BATCH_LIMIT} photos au maximum par lot. Décochez ${plural(n - BATCH_LIMIT, "photo", "photos")} pour continuer.`
-      : note || (n ? "" : "Touchez les photos pour les choisir");
+      : note || (n ? methodNote() : "Touchez les photos pour les choisir");
     const share = canShareFiles();
     $("dl-go").textContent =
       phase === "preparing"
@@ -67,6 +81,13 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     $("dl-all").textContent = n === all && all ? "Tout désélectionner" : "Tout sélectionner";
     $("dl-all").disabled = busy() || !all;
     $("dl-progress").hidden = !busy();
+  }
+  // What will happen on this device, and why, before the guest taps anything.
+  function methodNote() {
+    const support = shareSupport();
+    return support.ok
+      ? "Partage disponible : « Préparer » puis « Partager » pour enregistrer dans Photos ou votre galerie."
+      : `Téléchargement direct (${support.reason}). Retrouvez les photos ${whereFiles()}.`;
   }
   function progress(done, total, intro = "") {
     $("dl-progress").max = total;
@@ -143,8 +164,8 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     }
     return { done, failed, aborted: controller.signal.aborted };
   }
-  const summary = ({ done, failed, aborted }) =>
-    `${aborted ? "Téléchargement annulé. " : ""}${plural(done, "photo téléchargée", "photos téléchargées")}.${failed ? ` ${plural(failed, "photo n’a pas pu être téléchargée", "photos n’ont pas pu être téléchargées")}.` : ""}`;
+  const summary = ({ done, failed, aborted }, why = "") =>
+    `${why ? `${why} ` : ""}${aborted ? "Téléchargement annulé. " : ""}${plural(done, "photo téléchargée", "photos téléchargées")}.${failed ? ` ${plural(failed, "photo n’a pas pu être téléchargée", "photos n’ont pas pu être téléchargées")}.` : ""}${done ? ` Retrouvez-${done > 1 ? "les" : "la"} ${whereFiles()}.` : ""}`;
   async function fetchAll(list) {
     phase = "preparing";
     note = "";
@@ -194,7 +215,8 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     if (controller?.signal.aborted || !controller) return;
     if (networkFailed) {
       // Preparing failed (network, CORS): fall back to the plain downloads, never a broken share.
-      return finish(await downloadAll(list, "Le partage n’est pas disponible, téléchargement une par une. "));
+      const why = "Impossible de préparer les photos pour le partage (réseau ou autorisation).";
+      return finish(await downloadAll(list, `${why} Téléchargement une par une. `), why);
     }
     const base = peekDownloadCount();
     const items = list
@@ -215,7 +237,7 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     render();
     $("dl-go").focus({ preventScroll: true });
   }
-  const finish = (result) => exit(summary(result));
+  const finish = (result, why = "") => exit(summary(result, why));
   // Called directly from the click: navigator.share needs the user gesture, so nothing is awaited before it.
   function share() {
     const { items, base } = prepared;
@@ -223,7 +245,7 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
       .share({ files: items.map((item) => item.file) })
       .then(() => {
         commitDownloadCount(Math.max(peekDownloadCount(), base + items.length));
-        exit(`${plural(items.length, "photo partagée", "photos partagées")}.`);
+        exit(`${plural(items.length, "photo partagée", "photos partagées")}. Si vous avez choisi « Enregistrer », retrouvez-${items.length > 1 ? "les" : "la"} dans Photos.`);
       })
       .catch(async (error) => {
         if (error?.name === "AbortError") {
@@ -234,7 +256,8 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
         const list = items.map((item) => item.row);
         prepared = null;
         controller = new AbortController();
-        finish(await downloadAll(list, "Le partage n’a pas abouti, téléchargement une par une. "));
+        const why = `Le partage a été refusé (${error?.name || "erreur inconnue"}).`;
+        finish(await downloadAll(list, `${why} Téléchargement une par une. `), why);
       });
   }
   // Cancelling a running grouped download ends it: what was already handed to the browser stays, the selection is cleared.
@@ -276,4 +299,73 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     },
     render,
   };
+}
+
+// "Enregistrer dans Photos": native share of the photo shown in the lightbox. The file is fetched when the photo
+// opens, so the tap calls navigator.share at once (the user gesture is still valid). `download` is the existing
+// single download, used as the fallback; it resolves to true when the file was handed to the browser.
+const NOTE_MS = 12000;
+export function setupSinglePhoto({ sb, names, dateText, download }) {
+  let prepared = null,
+    token = 0,
+    timer = 0;
+  const say = (text) => {
+    clearTimeout(timer);
+    $("save-note").textContent = text;
+    if (text) timer = setTimeout(() => ($("save-note").textContent = ""), NOTE_MS);
+  };
+  const show = (visible) => {
+    $("save-photo").hidden = !visible;
+    $("lightbox-actions").classList.toggle("has-save", visible);
+  };
+  const label = () => (isIOS() ? "Enregistrer dans Photos" : "Enregistrer ou partager");
+  function reset() {
+    token++;
+    prepared = null;
+    say("");
+    if (!shareSupport().ok) return show(false);
+    show(true);
+    $("save-photo").disabled = true;
+    $("save-photo-label").textContent = "Préparation de la photo…";
+  }
+  function fail(reason, mine = token) {
+    if (mine !== token) return;
+    prepared = null;
+    show(false);
+    say(`Enregistrement dans Photos indisponible (${reason}). Utilisez « Télécharger ».`);
+  }
+  async function load(url, mine = token) {
+    if (mine !== token || $("save-photo").hidden) return;
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("http");
+      const blob = await response.blob();
+      if (!blob.size) throw new Error("empty");
+      if (mine !== token) return;
+      prepared = blob;
+      $("save-photo").disabled = false;
+      $("save-photo-label").textContent = label();
+    } catch {
+      fail("réseau ou autorisation", mine);
+    }
+  }
+  $("save-photo").addEventListener("click", () => {
+    if (!prepared) return;
+    // Everything before navigator.share is synchronous.
+    const number = peekDownloadCount() + 1;
+    const file = new File([prepared], downloadName(names, dateText, number), { type: "image/jpeg" });
+    navigator
+      .share({ files: [file] })
+      .then(() => {
+        commitDownloadCount(Math.max(peekDownloadCount(), number));
+        say("Photo partagée. Si vous avez choisi « Enregistrer l’image », retrouvez-la dans Photos.");
+      })
+      .catch(async (error) => {
+        if (error?.name === "AbortError") return say("Enregistrement annulé. Vous pouvez réessayer.");
+        const why = `Le partage a été refusé (${error?.name || "erreur inconnue"}).`;
+        say(`${why} Téléchargement direct…`);
+        if (await download()) say(`${why} Photo téléchargée : retrouvez-la ${whereFiles()}.`);
+      });
+  });
+  return { reset, load, fail, say };
 }

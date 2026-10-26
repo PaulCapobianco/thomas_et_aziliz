@@ -53,6 +53,7 @@ html[data-theme="dark"] {
 html[data-theme="dark"] .primary,
 html[data-theme="dark"] .primary.button,
 html[data-theme="dark"] #lightbox .lightbox-download,
+html[data-theme="dark"] #lightbox .lightbox-save,
 html[data-theme="dark"] .destination-card.is-public,
 html[data-theme="dark"] .photo-card.is-selected .pick-box {
   background: var(--fill);

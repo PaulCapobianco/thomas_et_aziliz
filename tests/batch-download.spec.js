@@ -109,7 +109,7 @@ test("desktop: successive downloads, names NN+1 to NN+n, counter consumed one by
   await expect(page.locator("#dl-bar")).toBeHidden({ timeout: 15000 });
   expect(await anchors(page)).toEqual([NAME(3), NAME(4), NAME(5)]);
   expect(await counter(page)).toBe(5);
-  await expect(page.locator("#gallery-status")).toHaveText("3 photos téléchargées.");
+  await expect(page.locator("#gallery-status")).toContainText("3 photos téléchargées.");
   await expect(page.locator("#gallery .is-selected")).toHaveCount(0);
   // The single download continues the same numbering.
   await page.route("**/fixtures/photo_01.jpg?download=1", (route) => route.fulfill({ body: "x", contentType: "image/jpeg" }));
@@ -152,7 +152,7 @@ test("touch phone: 'Préparer' then 'Partager' with the named files; the counter
   expect(await page.evaluate(() => window.__shared)).toEqual([[1, 2, 3, 4].map((n) => `${NAME(n)}|image/jpeg|true`)]);
   expect(await counter(page)).toBe(4);
   expect(await anchors(page)).toEqual([]);
-  await expect(page.locator("#gallery-status")).toHaveText("4 photos partagées.");
+  await expect(page.locator("#gallery-status")).toContainText("4 photos partagées.");
   await expect(page.locator("#gallery .is-selected")).toHaveCount(0);
 });
 

@@ -12,7 +12,7 @@ import {
   browserId,
   bindDialog,
 } from "./shared.js";
-import { setupBatch } from "./batch.js";
+import { setupBatch, setupSinglePhoto, whereFiles } from "./batch.js";
 import { setupUploads } from "./uploads.js";
 const sb = createClient();
 if (NAMES) {
@@ -57,6 +57,7 @@ let navigating = false;
 let savedScroll;
 let backgroundNodes = [];
 let uploads;
+const saver = setupSinglePhoto({ sb, names: NAMES, dateText: DATE_TXT, download: () => downloadCurrent() });
 const batch = setupBatch({ sb, names: NAMES, dateText: DATE_TXT, getRows: () => rows, onChange: () => renderGallery() });
 const frame = $("photo-frame");
 const viewport = document.querySelector(".photo-viewport");
@@ -349,9 +350,11 @@ async function openPhoto(index) {
   sizePhotoFrame();
   $("lightbox-status").textContent = "Chargement en haute définition…";
   updatePosition();
+  saver.reset();
   try {
     const url = await fullUrl(sb, rows[index]);
     if (request !== lightboxRequest || !dialog.open) return;
+    saver.load(url);
     const loader = new Image();
     loader.onload = () => {
       if (request !== lightboxRequest) return;
@@ -368,6 +371,7 @@ async function openPhoto(index) {
     loader.src = url;
   } catch {
     if (request === lightboxRequest) {
+      saver.fail("photo indisponible");
       $("full-photo").hidden = true;
       $("lightbox-status").textContent =
         "Cette photo n’est plus disponible. Actualisez la galerie.";
@@ -442,8 +446,8 @@ $("full-photo").addEventListener(
   },
   { passive: true },
 );
-$("download").onclick = async () => {
-  $("download").disabled = true;
+// The single download: same file name, same counter. Resolves to true when the file was handed to the browser.
+async function downloadCurrent() {
   try {
     // The number is only consumed once the signed URL exists, so a refused or failed request leaves no gap.
     const number = peekDownloadCount() + 1;
@@ -455,9 +459,18 @@ $("download").onclick = async () => {
     a.click();
     a.remove();
     commitDownloadCount(number);
+    saver.say(`Photo téléchargée. Retrouvez-la ${whereFiles()}.`);
+    return true;
   } catch {
     $("lightbox-status").textContent =
       "Téléchargement indisponible. Réessayez.";
+    return false;
+  }
+}
+$("download").onclick = async () => {
+  $("download").disabled = true;
+  try {
+    await downloadCurrent();
   } finally {
     $("download").disabled = false;
   }
