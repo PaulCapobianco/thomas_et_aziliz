@@ -1,7 +1,7 @@
 // Share journey: "Partager mes photos" -> choose public / private -> pick files -> preview -> confirm.
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { installMock } from "./mock.js";
+import { installMock, navLink } from "./mock.js";
 
 const fixture = (name) => `fixtures/${name}`;
 const settled = (page, timeout = 40000) =>
@@ -58,7 +58,7 @@ test.describe("step 1 from every entry point: destination cards, no chooser, not
       await expect(page.locator("#fab-bar .fab")).toBeVisible();
       await page.locator("#fab-bar .fab").click();
     } else {
-      await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
+      await navLink(page, "Partager des photos");
     }
     await expectStepOne(page);
     await page.waitForTimeout(500);
@@ -68,9 +68,9 @@ test.describe("step 1 from every entry point: destination cards, no chooser, not
     await installMock(page);
     await page.goto("/");
     const choosers = await watchChoosers(page);
-    await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
+    await navLink(page, "Partager des photos");
     await expectStepOne(page);
-    await page.getByRole("link", { name: "Accueil", exact: true }).click();
+    await navLink(page, "Accueil");
     await page.goto("/#partager");
     await expectStepOne(page);
     expect(choosers.count).toBe(0);
@@ -190,7 +190,7 @@ test("public send: audience 'public' and public paths; private send: audience 'm
   await installMock(page, { photos: 1 });
   await page.goto("/");
   await expect(page.locator("#gallery .photo-card")).toHaveCount(1);
-  await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
+  await navLink(page, "Partager des photos");
   await pick(page, "public", ["photo_01.jpg"]);
   await page.locator("#send").click();
   await settled(page);
@@ -206,7 +206,7 @@ test("public send: audience 'public' and public paths; private send: audience 'm
   const privatePaths = await page.evaluate(() => [...mock.objects.keys()].filter((p) => p.startsWith("maries/")));
   expect(privatePaths).toHaveLength(2); // thumb + full
   expect(await page.evaluate(() => mock.records.find((r) => r.audience === "maries").status)).toBe("published"); // accepted; visibility is audience-based
-  await page.getByRole("link", { name: "Accueil", exact: true }).click();
+  await navLink(page, "Accueil");
   await page.locator("#refresh").click();
   // The gallery shows the 1 seeded + 1 public photo, never the private one.
   await expect(page.locator("#gallery .photo-card")).toHaveCount(2);
@@ -251,7 +251,7 @@ test("pressing 'Partager mes photos' again gives back the initial choice; a pend
   await pick(page, "maries", ["photo_01.jpg"]);
   await expect(page.locator("#selection li")).toHaveCount(1);
   // Leave and come back through a share entry point: the unsent photo is not thrown away, destination displayed.
-  await page.getByRole("link", { name: "Accueil", exact: true }).click();
+  await navLink(page, "Accueil");
   await page.locator(".hero-cta").click();
   await expect(page.locator("#selection li")).toHaveCount(1);
   await expect(page.locator("#preview-summary")).toContainText("Envoyer uniquement aux mariés");
@@ -263,7 +263,7 @@ test("pressing 'Partager mes photos' again gives back the initial choice; a pend
   await page.locator("#send").click();
   await settled(page);
   await expectStepOne(page);
-  await page.getByRole("link", { name: "Accueil", exact: true }).click();
+  await navLink(page, "Accueil");
   await page.locator(".hero-cta").click();
   await expectStepOne(page);
 });

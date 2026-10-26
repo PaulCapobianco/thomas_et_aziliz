@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { installMock } from "./mock.js";
+import { installMock, navLink } from "./mock.js";
 
 for (const width of [390, 768, 1440]) {
   test(`ivory design: original portraits, navigation and three screens at ${width}px`, async ({ page }, info) => {
@@ -29,7 +29,7 @@ for (const width of [390, 768, 1440]) {
       await page.screenshot({ path: info.outputPath(`${screen}-${width}.png`), fullPage: true });
     };
     await capture("home");
-    await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
+    await navLink(page, "Partager des photos");
     // Step 1: destination cards, nothing preselected, no file chooser. Step 2 after picking files from a card.
     await expect(page.locator("[name=audience]:checked")).toHaveCount(0);
     await expect(page.locator("#choose-step")).toBeVisible();
@@ -43,7 +43,7 @@ for (const width of [390, 768, 1440]) {
     const bar = await page.locator("#send-bar").boundingBox();
     expect(Math.round(bar.y + bar.height)).toBe(900);
     await capture("share-private");
-    await page.getByRole("link", { name: "Galerie", exact: true }).click();
+    await navLink(page, "Galerie");
     await expect(page.locator("#gallery-view")).toBeVisible();
     await expect(page.locator("nav [aria-current=page]")).toHaveCount(1);
     await expect(page.locator("nav [aria-current=page]")).toHaveText("Galerie");

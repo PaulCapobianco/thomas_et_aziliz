@@ -407,3 +407,10 @@ export async function chooseDestination(page, value = "public") {
   if (await page.locator("[name=audience]:checked").count()) return;
   await page.locator(`[name=audience][value=${value}]`).check();
 }
+
+// Clicks a link of the header menu: under 768 px the links sit in the burger menu, which is opened first.
+export async function navLink(page, name) {
+  const toggle = page.locator("#menu-toggle");
+  if ((await toggle.isVisible()) && (await toggle.getAttribute("aria-expanded")) === "false") await toggle.click();
+  await page.locator("#site-menu").getByRole("link", { name, exact: true }).click();
+}

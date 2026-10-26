@@ -3512,3 +3512,91 @@ body.selecting .fab-bar {
 body.selecting .site-footer {
   padding-bottom: calc(12rem + env(safe-area-inset-bottom));
 }
+
+/* ---- Burger menu under 768 px: guest pages only (menu.js adds html.menu-js; the administration never does) ---- */
+.menu-toggle,
+.menu-backdrop {
+  display: none;
+}
+.menu-toggle {
+  flex: none;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-color: transparent;
+  color: var(--ink);
+  background: none;
+}
+.menu-toggle svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.menu-toggle .cross,
+.menu-toggle[aria-expanded="true"] .bars {
+  display: none;
+}
+.menu-toggle[aria-expanded="true"] .cross {
+  display: block;
+}
+@media (max-width: 767px) {
+  html.menu-js .menu-toggle {
+    display: inline-flex;
+  }
+  html.menu-js .site-header {
+    position: relative;
+    z-index: 40;
+    gap: .25rem;
+  }
+  html.menu-js .site-header .theme-toggle {
+    margin-left: auto;
+  }
+  html.menu-js .site-header nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    padding: .25rem max(1.25rem, env(safe-area-inset-left)) 1rem;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 22px 34px -22px #1b2838aa;
+  }
+  html.menu-js .site-header nav.is-open {
+    display: flex;
+  }
+  html.menu-js .site-header nav a {
+    min-height: 52px;
+    font-size: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  html.menu-js .site-header nav a:last-child {
+    border-bottom: 0;
+  }
+  html.menu-js .site-header nav a::after {
+    bottom: 12px;
+  }
+  /* The header stays crisp above the dimmed page while the menu is open. */
+  html.menu-js body.menu-open .site-header {
+    background: var(--bg);
+  }
+  html.menu-js .menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgb(17 25 37 / .5);
+  }
+  html.menu-js body.menu-open .menu-backdrop {
+    display: block;
+  }
+  body.menu-open {
+    overflow: hidden;
+  }
+}

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { installMock } from "./mock.js";
+import { installMock, navLink } from "./mock.js";
 
 const open = async (page) => {
   const errors = [];
@@ -140,7 +140,7 @@ test("footer link on the home page leads to the privacy page, and back to the al
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Les photos de notre mariage");
   // The header links of the privacy page reach the album routes.
   await page.goto("/confidentialite");
-  await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
+  await navLink(page, "Partager des photos");
   await expect(page).toHaveURL(/\/#partager$/);
   await expect(page.locator("#share-view")).toBeVisible();
 });

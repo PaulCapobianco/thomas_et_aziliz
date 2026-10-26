@@ -1,7 +1,7 @@
 // Upload status messages: one block, one message at a time (success 5 s, pending 10 s with OK, errors stay).
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { installMock, chooseDestination } from "./mock.js";
+import { installMock, chooseDestination, navLink } from "./mock.js";
 
 const fixture = (name) => `fixtures/${name}`;
 const box = (page) => page.locator("#upload-message");
@@ -272,11 +272,11 @@ test("photos sent from the share page appear in the gallery without reloading", 
   await installMock(page, { photos: 2 });
   await page.goto("/");
   await expect(page.locator("#gallery .photo-card")).toHaveCount(2);
-  await page.getByRole("link", { name: "Partager des photos", exact: true }).click();
+  await navLink(page, "Partager des photos");
   await sendOne(page, "photo_03.jpg");
   await settled(page);
   await expect(selected(page)).toHaveCount(0);
-  await page.getByRole("link", { name: "Accueil", exact: true }).click();
+  await navLink(page, "Accueil");
   await expect(page.locator("#gallery .photo-card")).toHaveCount(3);
 });
 
