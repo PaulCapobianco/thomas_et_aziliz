@@ -130,7 +130,7 @@ test("terms page: administrator vocabulary, download end date and report wording
   await open(page);
   const main = page.locator("main");
   await expect(main).toContainText("Paul Capobianco, administrateur unique");
-  await expect(page.locator("#acces")).toContainText("téléchargées jusqu’au 20 novembre 2026");
+  await expect(page.locator("#acces")).toContainText("téléchargées, une par une ou par lot de 20 photos au plus, jusqu’au 20 novembre 2026");
   await expect(page.locator("#acces")).toContainText("accessibles aux mariés et à l’administrateur");
   await expect(page.locator("#retrait")).toContainText("supprime la photo de l’album et de Google Drive dès que possible");
   await expect(page.locator(".legal-updated")).toContainText("25 octobre 2026");
