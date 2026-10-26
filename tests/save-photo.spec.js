@@ -3,7 +3,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { installMock } from "./mock.js";
-import { NAME, counter, downloads, recordDownloads, phone, IPHONE, ANDROID } from "./share-helpers.js";
+import { NAME, counter, downloads, recordDownloads, phone, IPHONE, ANDROID, IPAD_DESKTOP, WINDOWS } from "./share-helpers.js";
 
 const cards = (page) => page.locator("#gallery .photo-card");
 async function open(page, photos = 4, scheme = "light") {
@@ -60,11 +60,32 @@ test.describe("lightbox: save one photo", () => {
     expect(box.height).toBeGreaterThanOrEqual(44);
   });
 
-  test("Android wording: no promise of the Photos app", async ({ page }) => {
-    await phone(page, { ua: ANDROID });
+  test("Android: no native share, no button; the current download is used and says where the file goes", async ({ page }) => {
+    await recordDownloads(page);
+    await phone(page, { ua: ANDROID }); // the browser could share files, the app does not offer it on Android
     await open(page);
     await openPhoto(page);
-    await expect(save(page)).toContainText("Enregistrer ou partager");
+    await expect(save(page)).toBeHidden();
+    await page.locator("#download").click();
+    await expect.poll(() => counter(page)).toBe(1);
+    expect(await downloads(page)).toEqual([NAME(1)]);
+    expect(await page.evaluate(() => window.__shared.length)).toBe(0);
+    await expect(page.locator("#save-note")).toContainText("dossier Téléchargements");
+  });
+
+  test("iPad asking for the desktop site (Macintosh user agent, touch) still counts as iOS", async ({ page }) => {
+    await phone(page, { ua: IPAD_DESKTOP, touchPoints: 5 });
+    await open(page);
+    await openPhoto(page);
+    await expect(save(page)).toBeVisible();
+    await expect(save(page)).toContainText("Enregistrer dans Photos");
+  });
+
+  test("a touch laptop (Windows) downloads, it does not share", async ({ page }) => {
+    await phone(page, { ua: WINDOWS });
+    await open(page);
+    await openPhoto(page);
+    await expect(save(page)).toBeHidden();
   });
 
   test("a dismissed share consumes no number and the tap can be repeated", async ({ page }) => {
@@ -174,8 +195,8 @@ test.describe("batch: method, reason and location", () => {
     await expect(page.locator("#dl-note")).toContainText("dossier Téléchargements");
   });
 
-  test("touch phone whose browser cannot share files: reason shown", async ({ page }) => {
-    await phone(page, { canShare: "missing", ua: ANDROID });
+  test("iPhone whose browser cannot share files: reason shown", async ({ page }) => {
+    await phone(page, { canShare: "missing", ua: IPHONE });
     await open(page);
     await select(page, 2);
     await expect(page.locator("#dl-note")).toContainText("Téléchargement direct (ce navigateur ne partage pas les fichiers)");
@@ -188,6 +209,38 @@ test.describe("batch: method, reason and location", () => {
     await select(page, 2);
     await expect(page.locator("#dl-note")).toContainText("Téléchargement direct (ce navigateur refuse le partage de photos)");
     await expect(page.locator("#dl-note")).toContainText("app Fichiers");
+  });
+
+  test("Android: direct download announced with the folder and the multiple-downloads prompt, never a share", async ({ page }) => {
+    await recordDownloads(page);
+    await phone(page, { ua: ANDROID });
+    await open(page);
+    await select(page, 2);
+    const note = page.locator("#dl-note");
+    await expect(note).toContainText("Téléchargement direct");
+    await expect(note).toContainText("dossier Téléchargements");
+    await expect(note).toContainText("Autoriser plusieurs téléchargements");
+    await expect(page.locator("#dl-go")).toHaveText("Télécharger 2 photos");
+    await page.locator("#dl-go").click();
+    await expect(page.locator("#dl-bar")).toBeHidden({ timeout: 15000 });
+    expect(await page.evaluate(() => window.__shared.length)).toBe(0);
+    expect(await downloads(page)).toEqual([NAME(1), NAME(2)]);
+    expect(await counter(page)).toBe(2);
+    const status = page.locator("#gallery-status");
+    await expect(status).toContainText("2 photos téléchargées");
+    await expect(status).toContainText("dossier Téléchargements");
+    await expect(status).toContainText("Galerie");
+    await expect(status).toContainText("Autoriser");
+  });
+
+  test("a single downloaded photo on Android carries no multiple-downloads hint", async ({ page }) => {
+    await recordDownloads(page);
+    await phone(page, { ua: ANDROID });
+    await open(page);
+    await select(page, 1);
+    await page.locator("#dl-go").click();
+    await expect(page.locator("#dl-bar")).toBeHidden({ timeout: 15000 });
+    await expect(page.locator("#gallery-status")).not.toContainText("Autoriser");
   });
 
   test("share available: the bar announces the two steps and Photos", async ({ page }) => {
@@ -211,9 +264,9 @@ test.describe("batch: method, reason and location", () => {
     await expect(page.locator("#gallery-status")).toContainText("Photos");
   });
 
-  test("share refused: the fallback says why, downloads keep their names and the location is given", async ({ page }) => {
+  test("share refused on iPhone: the fallback says why, downloads keep their names and the location is given", async ({ page }) => {
     await recordDownloads(page);
-    await phone(page, { outcome: "fail", errorName: "NotAllowedError", ua: ANDROID });
+    await phone(page, { outcome: "fail", errorName: "NotAllowedError", ua: IPHONE });
     await open(page);
     await select(page, 2);
     await page.locator("#dl-go").click();
@@ -224,7 +277,7 @@ test.describe("batch: method, reason and location", () => {
     const status = page.locator("#gallery-status");
     await expect(status).toContainText("2 photos téléchargées");
     await expect(status).toContainText("refusé (NotAllowedError)");
-    await expect(status).toContainText("dossier Téléchargements");
+    await expect(status).toContainText("app Fichiers");
   });
 
   test("direct download: the final message says where the photos are", async ({ page }) => {

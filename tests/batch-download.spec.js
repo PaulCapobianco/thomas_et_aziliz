@@ -22,6 +22,7 @@ async function recordDownloads(page) {
 async function touchShare(page, outcome = "ok") {
   await page.addInitScript((outcome) => {
     const real = window.matchMedia.bind(window);
+    Object.defineProperty(navigator, "userAgent", { get: () => "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1" });
     window.matchMedia = (query) => (/pointer:\s*coarse/.test(query) ? { matches: true, media: query, addEventListener() {}, removeEventListener() {} } : real(query));
     window.__shared = [];
     navigator.canShare = () => true;

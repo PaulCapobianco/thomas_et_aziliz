@@ -24,6 +24,8 @@ export function shareSupport() {
     if (typeof navigator.share !== "function" || typeof navigator.canShare !== "function")
       return { ok: false, reason: "ce navigateur ne partage pas les fichiers" };
     if (!matchMedia("(pointer: coarse)").matches) return { ok: false, reason: "appareil non tactile" };
+    // Android's share sheet has no simple "save to the gallery": there the plain download is used.
+    if (!isIOS()) return { ok: false, reason: "le partage n’est utilisé que sur iPhone et iPad" };
     if (!navigator.canShare({ files: [new File(["x"], "photo.jpg", { type: "image/jpeg" })] }))
       return { ok: false, reason: "ce navigateur refuse le partage de photos" };
     return { ok: true };
@@ -37,11 +39,15 @@ const isIOS = () => {
   return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
 };
 // Where a downloaded file ends up (a link download never goes to Photos on iPhone).
+const isAndroid = () => /Android/.test(navigator.userAgent || "");
 export function whereFiles() {
   if (isIOS()) return "dans l’app Fichiers (dossier Téléchargements)";
-  if (/Android/.test(navigator.userAgent || "")) return "dans le dossier Téléchargements (app Fichiers)";
+  if (isAndroid())
+    return "dans le dossier Téléchargements (app Fichiers) et, selon votre téléphone, dans l’album « Téléchargements » de la Galerie";
   return "dans votre dossier Téléchargements";
 }
+// Chrome on Android asks once "Autoriser plusieurs téléchargements ?"; refusing it silently blocks every file after the first.
+const MULTI_HINT = "Si Chrome demande « Autoriser plusieurs téléchargements », touchez « Autoriser ».";
 // The focus is moved by script after some actions so that a keyboard or screen-reader user does not lose their place.
 // For a finger or a mouse that move is useless, and some phones draw a frame around a control focused by script, so
 // it only happens when the last input was the keyboard.
@@ -93,8 +99,10 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
   function methodNote() {
     const support = shareSupport();
     return support.ok
-      ? "Partage disponible : « Préparer » puis « Partager » pour enregistrer dans Photos ou votre galerie."
-      : `Téléchargement direct (${support.reason}). Retrouvez les photos ${whereFiles()}.`;
+      ? "Partage disponible : « Préparer » puis « Partager », puis « Enregistrer » pour les mettre dans Photos."
+      : isAndroid()
+        ? `Téléchargement direct : les photos iront ${whereFiles()}. ${MULTI_HINT}`
+        : `Téléchargement direct (${support.reason}). Retrouvez les photos ${whereFiles()}.`;
   }
   function progress(done, total, intro = "") {
     $("dl-progress").max = total;
@@ -172,7 +180,7 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     return { done, failed, aborted: controller.signal.aborted };
   }
   const summary = ({ done, failed, aborted }, why = "") =>
-    `${why ? `${why} ` : ""}${aborted ? "Téléchargement annulé. " : ""}${plural(done, "photo téléchargée", "photos téléchargées")}.${failed ? ` ${plural(failed, "photo n’a pas pu être téléchargée", "photos n’ont pas pu être téléchargées")}.` : ""}${done ? ` Retrouvez-${done > 1 ? "les" : "la"} ${whereFiles()}.` : ""}`;
+    `${why ? `${why} ` : ""}${aborted ? "Téléchargement annulé. " : ""}${plural(done, "photo téléchargée", "photos téléchargées")}.${failed ? ` ${plural(failed, "photo n’a pas pu être téléchargée", "photos n’ont pas pu être téléchargées")}.` : ""}${done ? ` Retrouvez-${done > 1 ? "les" : "la"} ${whereFiles()}.` : ""}${done > 1 && isAndroid() ? ` ${MULTI_HINT} Sinon, seules les premières photos arrivent.` : ""}`;
   async function fetchAll(list) {
     phase = "preparing";
     note = "";
@@ -325,7 +333,7 @@ export function setupSinglePhoto({ sb, names, dateText, download }) {
     $("save-photo").hidden = !visible;
     $("lightbox-actions").classList.toggle("has-save", visible);
   };
-  const label = () => (isIOS() ? "Enregistrer dans Photos" : "Enregistrer ou partager");
+  const label = () => "Enregistrer dans Photos"; // the button only exists on iPhone and iPad
   function reset() {
     token++;
     prepared = null;
