@@ -10,10 +10,12 @@
       content="Conditions d’utilisation de l’album photo du mariage de Thomas et Aziliz : envoi et partage des photos, droit à l’image, modération, signalements et accès."
     />
     <title>Conditions d’utilisation — Album du mariage de Thomas &amp; Aziliz</title>
+    <script src="/theme.js"></script>
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/assets/design_tokens.css" />
     <link rel="stylesheet" href="/app.css" />
     <link rel="stylesheet" href="/legal.css" />
+    <link rel="stylesheet" href="/theme.css" />
     <script src="/confidentialite.js" type="module"></script>
   </head>
   <body>
@@ -25,6 +27,10 @@
         <a href="/#partager">Partager des photos</a>
         <a href="/#souvenirs">Galerie</a>
       </nav>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Thème sombre" aria-pressed="false">
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 14.5A8 8 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/></svg>
+      </button>
     </header>
     <main id="main" tabindex="-1" class="container share-section legal">
       <p class="eyebrow">Thomas &amp; Aziliz</p>

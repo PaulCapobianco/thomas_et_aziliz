@@ -1,0 +1,105 @@
+/* Theme button (both themes). A 44 px touch target around a 20 px icon. */
+.theme-toggle {
+  flex: none;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-color: transparent;
+  color: var(--ink);
+  background: none;
+}
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.theme-toggle .icon-sun,
+html[data-theme="dark"] .theme-toggle .icon-moon {
+  display: none;
+}
+html[data-theme="dark"] .theme-toggle .icon-sun {
+  display: block;
+}
+
+/* ---- Dark theme: night blue, ivory text, sage and brass accents. Only under [data-theme="dark"], which
+   theme.js sets on the guest pages; the administration never loads this file. ---- */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111925;
+  --surface: #1a2433;
+  --paper-2: #222e41;
+  --text: #ece6d6;
+  --ink: #ece6d6;
+  --muted: #aab4c4;
+  --accent: #a8bd94;
+  --accent-hover: #c7d6b6;
+  --accent-soft: #1f2e2c;
+  --border: #3a4860;
+  --brass: #c9ae78;
+  --brass-ink: #dcc08a;
+  --ok: #93c284;
+  --danger: #f0897b;
+  --champagne-line: #8d7c55;
+  --fill: #4a5d40; /* sage fill of buttons and cards: light text stays on it, as in the light theme */
+}
+
+/* Sage fills keep their light text: a deeper sage than the text/line sage above. */
+html[data-theme="dark"] .primary,
+html[data-theme="dark"] .primary.button,
+html[data-theme="dark"] #lightbox .lightbox-download,
+html[data-theme="dark"] .destination-card.is-public,
+html[data-theme="dark"] .photo-card.is-selected .select-box {
+  background: var(--fill);
+  border-color: var(--accent);
+  color: #f6f1e6;
+}
+html[data-theme="dark"] .photo-card .select-box {
+  background: #1a2433;
+  border-color: var(--accent);
+}
+html[data-theme="dark"] .button::before {
+  background: #0b1018;
+}
+@media (hover: hover) and (pointer: fine) {
+  html[data-theme="dark"] .primary:hover,
+  html[data-theme="dark"] .primary.button:hover {
+    background: var(--fill);
+    border-color: var(--accent);
+  }
+}
+
+/* Surfaces written in light colours in app.css. */
+html[data-theme="dark"] .site-footer {
+  background: #0b1018;
+}
+html[data-theme="dark"] .marquee {
+  background: #2a2418 !important;
+}
+html[data-theme="dark"] .marquee-row {
+  color: #e8d5b0;
+}
+html[data-theme="dark"] .dl-bar,
+html[data-theme="dark"] .fab-bar {
+  background: #0f1622;
+}
+html[data-theme="dark"] .fab-bar {
+  background: linear-gradient(to top, #111925 65%, #11192500);
+}
+html[data-theme="dark"] #lightbox {
+  background: rgb(17 25 37 / .99);
+}
+
+/* The polaroid frames are paper objects: they keep their ivory paper, so their caption keeps dark ink. */
+html[data-theme="dark"] .polaroid figcaption {
+  color: #586071;
+}
+html[data-theme="dark"] .destination-card.is-public .destination-badge {
+  background: #2d3a27;
+  color: #e7ecdd;
+}

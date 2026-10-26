@@ -25,6 +25,8 @@ for (const file of [
   "shared.js",
   "uploads.js",
   "batch.js",
+  "theme.js",
+  "theme.css",
   "app.js",
   "motion.js",
   "admin.js",
