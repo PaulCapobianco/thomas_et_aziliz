@@ -275,3 +275,70 @@ html[data-theme="dark"] [tabindex]:focus-visible {
 #gallery-status[data-kind]:empty {
   display: none;
 }
+
+/* ---- "Comment ça marche ?" (home page, under the hero) ---- */
+.how {
+  padding-block: 2.5rem 1rem;
+}
+.how h2 {
+  margin: 0 0 1.2rem;
+  font: 400 clamp(1.7rem, 4.4vw, 2.3rem) / 1.15 var(--font-display);
+  color: var(--ink);
+}
+.how-steps {
+  display: grid;
+  gap: .9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: how;
+}
+.how-steps li {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr;
+  column-gap: .9rem;
+  align-items: start;
+  padding: .9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--brass);
+  counter-increment: how;
+}
+.how-steps li::before {
+  content: counter(how);
+  grid-row: 1 / span 2;
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  color: var(--accent);
+  font: 500 1.15rem/1 var(--font-display);
+}
+.how-steps strong {
+  font: 600 1rem/1.4 var(--font-ui);
+  color: var(--ink);
+}
+.how-steps span {
+  font: 400 .95rem/1.5 var(--font-ui);
+  color: var(--text);
+}
+.how-small {
+  margin: 1rem 0 0;
+  font-size: .85rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+@media (min-width: 768px) {
+  .how-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .how-steps li {
+    grid-template-columns: 1fr;
+    row-gap: .5rem;
+  }
+  .how-steps li::before {
+    grid-row: auto;
+  }
+}
