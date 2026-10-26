@@ -222,3 +222,34 @@ test("these elements are not in the Tab order, so the keyboard ring on real cont
   expect(ring[1]).toBe("solid");
   expect(ring[2]).toBeGreaterThanOrEqual(2);
 });
+
+// "Sélectionner" then the focus: a tap must not move the focus to "Tout sélectionner" (some phones draw a frame
+// around a control focused by script); the keyboard keeps the move, and its ring.
+for (const scheme of ["light", "dark"]) {
+  test(`${scheme}: a tap on "Sélectionner" leaves the focus alone; no frame on "Tout sélectionner"`, async ({ page }) => {
+    await open(page, scheme);
+    await page.locator("#select-mode").scrollIntoViewIfNeeded();
+    await page.locator("#select-mode").tap().catch(() => page.locator("#select-mode").click());
+    await expect(page.locator("#dl-bar")).toBeVisible();
+    const state = await page.evaluate(() => ({ active: document.activeElement.id, ring: getComputedStyle(document.getElementById("dl-all")).outlineStyle }));
+    expect(state.active).not.toBe("dl-all");
+    expect(state.ring === "none").toBeTruthy();
+    // Leaving the selection by a tap does not move the focus either.
+    await page.locator("#dl-cancel").click();
+    expect(await page.evaluate(() => document.activeElement.id)).not.toBe("select-mode");
+  });
+
+  test(`${scheme}: with the keyboard, "Sélectionner" moves the focus to "Tout sélectionner" and shows its ring`, async ({ page }) => {
+    await open(page, scheme, 1024);
+    await tabTo(page, page.locator("#select-mode"));
+    await page.keyboard.press("Enter");
+    await expect(page.locator("#dl-all")).toBeFocused();
+    const r = await ring(page.locator("#dl-all"));
+    expect(r.style).toBe("solid");
+    expect(r.width).toBeGreaterThanOrEqual(2);
+    // Escape-free exit with the keyboard: the focus returns to the "Sélectionner" button.
+    await page.locator("#dl-cancel").focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator("#select-mode")).toBeFocused();
+  });
+}

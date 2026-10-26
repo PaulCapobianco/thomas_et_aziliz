@@ -42,6 +42,13 @@ export function whereFiles() {
   if (/Android/.test(navigator.userAgent || "")) return "dans le dossier Téléchargements (app Fichiers)";
   return "dans votre dossier Téléchargements";
 }
+// The focus is moved by script after some actions so that a keyboard or screen-reader user does not lose their place.
+// For a finger or a mouse that move is useless, and some phones draw a frame around a control focused by script, so
+// it only happens when the last input was the keyboard.
+let keyboardUsed = false;
+document.addEventListener("keydown", () => (keyboardUsed = true), true);
+document.addEventListener("pointerdown", () => (keyboardUsed = false), true);
+const focusForKeyboard = (node) => keyboardUsed && node.focus({ preventScroll: true });
 export function setupBatch({ sb, names, dateText, getRows, onChange }) {
   let active = false,
     phase = "idle", // idle | preparing | ready | downloading
@@ -133,7 +140,7 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     render();
     onChange();
     $("gallery-status").textContent = message;
-    $("select-mode").focus({ preventScroll: true });
+    focusForKeyboard($("select-mode"));
   }
   // One file at a time through a signed URL with the imposed name: the same mechanism as the single download.
   async function downloadAll(list, intro = "") {
@@ -235,7 +242,7 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     phase = "ready";
     note = `Photos prêtes${refused ? ` (${plural(refused, "photo n’est plus disponible et a été ignorée", "photos ne sont plus disponibles et ont été ignorées")})` : ""}. Appuyez sur « Partager ».`;
     render();
-    $("dl-go").focus({ preventScroll: true });
+    focusForKeyboard($("dl-go"));
   }
   const finish = (result, why = "") => exit(summary(result, why));
   // Called directly from the click: navigator.share needs the user gesture, so nothing is awaited before it.
@@ -271,7 +278,7 @@ export function setupBatch({ sb, names, dateText, getRows, onChange }) {
     active = true;
     render();
     onChange();
-    $("dl-all").focus({ preventScroll: true });
+    focusForKeyboard($("dl-all"));
   };
   $("dl-all").onclick = () => {
     const rows = getRows();
