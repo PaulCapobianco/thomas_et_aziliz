@@ -3457,7 +3457,8 @@ html.motion .photo-card.no-delay::after {
 }
 .dl-note {
   margin: 0;
-  min-height: 1.4em;
+  /* Two lines reserved: the bar never changes height when a message appears (a tap could miss its card). */
+  min-height: 3.2em;
   font-size: .9rem;
   color: var(--text);
 }

@@ -34,6 +34,9 @@ async function touchShare(page, outcome = "ok") {
   }, outcome);
 }
 async function open(page, photos = 5, options = {}) {
+  // Reduced motion also turns off the smooth page scroll: Playwright aims at a card, and a scroll still gliding
+  // under the click would land it between two cards.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await installMock(page, { photos, ...options });
   await page.goto("/");
   await expect(cards(page)).toHaveCount(photos);
@@ -83,7 +86,11 @@ test("more than 20 photos: button disabled with a clear message, never a silent 
   await expect(page.locator("#dl-count")).toHaveText("25 photos sélectionnées");
   await expect(page.locator("#dl-go")).toBeDisabled();
   await expect(page.locator("#dl-note")).toHaveText("20 photos au maximum par lot. Décochez 5 photos pour continuer.");
-  for (let i = 20; i < 24; i++) await cards(page).nth(i).click();
+  for (let i = 20; i < 24; i++) {
+    await cards(page).nth(i).click();
+    // One tick at a time: wait for the counter before the next click.
+    await expect(page.locator("#dl-count")).toHaveText(`${25 - (i - 19)} photos sélectionnées`);
+  }
   await expect(page.locator("#dl-note")).toHaveText("20 photos au maximum par lot. Décochez 1 photo pour continuer.");
   await cards(page).nth(24).click();
   await expect(page.locator("#dl-count")).toHaveText("20 photos sélectionnées");
