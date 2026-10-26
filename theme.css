@@ -107,3 +107,103 @@ html[data-theme="dark"] .destination-card.is-public .destination-badge {
   background: #2d3a27;
   color: #e7ecdd;
 }
+
+/* ---- Touch and mouse: no frame around a control after a tap or a click ----
+   Guest pages only (the administration never loads this file). The ring stays for the keyboard (:focus-visible),
+   and a tap no longer flashes the browser's own highlight box. */
+a,
+button,
+summary,
+label,
+input,
+select,
+.photo-card,
+.destination-card,
+.file-picker {
+  -webkit-tap-highlight-color: transparent;
+}
+a:focus:not(:focus-visible),
+button:not(.is-selected):focus:not(:focus-visible),
+summary:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+.photo-card:not(.is-selected):focus:not(:focus-visible),
+.destination-card:focus:not(:focus-visible),
+.polaroid-strip:focus:not(:focus-visible),
+#lightbox:focus:not(:focus-visible),
+[tabindex]:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+/* (A ticked card keeps its selection ring: it is a state, not a focus frame.) */
+/* The keyboard ring on a dark page: the light sage (7 to 9:1 on the night blue) instead of the dark sage. */
+html[data-theme="dark"] a:focus-visible,
+html[data-theme="dark"] button:focus-visible,
+html[data-theme="dark"] input:focus-visible,
+html[data-theme="dark"] select:focus-visible,
+html[data-theme="dark"] .file-picker:focus-within,
+html[data-theme="dark"] [tabindex]:focus-visible {
+  outline-color: var(--accent);
+}
+
+/* ---- Touch screens: no "stuck" hover after a tap ----
+   After a tap, a phone keeps :hover on the control until the next tap elsewhere; app.css draws a frame, a fill or a
+   colour change on :hover, which is the box seen around a button after touching it. On devices without hover the
+   resting look is restored (a pointer keeps its hover effects, they live in app.css). */
+@media (hover: none) {
+  .theme-toggle:hover,
+  .menu-toggle:hover {
+    border-color: transparent;
+  }
+  .select-toggle:hover {
+    border-color: var(--ink);
+  }
+  .select-toggle[aria-pressed="true"]:hover {
+    border-color: var(--fill, var(--accent));
+  }
+  .dl-actions button:not(.primary):hover {
+    border-color: var(--border);
+  }
+  .primary:hover,
+  .primary.button:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  html[data-theme="dark"] .primary:hover,
+  html[data-theme="dark"] .primary.button:hover,
+  html[data-theme="dark"] #lightbox .lightbox-download:hover,
+  html[data-theme="dark"] #lightbox .lightbox-save:hover {
+    background: var(--fill);
+    border-color: var(--ink);
+  }
+  .button.secondary:hover {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+  .lightbox-stage button:hover {
+    background: transparent;
+  }
+  .footer-legal:hover {
+    color: #c3cad4;
+    text-decoration-color: var(--brass);
+  }
+  .footer-legal[aria-current="page"]:hover {
+    color: #f6f1e6;
+  }
+  nav a:not([aria-current="page"]):hover::after {
+    transform: scaleX(0);
+  }
+  /* The pressed look (an inset shadow) can also stay on a phone after the finger left: no frame, no halo. */
+  button:not(.photo-card):not(.admin-preview):not(.destination-card):not(:disabled):active {
+    box-shadow: none;
+  }
+  .legal a:hover {
+    color: inherit;
+  }
+  .legal a.button:hover {
+    color: #f6f1e6;
+  }
+  .legal-toc a:hover {
+    text-decoration-color: transparent;
+  }
+}
